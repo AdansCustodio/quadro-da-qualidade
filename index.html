@@ -43,6 +43,9 @@
         <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
         <button onclick="window.setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
         <button onclick="window.setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
+        <!-- Novas Abas -->
+        <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
+        <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
         
         <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2">
             <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" title="Dia Anterior">
@@ -113,7 +116,7 @@
         }
 
         // Estado do Sistema
-        const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4'];
+        const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
         const schedule = [
             { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
             { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" },
@@ -253,8 +256,10 @@
 
             if (viewMode === 'grid') {
                 mainContent.className = "grid-view-container";
-                mainContent.innerHTML = ovenList.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
-                ovenList.forEach(ov => window.attachCalculations(ov));
+                // FILTRO: Excluir FORNO 1 da visão GERAL
+                const gridOvens = ovenList.filter(ov => ov !== 'FORNO 1');
+                mainContent.innerHTML = gridOvens.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
+                gridOvens.forEach(ov => window.attachCalculations(ov));
             } else {
                 mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
                 mainContent.innerHTML = generateOvenHTML(currentOven);
@@ -346,12 +351,18 @@
 
         window.togglePresentation = () => {
             const overlay = document.getElementById('presentation-overlay');
+            // FILTRO: Excluir FORNO 1 da Apresentação
+            const cycleList = ovenList.filter(o => o !== 'FORNO 1');
+
             if (presentationInterval) {
                 clearInterval(presentationInterval); clearInterval(countdownInterval);
                 presentationInterval = null; 
                 if(overlay) overlay.style.display = 'none';
             } else {
-                window.setViewMode('single', 'FORNO 1');
+                // Ao iniciar, se estivermos no FORNO 1, pula para o próximo válido (ex: FORNO 2)
+                const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
+                window.setViewMode('single', startOven);
+
                 if(overlay) overlay.style.display = 'block';
                 countdownSeconds = 30;
                 countdownInterval = setInterval(() => {
@@ -359,9 +370,14 @@
                     const timer = document.getElementById('presentation-timer');
                     if(timer) timer.innerText = countdownSeconds;
                 }, 1000);
+                
                 presentationInterval = setInterval(() => {
-                    const idx = (ovenList.indexOf(currentOven) + 1) % ovenList.length;
-                    window.setViewMode('single', ovenList[idx]);
+                    const currentIdx = cycleList.indexOf(currentOven);
+                    // Se currentOven não estiver na lista (ex: navegação manual para FORNO 1 durante a apresentação), volta para o índice 0
+                    const safeIdx = currentIdx === -1 ? -1 : currentIdx;
+                    const nextIdx = (safeIdx + 1) % cycleList.length;
+                    
+                    window.setViewMode('single', cycleList[nextIdx]);
                     countdownSeconds = 30;
                 }, 30000);
             }
