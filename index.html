@@ -132,8 +132,10 @@
         let presentationInterval = null;
         let countdownInterval = null;
         let countdownSeconds = 30;
-        let isSaving = false;
         let unsubscribeRealtime = null;
+        
+        // Controle de timeouts de salvamento
+        const saveTimeouts = {};
 
         const ovenDataStore = {};
 
@@ -261,7 +263,7 @@
 
             if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
                 focusedId = activeElement.id;
-                // Apenas tenta salvar cursor se for texto (input type="number" não suporta selectionRange em alguns browsers)
+                // Apenas tenta salvar cursor se for texto
                 if (activeElement.type !== 'number' && activeElement.tagName === 'INPUT') {
                     try {
                         cursorStart = activeElement.selectionStart;
@@ -275,7 +277,6 @@
 
             if (viewMode === 'grid') {
                 mainContent.className = "grid-view-container";
-                // FILTRO: Excluir FORNO 1 da visão GERAL
                 const gridOvens = ovenList.filter(ov => ov !== 'FORNO 1');
                 mainContent.innerHTML = gridOvens.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
                 gridOvens.forEach(ov => window.attachCalculations(ov));
@@ -321,7 +322,7 @@
             selectedDate.setDate(selectedDate.getDate() + offset);
             updateDateUI();
             resetStore();
-            renderContent(); // Limpa visualmente enquanto carrega
+            renderContent(); 
             if (db) setupRealtimeListener();
         };
 
@@ -351,7 +352,6 @@
             const aInputs = document.querySelectorAll(`.input-quali-acum[data-oven="${oven}"]`);
             let sum = 0, count = 0;
             hInputs.forEach((input, i) => {
-                // Tratamento para aceitar vírgula (formatação BR)
                 const rawVal = input.value.replace(',', '.');
                 const val = parseFloat(rawVal);
                 
@@ -360,7 +360,6 @@
                     sum += val; count++;
                     const avg = sum / count;
                     if (aInputs[i]) {
-                        // Formata saída com vírgula para manter padrão visual
                         aInputs[i].value = avg.toFixed(2).replace('.', ',');
                         aInputs[i].className = avg >= 97 ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
                     }
@@ -387,7 +386,6 @@
 
         window.togglePresentation = () => {
             const overlay = document.getElementById('presentation-overlay');
-            // FILTRO: Excluir FORNO 1 da Apresentação
             const cycleList = ovenList.filter(o => o !== 'FORNO 1');
 
             if (presentationInterval) {
@@ -395,7 +393,6 @@
                 presentationInterval = null; 
                 if(overlay) overlay.style.display = 'none';
             } else {
-                // Ao iniciar, se estivermos no FORNO 1, pula para o próximo válido (ex: FORNO 2)
                 const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
                 window.setViewMode('single', startOven);
 
@@ -409,10 +406,8 @@
                 
                 presentationInterval = setInterval(() => {
                     const currentIdx = cycleList.indexOf(currentOven);
-                    // Se currentOven não estiver na lista (ex: navegação manual para FORNO 1 durante a apresentação), volta para o índice 0
                     const safeIdx = currentIdx === -1 ? -1 : currentIdx;
                     const nextIdx = (safeIdx + 1) % cycleList.length;
-                    
                     window.setViewMode('single', cycleList[nextIdx]);
                     countdownSeconds = 30;
                 }, 30000);
@@ -434,16 +429,28 @@
         };
 
         // --- FIREBASE LOGIC ---
-        const saveToFirebase = async (ovenId) => {
-            if (!db || isSaving) return;
-            isSaving = true;
-            const dateKey = getDateKey(selectedDate);
-            try {
-                const docId = `${ovenId}_${dateKey}`;
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
-                await setDoc(docRef, ovenDataStore[ovenId]);
-            } catch (e) { console.error("Erro save:", e); } 
-            finally { setTimeout(() => isSaving = false, 500); }
+        // Sistema robusto de salvamento com Debounce e Captura de Estado
+        const saveToFirebase = (ovenId) => {
+            if (!db) return;
+            
+            // Limpa o timer anterior para não salvar múltiplas vezes se estiver digitando
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
+
+            // CAPTURA O ESTADO ATUAL IMEDIATAMENTE (Cópia de Segurança)
+            // Isso garante que salvamos os dados DESSA data específica, mesmo se o usuário mudar a data no calendário depois.
+            const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
+            const targetDateKey = getDateKey(selectedDate); // Pega a data selecionada NO MOMENTO DA DIGITAÇÃO
+
+            // Agenda o envio para daqui a 1 segundo (Debounce)
+            saveTimeouts[ovenId] = setTimeout(async () => {
+                try {
+                    const docId = `${ovenId}_${targetDateKey}`;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                    await setDoc(docRef, dataToSave);
+                } catch (e) { 
+                    console.error("Erro ao salvar:", e); 
+                }
+            }, 1000);
         };
 
         const setupRealtimeListener = () => {
@@ -463,7 +470,7 @@
                         }
                     }
                 });
-                if(!hasData) resetStore(); // Garante limpeza se mudarmos para dia vazio
+                if(!hasData) resetStore(); 
                 renderContent();
             });
         };
@@ -472,7 +479,7 @@
         const init = async () => {
             resetStore();
             updateDateUI();
-            renderContent(); // Renderiza visual vazio imediatamente
+            renderContent();
             
             if(auth) {
                 try {
