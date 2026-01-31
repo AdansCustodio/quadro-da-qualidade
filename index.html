@@ -169,6 +169,8 @@
             const data = ovenDataStore[ovenName];
             const headerSize = isMini ? 'text-xs py-1' : 'text-xl py-2';
             const tableFontSize = isMini ? 'text-[0.6rem]' : 'text-xs';
+            // Criar ID seguro para os inputs
+            const safeOven = ovenName.replace(/\s+/g, '-');
 
             let rowsHTML = schedule.map((item, index) => {
                 const rowData = data.rows[index];
@@ -179,11 +181,11 @@
                             ${item.time}<span class="shift-stamp">${item.shift}</span>
                         </td>
                         <td class="border-black">
-                            <input type="text" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" 
+                            <input type="text" id="input-${safeOven}-${index}-ref" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" 
                                 oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')">
                         </td>
                         <td class="border-black">
-                            <select class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)">
+                            <select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)">
                                 <option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option>
                                 <option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option>
                                 <option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option>
@@ -191,25 +193,25 @@
                             </select>
                         </td>
                         <td class="border-black">
-                            <input type="number" step="0.01" class="nav-input" value="${rowData.vol || ''}" 
+                            <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" 
                                 oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value)">
                         </td>
                         <td class="border-black">
-                            <input type="number" step="0.01" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" 
-                                data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value)">
+                            <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" 
+                                data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')">
                         </td>
                         <td class="border-black">
                             <input type="text" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00">
                         </td>
                         <td class="border-black p-0">
                             <div class="flex flex-col">
-                                ${[0,1,2,3].map(i => `<input type="text" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.defects[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'defects', ${i}, this.value)">`).join('')}
+                                ${[0,1,2,3].map(i => `<input type="text" id="input-${safeOven}-${index}-defect-${i}" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.defects[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'defects', ${i}, this.value)">`).join('')}
                             </div>
                         </td>
                         <td class="border-black p-0">
                             <div class="flex h-full">
                                 <div class="flex flex-col flex-grow">
-                                    ${[0,1,2,3].map(i => `<input type="text" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.quebras[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'quebras', ${i}, this.value)">`).join('')}
+                                    ${[0,1,2,3].map(i => `<input type="text" id="input-${safeOven}-${index}-quebra-${i}" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.quebras[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'quebras', ${i}, this.value)">`).join('')}
                                 </div>
                                 <div class="quebra-total-box">
                                     <div class="quebra-total-header uppercase">Total</div>
@@ -251,6 +253,23 @@
         };
 
         const renderContent = () => {
+            // Lógica de preservação de Foco
+            const activeElement = document.activeElement;
+            let focusedId = null;
+            let cursorStart = null;
+            let cursorEnd = null;
+
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
+                focusedId = activeElement.id;
+                // Apenas tenta salvar cursor se for texto (input type="number" não suporta selectionRange em alguns browsers)
+                if (activeElement.type !== 'number' && activeElement.tagName === 'INPUT') {
+                    try {
+                        cursorStart = activeElement.selectionStart;
+                        cursorEnd = activeElement.selectionEnd;
+                    } catch (e) {}
+                }
+            }
+
             const mainContent = document.getElementById('main-content');
             if(!mainContent) return;
 
@@ -264,6 +283,19 @@
                 mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
                 mainContent.innerHTML = generateOvenHTML(currentOven);
                 window.attachCalculations(currentOven);
+            }
+
+            // Restaurar Foco
+            if (focusedId) {
+                const el = document.getElementById(focusedId);
+                if (el) {
+                    el.focus();
+                    if (cursorStart !== null && cursorEnd !== null) {
+                        try {
+                            el.setSelectionRange(cursorStart, cursorEnd);
+                        } catch (e) {}
+                    }
+                }
             }
         };
 
@@ -319,13 +351,17 @@
             const aInputs = document.querySelectorAll(`.input-quali-acum[data-oven="${oven}"]`);
             let sum = 0, count = 0;
             hInputs.forEach((input, i) => {
-                const val = parseFloat(input.value);
+                // Tratamento para aceitar vírgula (formatação BR)
+                const rawVal = input.value.replace(',', '.');
+                const val = parseFloat(rawVal);
+                
                 if (!isNaN(val)) {
                     input.className = val >= 97 ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
                     sum += val; count++;
                     const avg = sum / count;
                     if (aInputs[i]) {
-                        aInputs[i].value = avg.toFixed(2);
+                        // Formata saída com vírgula para manter padrão visual
+                        aInputs[i].value = avg.toFixed(2).replace('.', ',');
                         aInputs[i].className = avg >= 97 ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
                     }
                 } else {
