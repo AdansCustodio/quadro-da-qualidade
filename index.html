@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Qualidade - CCO Fornos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-size: 1.1rem;
+        }
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            text-align: center;
+            padding: 2px; 
+        }
+        .header-blue {
+            color: #2563eb;
+        }
+        
+        .bg-gray-custom {
+            background-color: #f3f4f6;
+        }
+
+        input, select {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            outline: none;
+            font-size: 1rem;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .defect-input {
+            width: 100%;
+            border-bottom: 1px solid #ccc;
+            padding: 1px 4px;
+            text-align: left;
+            font-size: 0.85rem;
+            height: 1.4rem;
+        }
+        .defect-input:last-child {
+            border-bottom: none;
+        }
+        .defect-input:focus {
+            background-color: #fffde7;
+        }
+        .text-target-ok { color: #16a34a; font-weight: bold; }
+        .text-target-low { color: #dc2626; font-weight: bold; }
+        
+        .shift-stamp {
+            display: block;
+            font-size: 0.55rem;
+            font-weight: normal;
+            color: #6b7280;
+            line-height: 1;
+            margin-top: 1px;
+            text-transform: uppercase;
+        }
+
+        .tab-btn {
+            transition: all 0.2s;
+            border-bottom: 4px solid transparent;
+        }
+        .tab-btn.active {
+            border-bottom-color: #2563eb;
+            color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .btn-presentation { background-color: #f59e0b; color: white; border-radius: 4px; }
+        .btn-general { background-color: #1e293b; color: white; border-radius: 4px; }
+        .btn-nav-date { background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; }
+        .btn-nav-date:hover { background-color: #e5e7eb; }
+
+        .quebra-total-box {
+            width: 60px;
+            border-left: 1px solid #999;
+            display: flex;
+            flex-direction: column;
+            background-color: #fafafa;
+        }
+        .quebra-total-header {
+            font-size: 0.5rem;
+            font-weight: bold;
+            border-bottom: 1px solid #999;
+            padding: 1px 0;
+            background-color: #f0f0f0;
+            color: #444;
+        }
+
+        #presentation-overlay {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border-left: 5px solid #f59e0b;
+        }
+
+        .grid-view-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 10px;
+            max-width: 100% !important;
+        }
+
+        @media (min-width: 1600px) {
+            .grid-view-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .oven-card {
+            background: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body class="bg-gray-200 p-4">
+
+    <!-- Navegação Superior -->
+    <div class="max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
+        <button onclick="setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1">Forno 1</button>
+        <button onclick="setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
+        <button onclick="setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
+        <button onclick="setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
+        <button onclick="setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
+        
+        <!-- Navegador de Data -->
+        <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2">
+            <button onclick="changeDate(-1)" class="btn-nav-date p-1" title="Dia Anterior">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <div class="flex flex-col items-center min-w-[100px]">
+                <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
+                <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
+            </div>
+            <button onclick="changeDate(1)" class="btn-nav-date p-1" title="Próximo Dia">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="flex-grow"></div>
+
+        <button onclick="setViewMode('grid')" class="btn-general px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap mr-2" id="btn-GERAL">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            GERAL
+        </button>
+
+        <button onclick="togglePresentation()" class="btn-presentation px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Apresentação
+        </button>
+    </div>
+
+    <div id="presentation-overlay">
+        <div class="flex flex-col items-center">
+            <span class="text-xs uppercase opacity-70 mb-1">Ciclo Ativo</span>
+            <div class="flex items-center gap-4">
+                <span class="font-bold">Troca em: <span id="presentation-timer">30</span>s</span>
+                <button onclick="togglePresentation()" class="bg-red-600 hover:bg-red-700 text-white text-[10px] px-2 py-1 rounded font-bold uppercase">Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-7xl mx-auto"></div>
+
+    <datalist id="ref-suggestions"></datalist>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configurações Globais
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Estado do App
+        const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4'];
+        const schedule = [
+            { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
+            { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" },
+            { time: "05:30", shift: "TA" }, { time: "07:30", shift: "TA" }, 
+            { time: "09:30", shift: "TA" }, { time: "11:30", shift: "TA" },
+            { time: "13:30", shift: "TB" }, { time: "15:30", shift: "TB" }, 
+            { time: "17:30", shift: "TB" }, { time: "19:30", shift: "TB" }
+        ];
+
+        let currentOven = 'FORNO 1';
+        let viewMode = 'single';
+        let selectedDate = new Date();
+        let presentationInterval = null;
+        let countdownInterval = null;
+        let countdownSeconds = 30;
+        let isSaving = false;
+        let unsubscribeRealtime = null;
+        
+        const ovenDataStore = {};
+        const resetStore = () => {
+            ovenList.forEach(ov => {
+                ovenDataStore[ov] = { 
+                    linha: '', 
+                    rows: Array(12).fill(null).map(() => ({ 
+                        ref: '', turno: '', vol: '', qHora: '', 
+                        defects: ['', '', '', ''], quebras: ['', '', '', ''] 
+                    })) 
+                };
+            });
+        };
+        resetStore();
+
+        // --- UTILITÁRIOS ---
+        const getDateKey = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const updateDateUI = () => {
+            const d = selectedDate.getDate().toString().padStart(2, '0');
+            const m = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+            const y = selectedDate.getFullYear();
+            document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
+        };
+
+        // --- FIREBASE CORE ---
+        const initApp = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+            }
+        };
+
+        const setupRealtimeListener = () => {
+            if (unsubscribeRealtime) unsubscribeRealtime();
+            
+            const dateKey = getDateKey(selectedDate);
+            // Seguindo a REGRA 1: artifacts/{appId}/public/data/{collectionName}
+            // Document ID será ovenId_dateKey
+            const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+            
+            unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
+                let hasDataForDate = false;
+                snapshot.forEach((doc) => {
+                    const id = doc.id;
+                    if (id.includes(dateKey)) {
+                        const ovenName = id.replace(`_${dateKey}`, '');
+                        if (ovenList.includes(ovenName)) {
+                            ovenDataStore[ovenName] = doc.data();
+                            hasDataForDate = true;
+                        }
+                    }
+                });
+
+                // Se mudamos de data e não tem nada, resetamos o local para mostrar vazio
+                if (!hasDataForDate) {
+                    resetStore();
+                }
+                renderContent();
+            }, (error) => console.error("Firestore error:", error));
+        };
+
+        const saveToFirebase = async (ovenId) => {
+            const user = auth.currentUser;
+            if (!user || isSaving) return;
+            
+            isSaving = true;
+            const dateKey = getDateKey(selectedDate);
+            try {
+                const docId = `${ovenId}_${dateKey}`;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                await setDoc(docRef, ovenDataStore[ovenId]);
+            } catch (e) {
+                console.error("Error saving:", e);
+            } finally {
+                setTimeout(() => { isSaving = false; }, 500);
+            }
+        };
+
+        // --- INTERFACE ---
+        window.changeDate = (offset) => {
+            selectedDate.setDate(selectedDate.getDate() + offset);
+            updateDateUI();
+            resetStore(); // Limpa local antes do snapshot carregar os novos
+            setupRealtimeListener();
+        };
+
+        window.setViewMode = (mode, oven = null) => {
+            viewMode = mode;
+            if (oven) currentOven = oven;
+            
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('btn-GERAL').classList.remove('bg-blue-600');
+            
+            if (mode === 'grid') {
+                document.getElementById('btn-GERAL').classList.add('bg-blue-600');
+            } else {
+                const btn = document.getElementById(`btn-${currentOven}`);
+                if (btn) btn.classList.add('active');
+            }
+            renderContent();
+        };
+
+        const renderContent = () => {
+            const mainContent = document.getElementById('main-content');
+            if (viewMode === 'grid') {
+                mainContent.className = "grid-view-container";
+                mainContent.innerHTML = ovenList.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
+                ovenList.forEach(ov => attachCalculations(ov));
+            } else {
+                mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
+                mainContent.innerHTML = generateOvenHTML(currentOven);
+                attachCalculations(currentOven);
+            }
+        };
+
+        const generateOvenHTML = (ovenName, isMini = false) => {
+            const data = ovenDataStore[ovenName];
+            const headerSize = isMini ? 'text-xs py-1' : 'text-xl py-2';
+            const tableFontSize = isMini ? 'text-[0.6rem]' : 'text-xs';
+
+            let rowsHTML = schedule.map((item, index) => {
+                const rowData = data.rows[index];
+                const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
+                return `
+                    <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
+                        <td class="font-bold border-black ${isMini ? 'text-[0.7rem]' : 'text-sm'} p-0">
+                            ${item.time}<span class="shift-stamp">${item.shift}</span>
+                        </td>
+                        <td class="border-black">
+                            <input type="text" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" 
+                                oninput="syncData('${ovenName}', ${index}, 'ref', this.value); sugerirReferencia(this, '${ovenName}')">
+                        </td>
+                        <td class="border-black">
+                            <select class="text-gray-700 font-medium nav-input" onchange="syncData('${ovenName}', ${index}, 'turno', this.value)">
+                                <option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option>
+                                <option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option>
+                                <option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option>
+                                <option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option>
+                            </select>
+                        </td>
+                        <td class="border-black">
+                            <input type="number" step="0.01" class="nav-input" value="${rowData.vol || ''}" 
+                                oninput="syncData('${ovenName}', ${index}, 'vol', this.value)">
+                        </td>
+                        <td class="border-black">
+                            <input type="number" step="0.01" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" 
+                                data-oven="${ovenName}" oninput="syncData('${ovenName}', ${index}, 'qHora', this.value)">
+                        </td>
+                        <td class="border-black">
+                            <input type="text" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00">
+                        </td>
+                        <td class="border-black p-0">
+                            <div class="flex flex-col">
+                                ${[0,1,2,3].map(i => `<input type="text" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.defects[i] || ''}" oninput="syncSub('${ovenName}', ${index}, 'defects', ${i}, this.value)">`).join('')}
+                            </div>
+                        </td>
+                        <td class="border-black p-0">
+                            <div class="flex h-full">
+                                <div class="flex flex-col flex-grow">
+                                    ${[0,1,2,3].map(i => `<input type="text" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.quebras[i] || ''}" oninput="syncSub('${ovenName}', ${index}, 'quebras', ${i}, this.value)">`).join('')}
+                                </div>
+                                <div class="quebra-total-box">
+                                    <div class="quebra-total-header uppercase">Total</div>
+                                    <div class="flex-grow flex items-center justify-center font-bold ${isMini ? 'text-[0.6rem]' : 'text-xs'}" id="total-${ovenName}-${index}">0,00</div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div class="border-b border-black text-center ${headerSize} font-bold uppercase bg-gray-50">Acompanhamento - ${ovenName}</div>
+                <div class="flex border-b border-black font-bold uppercase text-[0.6rem] bg-white">
+                    <div class="w-1/2 border-r border-black p-1 flex justify-center items-center">${ovenName}</div>
+                    <div class="w-1/2 p-1 flex justify-center items-center gap-1">
+                        <span>Linha:</span>
+                        <select onchange="syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600">
+                            <option value="">-</option>
+                            <option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option>
+                            <option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option>
+                            <option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option>
+                            <option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option>
+                            <option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="header-blue font-bold ${tableFontSize} leading-tight bg-gray-50">
+                            <th class="w-10">Hora</th><th class="w-24">Referência</th><th class="w-10">Turno<br>Esmalt.</th>
+                            <th class="w-12">Volume</th><th class="w-14">Qualidade<br>Hora %</th><th class="w-14">Qualidade<br>Acum %</th>
+                            <th class="w-24 italic">Defeitos</th><th class="w-32 text-red-600">Quebra %</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHTML}</tbody>
+                </table>
+            `;
+        };
+
+        // --- CÁLCULOS ---
+        window.syncData = (oven, row, field, val) => {
+            ovenDataStore[oven].rows[row][field] = val;
+            saveToFirebase(oven);
+        };
+        window.syncSub = (oven, row, field, sub, val) => {
+            ovenDataStore[oven].rows[row][field][sub] = val;
+            saveToFirebase(oven);
+            if (field === 'quebras') runQuebra(oven, row);
+        };
+        window.syncLinha = (oven, val) => {
+            ovenDataStore[oven].linha = val;
+            saveToFirebase(oven);
+        };
+
+        const attachCalculations = (oven) => {
+            runCalcs(oven);
+            for(let i=0; i<12; i++) runQuebra(oven, i);
+        };
+
+        const runCalcs = (oven) => {
+            const hInputs = document.querySelectorAll(`.input-quali-hora[data-oven="${oven}"]`);
+            const aInputs = document.querySelectorAll(`.input-quali-acum[data-oven="${oven}"]`);
+            let sum = 0, count = 0;
+            hInputs.forEach((input, i) => {
+                const val = parseFloat(input.value);
+                if (!isNaN(val)) {
+                    input.className = val >= 97 ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
+                    sum += val; count++;
+                    const avg = sum / count;
+                    if (aInputs[i]) {
+                        aInputs[i].value = avg.toFixed(2);
+                        aInputs[i].className = avg >= 97 ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                    }
+                } else {
+                    input.className = "input-quali-hora nav-input";
+                    if (aInputs[i]) aInputs[i].value = "";
+                }
+            });
+        };
+
+        const runQuebra = (oven, row) => {
+            const data = ovenDataStore[oven].rows[row].quebras;
+            let total = 0;
+            data.forEach(s => {
+                const ms = String(s || '').replace(',', '.').match(/[-+]?[0-9]*\.?[0-9]+/g);
+                if (ms) ms.forEach(m => total += parseFloat(m));
+            });
+            const display = document.getElementById(`total-${oven}-${row}`);
+            if (display) {
+                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                display.className = `flex-grow flex items-center justify-center font-bold ${total < 1.5 ? 'text-target-ok' : 'text-target-low'}`;
+            }
+        };
+
+        window.togglePresentation = () => {
+            const overlay = document.getElementById('presentation-overlay');
+            if (presentationInterval) {
+                clearInterval(presentationInterval); clearInterval(countdownInterval);
+                presentationInterval = null;
+                overlay.style.display = 'none';
+            } else {
+                setViewMode('single', 'FORNO 1');
+                overlay.style.display = 'block';
+                countdownSeconds = 30;
+                countdownInterval = setInterval(() => {
+                    countdownSeconds--; if (countdownSeconds < 0) countdownSeconds = 29;
+                    document.getElementById('presentation-timer').innerText = countdownSeconds;
+                }, 1000);
+                presentationInterval = setInterval(() => {
+                    const idx = (ovenList.indexOf(currentOven) + 1) % ovenList.length;
+                    setViewMode('single', ovenList[idx]);
+                    countdownSeconds = 30;
+                }, 30000);
+            }
+        };
+
+        window.sugerirReferencia = (input, oven) => {
+            const rowIndex = parseInt(input.closest('tr').dataset.row);
+            const refDatalist = document.getElementById('ref-suggestions');
+            refDatalist.innerHTML = '';
+            if (rowIndex > 0) {
+                const prev = ovenDataStore[oven].rows[rowIndex - 1].ref;
+                if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) {
+                    const opt = document.createElement('option'); opt.value = prev;
+                    refDatalist.appendChild(opt);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const inputs = Array.from(document.querySelectorAll('.nav-input'));
+                const idx = inputs.indexOf(e.target);
+                if (idx < inputs.length - 1) inputs[idx + 1].focus();
+            }
+        });
+
+        // Auth Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) setupRealtimeListener();
+        });
+
+        updateDateUI();
+        initApp();
+    </script>
+</body>
+</html>
