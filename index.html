@@ -24,14 +24,24 @@
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: #eff6ff; }
         .btn-presentation { background-color: #f59e0b; color: white; border-radius: 4px; }
         .btn-general { background-color: #1e293b; color: white; border-radius: 4px; }
+        .btn-config { background-color: #4b5563; color: white; border-radius: 4px; }
+        .btn-config.active { background-color: #374151; ring: 2px solid #9ca3af; }
         .btn-nav-date { background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; }
         .btn-nav-date:hover { background-color: #e5e7eb; }
         .quebra-total-box { width: 60px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
         #presentation-overlay { display: none; position: fixed; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.85); color: white; padding: 15px 25px; border-radius: 8px; z-index: 1000; border-left: 5px solid #f59e0b; }
+        
         .grid-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 10px; max-width: 100% !important; }
         @media (min-width: 1600px) { .grid-view-container { grid-template-columns: repeat(3, 1fr); } }
         .oven-card { background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #000; }
+        
+        /* Estilos da Aba de Configuração */
+        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: 20px auto; border: 1px solid #e5e7eb; }
+
+        /* Modal de Senha */
+        #password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
+        .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
     </style>
 </head>
 <body class="bg-gray-200 p-4">
@@ -43,7 +53,6 @@
         <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
         <button onclick="window.setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
         <button onclick="window.setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
-        <!-- Novas Abas -->
         <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
         <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
         
@@ -66,9 +75,32 @@
             GERAL
         </button>
 
+        <button onclick="window.openPasswordModal()" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2" id="btn-CONFIG" title="Configurações">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+
         <button onclick="window.togglePresentation()" class="btn-presentation px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap">
             Apresentação
         </button>
+    </div>
+
+    <!-- Modal de Senha -->
+    <div id="password-modal">
+        <div class="pwd-content">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Acesso Restrito</h3>
+            <p class="text-sm text-gray-600 mb-4">Digite a senha de administrador para acessar as configurações.</p>
+            
+            <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
+            
+            <div class="flex justify-between gap-2">
+                <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
+                <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
+            </div>
+            <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
+        </div>
     </div>
 
     <div id="presentation-overlay">
@@ -90,22 +122,22 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        /** * CONFIGURAÇÃO FIREBASE 
-         * IMPORTANTE: Se você for publicar no GitHub, substitua as aspas vazias abaixo
-         * pelos dados do seu projeto no Firebase Console (Configurações do Projeto > Geral > Seus Aplicativos).
-         */
         const githubFirebaseConfig = {
-            apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
-            authDomain: "quadro-da-qualidade.firebaseapp.com",
-            databaseURL: "https://quadro-da-qualidade-default-rtdb.firebaseio.com",
-            projectId: "quadro-da-qualidade",
-            storageBucket: "quadro-da-qualidade.firebasestorage.app",
-            messagingSenderId: "736566707005",
-            appId: "1:736566707005:web:f33e4450ea82e375b07b54",
-            measurementId: "G-JYGSP8BQW8"            
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : githubFirebaseConfig;
+        
+        // Verificação silenciosa para não atrapalhar, mas logar erro
+        if (!firebaseConfig.apiKey) {
+            console.warn("Configuração Firebase não detectada. O salvamento na nuvem não funcionará no GitHub/LocalHost sem as chaves.");
+        }
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         let app, auth, db;
@@ -114,10 +146,9 @@
             auth = getAuth(app);
             db = getFirestore(app);
         } catch (e) {
-            console.error("Erro inicialização Firebase (Verifique as chaves):", e);
+            console.error("Erro inicialização Firebase:", e);
         }
 
-        // Estado do Sistema
         const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
         const schedule = [
             { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
@@ -129,16 +160,26 @@
         ];
 
         let currentOven = 'FORNO 1';
-        let viewMode = 'single';
+        let viewMode = 'single'; // single, grid, config
         let selectedDate = new Date();
         let presentationInterval = null;
         let countdownInterval = null;
         let countdownSeconds = 30;
         let unsubscribeRealtime = null;
         
-        // Controle de timeouts de salvamento
-        const saveTimeouts = {};
+        let configTargets = {
+            quality: 97.0,
+            breakage: 1.5
+        };
 
+        const savedConfig = localStorage.getItem('cco_config_targets');
+        if (savedConfig) {
+            try {
+                configTargets = JSON.parse(savedConfig);
+            } catch(e) {}
+        }
+        
+        const saveTimeouts = {};
         const ovenDataStore = {};
 
         const resetStore = () => {
@@ -168,12 +209,101 @@
             if(display) display.innerText = `${d}/${m}/${y}`;
         };
 
-        // --- HTML GENERATOR ---
+        // --- FUNÇÕES DE SENHA E CONFIGURAÇÃO (ATUALIZADAS) ---
+        
+        window.openPasswordModal = () => {
+            const modal = document.getElementById('password-modal');
+            const input = document.getElementById('admin-password');
+            const error = document.getElementById('pwd-error');
+            
+            if (modal) {
+                input.value = ''; // Limpa senha anterior
+                error.classList.add('hidden');
+                modal.style.display = 'flex';
+                setTimeout(() => input.focus(), 100); // Foca no input
+            }
+        };
+
+        window.closePasswordModal = () => {
+            document.getElementById('password-modal').style.display = 'none';
+        };
+
+        window.submitPassword = () => {
+            const input = document.getElementById('admin-password');
+            const error = document.getElementById('pwd-error');
+            
+            if (input.value === "admin321") {
+                window.closePasswordModal();
+                window.setViewMode('config');
+            } else {
+                error.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        };
+
+        // Permite dar Enter no input de senha
+        document.getElementById('admin-password')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') window.submitPassword();
+        });
+
+        window.saveConfig = () => {
+            const q = parseFloat(document.getElementById('config-quality').value);
+            const b = parseFloat(document.getElementById('config-breakage').value);
+
+            if (!isNaN(q) && !isNaN(b)) {
+                configTargets.quality = q;
+                configTargets.breakage = b;
+                localStorage.setItem('cco_config_targets', JSON.stringify(configTargets));
+                // Feedback visual simples em vez de alert (para evitar bloqueios)
+                const saveBtn = document.querySelector('.config-container button:last-child');
+                const originalText = saveBtn.innerText;
+                saveBtn.innerText = "Salvo!";
+                saveBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                
+                setTimeout(() => {
+                    window.setViewMode('single', currentOven || 'FORNO 1'); 
+                }, 500);
+            } else {
+                alert("Por favor, insira valores numéricos válidos.");
+            }
+        };
+
+        window.cancelConfig = () => {
+             window.setViewMode('single', currentOven || 'FORNO 1');
+        }
+
+        // --- GERADORES DE HTML ---
+        
+        const generateConfigHTML = () => {
+            return `
+                <div class="config-container">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">Configuração de Metas</h2>
+                    
+                    <div class="mb-6">
+                        <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Qualidade (%):</label>
+                        <input type="number" step="0.1" id="config-quality" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-blue-600 focus:border-blue-500 outline-none" value="${configTargets.quality}">
+                        <p class="text-sm text-gray-500 mt-2 text-center">Valores acima deste serão exibidos em <span class="text-green-600 font-bold">VERDE</span>.</p>
+                    </div>
+
+                    <div class="mb-8">
+                        <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Quebra (%):</label>
+                        <input type="number" step="0.1" id="config-breakage" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-red-600 focus:border-red-500 outline-none" value="${configTargets.breakage}">
+                        <p class="text-sm text-gray-500 mt-2 text-center">Valores abaixo ou igual a este serão exibidos em <span class="text-green-600 font-bold">VERDE</span>.</p>
+                    </div>
+
+                    <div class="flex justify-between gap-4">
+                        <button onclick="window.cancelConfig()" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Cancelar</button>
+                        <button onclick="window.saveConfig()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">Salvar Alterações</button>
+                    </div>
+                </div>
+            `;
+        };
+
         const generateOvenHTML = (ovenName, isMini = false) => {
             const data = ovenDataStore[ovenName];
             const headerSize = isMini ? 'text-xs py-1' : 'text-xl py-2';
             const tableFontSize = isMini ? 'text-[0.6rem]' : 'text-xs';
-            // Criar ID seguro para os inputs
             const safeOven = ovenName.replace(/\s+/g, '-');
 
             let rowsHTML = schedule.map((item, index) => {
@@ -198,14 +328,14 @@
                         </td>
                         <td class="border-black">
                             <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" 
-                                oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value)">
+                                oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')">
                         </td>
                         <td class="border-black">
                             <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" 
                                 data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')">
                         </td>
                         <td class="border-black">
-                            <input type="text" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00">
+                            <input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00">
                         </td>
                         <td class="border-black p-0">
                             <div class="flex flex-col">
@@ -257,7 +387,6 @@
         };
 
         const renderContent = () => {
-            // Lógica de preservação de Foco
             const activeElement = document.activeElement;
             let focusedId = null;
             let cursorStart = null;
@@ -265,7 +394,6 @@
 
             if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
                 focusedId = activeElement.id;
-                // Apenas tenta salvar cursor se for texto
                 if (activeElement.type !== 'number' && activeElement.tagName === 'INPUT') {
                     try {
                         cursorStart = activeElement.selectionStart;
@@ -277,7 +405,12 @@
             const mainContent = document.getElementById('main-content');
             if(!mainContent) return;
 
-            if (viewMode === 'grid') {
+            // RENDERIZAÇÃO BASEADA NO MODO
+            if (viewMode === 'config') {
+                mainContent.className = "max-w-7xl mx-auto";
+                mainContent.innerHTML = generateConfigHTML();
+                return;
+            } else if (viewMode === 'grid') {
                 mainContent.className = "grid-view-container";
                 const gridOvens = ovenList.filter(ov => ov !== 'FORNO 1');
                 mainContent.innerHTML = gridOvens.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
@@ -288,7 +421,6 @@
                 window.attachCalculations(currentOven);
             }
 
-            // Restaurar Foco
             if (focusedId) {
                 const el = document.getElementById(focusedId);
                 if (el) {
@@ -302,17 +434,23 @@
             }
         };
 
-        // --- GLOBAL WINDOW FUNCTIONS ---
         window.setViewMode = (mode, oven = null) => {
             viewMode = mode;
             if (oven) currentOven = oven;
             
+            // UI Updates
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             const btnGeral = document.getElementById('btn-GERAL');
             if(btnGeral) btnGeral.classList.remove('bg-blue-600');
             
+            // Botão Config UI
+            const btnConfig = document.getElementById('btn-CONFIG');
+            if(btnConfig) btnConfig.classList.remove('active');
+
             if (mode === 'grid') {
                 if(btnGeral) btnGeral.classList.add('bg-blue-600');
+            } else if (mode === 'config') {
+                if(btnConfig) btnConfig.classList.add('active');
             } else {
                 const btn = document.getElementById(`btn-${currentOven}`);
                 if (btn) btn.classList.add('active');
@@ -350,26 +488,54 @@
         };
 
         window.runCalcs = (oven) => {
-            const hInputs = document.querySelectorAll(`.input-quali-hora[data-oven="${oven}"]`);
-            const aInputs = document.querySelectorAll(`.input-quali-acum[data-oven="${oven}"]`);
-            let sum = 0, count = 0;
-            hInputs.forEach((input, i) => {
-                const rawVal = input.value.replace(',', '.');
-                const val = parseFloat(rawVal);
-                
-                if (!isNaN(val)) {
-                    input.className = val >= 97 ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
-                    sum += val; count++;
-                    const avg = sum / count;
-                    if (aInputs[i]) {
-                        aInputs[i].value = avg.toFixed(2).replace('.', ',');
-                        aInputs[i].className = avg >= 97 ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
-                    }
+            const safeOven = oven.replace(/\s+/g, '-');
+            let weightedScoreSum = 0; 
+            let previousVolume = 0;   
+
+            for (let i = 0; i < 12; i++) {
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
+                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
+                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+
+                if (!hInput || !aInput || !volInput) continue;
+
+                const hValStr = hInput.value.replace(',', '.');
+                const volValStr = volInput.value.replace('.', '').replace(',', '.');
+
+                const hVal = parseFloat(hValStr);
+                const volVal = parseFloat(volValStr);
+
+                // Aplica META CONFIGURADA DE QUALIDADE
+                if (!isNaN(hVal)) {
+                    hInput.className = hVal >= configTargets.quality ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
                 } else {
-                    input.className = "input-quali-hora nav-input";
-                    if (aInputs[i]) aInputs[i].value = "";
+                    hInput.className = "input-quali-hora nav-input";
                 }
-            });
+
+                if (!isNaN(volVal) && !isNaN(hVal)) {
+                    let deltaVol = volVal - previousVolume;
+                    weightedScoreSum += deltaVol * hVal;
+
+                    if (volVal > 0) {
+                        const avg = weightedScoreSum / volVal;
+                        aInput.value = avg.toFixed(2).replace('.', ',');
+                        // Aplica META CONFIGURADA NA ACUMULADA TAMBÉM
+                        aInput.className = avg >= configTargets.quality ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                    } else {
+                        aInput.value = "";
+                        aInput.className = "input-quali-acum";
+                    }
+                    previousVolume = volVal;
+
+                } else if (!isNaN(volVal)) {
+                    previousVolume = volVal;
+                    aInput.value = "";
+                    aInput.className = "input-quali-acum";
+                } else {
+                    aInput.value = "";
+                    aInput.className = "input-quali-acum";
+                }
+            }
         };
 
         window.runQuebra = (oven, row) => {
@@ -382,7 +548,8 @@
             const display = document.getElementById(`total-${oven}-${row}`);
             if (display) {
                 display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                display.className = `flex-grow flex items-center justify-center font-bold ${total < 1.5 ? 'text-target-ok' : 'text-target-low'}`;
+                // Aplica META CONFIGURADA DE QUEBRA ( < META = VERDE )
+                display.className = `flex-grow flex items-center justify-center font-bold ${total <= configTargets.breakage ? 'text-target-ok' : 'text-target-low'}`;
             }
         };
 
@@ -430,20 +597,11 @@
             }
         };
 
-        // --- FIREBASE LOGIC ---
-        // Sistema robusto de salvamento com Debounce e Captura de Estado
         const saveToFirebase = (ovenId) => {
             if (!db) return;
-            
-            // Limpa o timer anterior para não salvar múltiplas vezes se estiver digitando
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
-
-            // CAPTURA O ESTADO ATUAL IMEDIATAMENTE (Cópia de Segurança)
-            // Isso garante que salvamos os dados DESSA data específica, mesmo se o usuário mudar a data no calendário depois.
             const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
-            const targetDateKey = getDateKey(selectedDate); // Pega a data selecionada NO MOMENTO DA DIGITAÇÃO
-
-            // Agenda o envio para daqui a 1 segundo (Debounce)
+            const targetDateKey = getDateKey(selectedDate);
             saveTimeouts[ovenId] = setTimeout(async () => {
                 try {
                     const docId = `${ovenId}_${targetDateKey}`;
@@ -458,7 +616,6 @@
         const setupRealtimeListener = () => {
             if (unsubscribeRealtime) unsubscribeRealtime();
             if (!db) return;
-            
             const dateKey = getDateKey(selectedDate);
             const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
             unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
@@ -477,7 +634,6 @@
             });
         };
 
-        // --- INIT ---
         const init = async () => {
             resetStore();
             updateDateUI();
@@ -499,6 +655,9 @@
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
+                    // Evita submeter formulários se não for o de senha
+                    if (document.activeElement.id === 'admin-password') return;
+                    
                     e.preventDefault();
                     const inputs = Array.from(document.querySelectorAll('.nav-input'));
                     const idx = inputs.indexOf(e.target);
