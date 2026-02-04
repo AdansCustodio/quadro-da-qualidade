@@ -122,6 +122,9 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // ==========================================
+        // CONFIGURAÇÃO FIREBASE
+        // ==========================================
         const githubFirebaseConfig = {
             apiKey: "",
             authDomain: "",
@@ -133,22 +136,31 @@
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : githubFirebaseConfig;
         
-        // Verificação silenciosa para não atrapalhar, mas logar erro
+        // Diagnóstico de Configuração
         if (!firebaseConfig.apiKey) {
-            console.warn("Configuração Firebase não detectada. O salvamento na nuvem não funcionará no GitHub/LocalHost sem as chaves.");
+            console.error("ATENÇÃO: Chaves do Firebase não encontradas! O salvamento não funcionará.");
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+        // Inicialização Segura
         let app, auth, db;
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
+            if (firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase inicializado com sucesso.");
+            } else {
+                console.warn("Firebase não inicializado (falta configuração). Modo offline ativo (dados não serão salvos).");
+            }
         } catch (e) {
-            console.error("Erro inicialização Firebase:", e);
+            console.error("Erro crítico na inicialização do Firebase:", e);
         }
 
+        // ==========================================
+        // ESTADO GLOBAL
+        // ==========================================
         const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
         const schedule = [
             { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
@@ -160,28 +172,27 @@
         ];
 
         let currentOven = 'FORNO 1';
-        let viewMode = 'single'; // single, grid, config
+        let viewMode = 'single';
         let selectedDate = new Date();
         let presentationInterval = null;
         let countdownInterval = null;
         let countdownSeconds = 30;
         let unsubscribeRealtime = null;
         
-        let configTargets = {
-            quality: 97.0,
-            breakage: 1.5
-        };
+        let configTargets = { quality: 97.0, breakage: 1.5 };
 
-        const savedConfig = localStorage.getItem('cco_config_targets');
-        if (savedConfig) {
-            try {
-                configTargets = JSON.parse(savedConfig);
-            } catch(e) {}
-        }
+        // Carregar config local
+        try {
+            const savedConfig = localStorage.getItem('cco_config_targets');
+            if (savedConfig) configTargets = JSON.parse(savedConfig);
+        } catch(e) { console.error("Erro localStorage:", e); }
         
         const saveTimeouts = {};
         const ovenDataStore = {};
 
+        // ==========================================
+        // FUNÇÕES AUXILIARES
+        // ==========================================
         const resetStore = () => {
             ovenList.forEach(ov => {
                 ovenDataStore[ov] = { 
@@ -209,18 +220,208 @@
             if(display) display.innerText = `${d}/${m}/${y}`;
         };
 
-        // --- FUNÇÕES DE SENHA E CONFIGURAÇÃO (ATUALIZADAS) ---
+        // ==========================================
+        // LÓGICA DE SALVAMENTO E SINCRONIZAÇÃO
+        // ==========================================
+        const saveToFirebase = (ovenId) => {
+            if (!db) return; // Modo offline silencioso
+
+            // Verifica se existe dado para salvar
+            if (!ovenDataStore[ovenId]) {
+                console.warn(`Tentativa de salvar dados inexistentes para ${ovenId}`);
+                return;
+            }
+
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
+            
+            // Cópia de segurança
+            const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
+            const targetDateKey = getDateKey(selectedDate);
+            
+            saveTimeouts[ovenId] = setTimeout(async () => {
+                try {
+                    const docId = `${ovenId}_${targetDateKey}`;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                    await setDoc(docRef, dataToSave);
+                    // console.log(`Dados salvos para ${ovenId}`);
+                } catch (e) { 
+                    console.error("Erro ao salvar no Firebase:", e); 
+                }
+            }, 1000);
+        };
+
+        const setupRealtimeListener = () => {
+            if (unsubscribeRealtime) unsubscribeRealtime();
+            if (!db) return;
+
+            const dateKey = getDateKey(selectedDate);
+            const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+            
+            unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
+                let hasData = false;
+                snapshot.forEach((doc) => {
+                    if (doc.id.includes(dateKey)) {
+                        const ovenName = doc.id.replace(`_${dateKey}`, '');
+                        if (ovenList.includes(ovenName)) {
+                            ovenDataStore[ovenName] = doc.data();
+                            hasData = true;
+                        }
+                    }
+                });
+                
+                // Se o snapshot veio vazio (dia novo), resetamos, mas mantemos o render
+                if(!hasData) resetStore(); 
+                
+                renderContent();
+            }, (error) => {
+                console.error("Erro no listener do Firebase:", error);
+            });
+        };
+
+        // ==========================================
+        // FUNÇÕES GLOBAIS (WINDOW)
+        // ==========================================
         
+        // Navegação e View
+        window.setViewMode = (mode, oven = null) => {
+            viewMode = mode;
+            if (oven) currentOven = oven;
+            
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            const btnGeral = document.getElementById('btn-GERAL');
+            const btnConfig = document.getElementById('btn-CONFIG');
+            
+            if(btnGeral) btnGeral.classList.remove('bg-blue-600');
+            if(btnConfig) btnConfig.classList.remove('active');
+
+            if (mode === 'grid') {
+                if(btnGeral) btnGeral.classList.add('bg-blue-600');
+            } else if (mode === 'config') {
+                if(btnConfig) btnConfig.classList.add('active');
+            } else {
+                const btn = document.getElementById(`btn-${currentOven}`);
+                if (btn) btn.classList.add('active');
+            }
+            renderContent();
+        };
+
+        window.changeDate = (offset) => {
+            selectedDate.setDate(selectedDate.getDate() + offset);
+            updateDateUI();
+            resetStore();
+            renderContent(); 
+            if (db) setupRealtimeListener();
+        };
+
+        // Sincronização de Inputs
+        window.syncData = (oven, row, field, val) => {
+            ovenDataStore[oven].rows[row][field] = val;
+            saveToFirebase(oven);
+        };
+
+        window.syncSub = (oven, row, field, sub, val) => {
+            ovenDataStore[oven].rows[row][field][sub] = val;
+            saveToFirebase(oven);
+            if (field === 'quebras') window.runQuebra(oven, row);
+        };
+
+        window.syncLinha = (oven, val) => {
+            ovenDataStore[oven].linha = val;
+            saveToFirebase(oven);
+        };
+
+        // Cálculos e Lógica
+        window.attachCalculations = (oven) => {
+            window.runCalcs(oven);
+            for(let i=0; i<12; i++) window.runQuebra(oven, i);
+        };
+
+        window.runCalcs = (oven) => {
+            const safeOven = oven.replace(/\s+/g, '-');
+            let weightedScoreSum = 0; 
+            let previousVolume = 0;   
+
+            for (let i = 0; i < 12; i++) {
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
+                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
+                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+
+                if (!hInput || !aInput || !volInput) continue;
+
+                const hValStr = hInput.value.replace(',', '.');
+                const volValStr = volInput.value.replace('.', '').replace(',', '.');
+                const hVal = parseFloat(hValStr);
+                const volVal = parseFloat(volValStr);
+
+                if (!isNaN(hVal)) {
+                    hInput.className = hVal >= configTargets.quality ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
+                } else {
+                    hInput.className = "input-quali-hora nav-input";
+                }
+
+                if (!isNaN(volVal) && !isNaN(hVal)) {
+                    let deltaVol = volVal - previousVolume;
+                    weightedScoreSum += deltaVol * hVal;
+
+                    if (volVal > 0) {
+                        const avg = weightedScoreSum / volVal;
+                        aInput.value = avg.toFixed(2).replace('.', ',');
+                        aInput.className = avg >= configTargets.quality ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                    } else {
+                        aInput.value = "";
+                        aInput.className = "input-quali-acum";
+                    }
+                    previousVolume = volVal;
+                } else if (!isNaN(volVal)) {
+                    previousVolume = volVal;
+                    aInput.value = "";
+                    aInput.className = "input-quali-acum";
+                } else {
+                    aInput.value = "";
+                    aInput.className = "input-quali-acum";
+                }
+            }
+        };
+
+        window.runQuebra = (oven, row) => {
+            const data = ovenDataStore[oven].rows[row].quebras;
+            let total = 0;
+            data.forEach(s => {
+                const ms = String(s || '').replace(',', '.').match(/[-+]?[0-9]*\.?[0-9]+/g);
+                if (ms) ms.forEach(m => total += parseFloat(m));
+            });
+            const display = document.getElementById(`total-${oven}-${row}`);
+            if (display) {
+                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                display.className = `flex-grow flex items-center justify-center font-bold ${total <= configTargets.breakage ? 'text-target-ok' : 'text-target-low'}`;
+            }
+        };
+
+        window.sugerirReferencia = (input, oven) => {
+            const rowIndex = parseInt(input.closest('tr').dataset.row);
+            const refDatalist = document.getElementById('ref-suggestions');
+            if(!refDatalist) return;
+            refDatalist.innerHTML = '';
+            if (rowIndex > 0) {
+                const prev = ovenDataStore[oven].rows[rowIndex - 1].ref;
+                if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) {
+                    const opt = document.createElement('option'); opt.value = prev;
+                    refDatalist.appendChild(opt);
+                }
+            }
+        };
+
+        // Configuração e Senha
         window.openPasswordModal = () => {
             const modal = document.getElementById('password-modal');
             const input = document.getElementById('admin-password');
             const error = document.getElementById('pwd-error');
             
             if (modal) {
-                input.value = ''; // Limpa senha anterior
+                input.value = '';
                 error.classList.add('hidden');
                 modal.style.display = 'flex';
-                setTimeout(() => input.focus(), 100); // Foca no input
+                setTimeout(() => input.focus(), 100);
             }
         };
 
@@ -231,7 +432,6 @@
         window.submitPassword = () => {
             const input = document.getElementById('admin-password');
             const error = document.getElementById('pwd-error');
-            
             if (input.value === "admin321") {
                 window.closePasswordModal();
                 window.setViewMode('config');
@@ -242,59 +442,70 @@
             }
         };
 
-        // Permite dar Enter no input de senha
-        document.getElementById('admin-password')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') window.submitPassword();
-        });
-
         window.saveConfig = () => {
             const q = parseFloat(document.getElementById('config-quality').value);
             const b = parseFloat(document.getElementById('config-breakage').value);
-
             if (!isNaN(q) && !isNaN(b)) {
                 configTargets.quality = q;
                 configTargets.breakage = b;
                 localStorage.setItem('cco_config_targets', JSON.stringify(configTargets));
-                // Feedback visual simples em vez de alert (para evitar bloqueios)
                 const saveBtn = document.querySelector('.config-container button:last-child');
-                const originalText = saveBtn.innerText;
                 saveBtn.innerText = "Salvo!";
                 saveBtn.classList.replace('bg-blue-600', 'bg-green-600');
-                
-                setTimeout(() => {
-                    window.setViewMode('single', currentOven || 'FORNO 1'); 
-                }, 500);
+                setTimeout(() => window.setViewMode('single', currentOven || 'FORNO 1'), 500);
             } else {
-                alert("Por favor, insira valores numéricos válidos.");
+                alert("Valores inválidos.");
             }
         };
 
-        window.cancelConfig = () => {
-             window.setViewMode('single', currentOven || 'FORNO 1');
-        }
+        window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 1');
 
-        // --- GERADORES DE HTML ---
-        
+        window.togglePresentation = () => {
+            const overlay = document.getElementById('presentation-overlay');
+            const cycleList = ovenList.filter(o => o !== 'FORNO 1');
+            if (presentationInterval) {
+                clearInterval(presentationInterval); clearInterval(countdownInterval);
+                presentationInterval = null; 
+                if(overlay) overlay.style.display = 'none';
+            } else {
+                const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
+                window.setViewMode('single', startOven);
+                if(overlay) overlay.style.display = 'block';
+                countdownSeconds = 30;
+                countdownInterval = setInterval(() => {
+                    countdownSeconds--; if (countdownSeconds < 0) countdownSeconds = 29;
+                    const timer = document.getElementById('presentation-timer');
+                    if(timer) timer.innerText = countdownSeconds;
+                }, 1000);
+                presentationInterval = setInterval(() => {
+                    const currentIdx = cycleList.indexOf(currentOven);
+                    const nextIdx = (currentIdx + 1) % cycleList.length;
+                    window.setViewMode('single', cycleList[nextIdx]);
+                    countdownSeconds = 30;
+                }, 30000);
+            }
+        };
+
+        // ==========================================
+        // RENDERIZAÇÃO
+        // ==========================================
         const generateConfigHTML = () => {
             return `
                 <div class="config-container">
                     <h2 class="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">Configuração de Metas</h2>
-                    
                     <div class="mb-6">
                         <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Qualidade (%):</label>
                         <input type="number" step="0.1" id="config-quality" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-blue-600 focus:border-blue-500 outline-none" value="${configTargets.quality}">
-                        <p class="text-sm text-gray-500 mt-2 text-center">Valores acima deste serão exibidos em <span class="text-green-600 font-bold">VERDE</span>.</p>
+                        <p class="text-sm text-gray-500 mt-2 text-center">Acima deste valor = <span class="text-green-600 font-bold">VERDE</span></p>
                     </div>
-
                     <div class="mb-8">
                         <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Quebra (%):</label>
                         <input type="number" step="0.1" id="config-breakage" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-red-600 focus:border-red-500 outline-none" value="${configTargets.breakage}">
-                        <p class="text-sm text-gray-500 mt-2 text-center">Valores abaixo ou igual a este serão exibidos em <span class="text-green-600 font-bold">VERDE</span>.</p>
+                        <p class="text-sm text-gray-500 mt-2 text-center">Abaixo deste valor = <span class="text-green-600 font-bold">VERDE</span></p>
                     </div>
-
                     <div class="flex justify-between gap-4">
-                        <button onclick="window.cancelConfig()" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200">Cancelar</button>
-                        <button onclick="window.saveConfig()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">Salvar Alterações</button>
+                        <button onclick="window.cancelConfig()" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg">Cancelar</button>
+                        <button onclick="window.saveConfig()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md">Salvar</button>
                     </div>
                 </div>
             `;
@@ -395,17 +606,13 @@
             if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
                 focusedId = activeElement.id;
                 if (activeElement.type !== 'number' && activeElement.tagName === 'INPUT') {
-                    try {
-                        cursorStart = activeElement.selectionStart;
-                        cursorEnd = activeElement.selectionEnd;
-                    } catch (e) {}
+                    try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch (e) {}
                 }
             }
 
             const mainContent = document.getElementById('main-content');
             if(!mainContent) return;
 
-            // RENDERIZAÇÃO BASEADA NO MODO
             if (viewMode === 'config') {
                 mainContent.className = "max-w-7xl mx-auto";
                 mainContent.innerHTML = generateConfigHTML();
@@ -425,215 +632,14 @@
                 const el = document.getElementById(focusedId);
                 if (el) {
                     el.focus();
-                    if (cursorStart !== null && cursorEnd !== null) {
-                        try {
-                            el.setSelectionRange(cursorStart, cursorEnd);
-                        } catch (e) {}
-                    }
+                    if (cursorStart !== null && cursorEnd !== null) try { el.setSelectionRange(cursorStart, cursorEnd); } catch (e) {}
                 }
             }
         };
 
-        window.setViewMode = (mode, oven = null) => {
-            viewMode = mode;
-            if (oven) currentOven = oven;
-            
-            // UI Updates
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            const btnGeral = document.getElementById('btn-GERAL');
-            if(btnGeral) btnGeral.classList.remove('bg-blue-600');
-            
-            // Botão Config UI
-            const btnConfig = document.getElementById('btn-CONFIG');
-            if(btnConfig) btnConfig.classList.remove('active');
-
-            if (mode === 'grid') {
-                if(btnGeral) btnGeral.classList.add('bg-blue-600');
-            } else if (mode === 'config') {
-                if(btnConfig) btnConfig.classList.add('active');
-            } else {
-                const btn = document.getElementById(`btn-${currentOven}`);
-                if (btn) btn.classList.add('active');
-            }
-            renderContent();
-        };
-
-        window.changeDate = (offset) => {
-            selectedDate.setDate(selectedDate.getDate() + offset);
-            updateDateUI();
-            resetStore();
-            renderContent(); 
-            if (db) setupRealtimeListener();
-        };
-
-        window.syncData = (oven, row, field, val) => {
-            ovenDataStore[oven].rows[row][field] = val;
-            saveToFirebase(oven);
-        };
-
-        window.syncSub = (oven, row, field, sub, val) => {
-            ovenDataStore[oven].rows[row][field][sub] = val;
-            saveToFirebase(oven);
-            if (field === 'quebras') window.runQuebra(oven, row);
-        };
-
-        window.syncLinha = (oven, val) => {
-            ovenDataStore[oven].linha = val;
-            saveToFirebase(oven);
-        };
-
-        window.attachCalculations = (oven) => {
-            window.runCalcs(oven);
-            for(let i=0; i<12; i++) window.runQuebra(oven, i);
-        };
-
-        window.runCalcs = (oven) => {
-            const safeOven = oven.replace(/\s+/g, '-');
-            let weightedScoreSum = 0; 
-            let previousVolume = 0;   
-
-            for (let i = 0; i < 12; i++) {
-                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
-                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
-                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
-
-                if (!hInput || !aInput || !volInput) continue;
-
-                const hValStr = hInput.value.replace(',', '.');
-                const volValStr = volInput.value.replace('.', '').replace(',', '.');
-
-                const hVal = parseFloat(hValStr);
-                const volVal = parseFloat(volValStr);
-
-                // Aplica META CONFIGURADA DE QUALIDADE
-                if (!isNaN(hVal)) {
-                    hInput.className = hVal >= configTargets.quality ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
-                } else {
-                    hInput.className = "input-quali-hora nav-input";
-                }
-
-                if (!isNaN(volVal) && !isNaN(hVal)) {
-                    let deltaVol = volVal - previousVolume;
-                    weightedScoreSum += deltaVol * hVal;
-
-                    if (volVal > 0) {
-                        const avg = weightedScoreSum / volVal;
-                        aInput.value = avg.toFixed(2).replace('.', ',');
-                        // Aplica META CONFIGURADA NA ACUMULADA TAMBÉM
-                        aInput.className = avg >= configTargets.quality ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
-                    } else {
-                        aInput.value = "";
-                        aInput.className = "input-quali-acum";
-                    }
-                    previousVolume = volVal;
-
-                } else if (!isNaN(volVal)) {
-                    previousVolume = volVal;
-                    aInput.value = "";
-                    aInput.className = "input-quali-acum";
-                } else {
-                    aInput.value = "";
-                    aInput.className = "input-quali-acum";
-                }
-            }
-        };
-
-        window.runQuebra = (oven, row) => {
-            const data = ovenDataStore[oven].rows[row].quebras;
-            let total = 0;
-            data.forEach(s => {
-                const ms = String(s || '').replace(',', '.').match(/[-+]?[0-9]*\.?[0-9]+/g);
-                if (ms) ms.forEach(m => total += parseFloat(m));
-            });
-            const display = document.getElementById(`total-${oven}-${row}`);
-            if (display) {
-                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                // Aplica META CONFIGURADA DE QUEBRA ( < META = VERDE )
-                display.className = `flex-grow flex items-center justify-center font-bold ${total <= configTargets.breakage ? 'text-target-ok' : 'text-target-low'}`;
-            }
-        };
-
-        window.togglePresentation = () => {
-            const overlay = document.getElementById('presentation-overlay');
-            const cycleList = ovenList.filter(o => o !== 'FORNO 1');
-
-            if (presentationInterval) {
-                clearInterval(presentationInterval); clearInterval(countdownInterval);
-                presentationInterval = null; 
-                if(overlay) overlay.style.display = 'none';
-            } else {
-                const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
-                window.setViewMode('single', startOven);
-
-                if(overlay) overlay.style.display = 'block';
-                countdownSeconds = 30;
-                countdownInterval = setInterval(() => {
-                    countdownSeconds--; if (countdownSeconds < 0) countdownSeconds = 29;
-                    const timer = document.getElementById('presentation-timer');
-                    if(timer) timer.innerText = countdownSeconds;
-                }, 1000);
-                
-                presentationInterval = setInterval(() => {
-                    const currentIdx = cycleList.indexOf(currentOven);
-                    const safeIdx = currentIdx === -1 ? -1 : currentIdx;
-                    const nextIdx = (safeIdx + 1) % cycleList.length;
-                    window.setViewMode('single', cycleList[nextIdx]);
-                    countdownSeconds = 30;
-                }, 30000);
-            }
-        };
-
-        window.sugerirReferencia = (input, oven) => {
-            const rowIndex = parseInt(input.closest('tr').dataset.row);
-            const refDatalist = document.getElementById('ref-suggestions');
-            if(!refDatalist) return;
-            refDatalist.innerHTML = '';
-            if (rowIndex > 0) {
-                const prev = ovenDataStore[oven].rows[rowIndex - 1].ref;
-                if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) {
-                    const opt = document.createElement('option'); opt.value = prev;
-                    refDatalist.appendChild(opt);
-                }
-            }
-        };
-
-        const saveToFirebase = (ovenId) => {
-            if (!db) return;
-            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
-            const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
-            const targetDateKey = getDateKey(selectedDate);
-            saveTimeouts[ovenId] = setTimeout(async () => {
-                try {
-                    const docId = `${ovenId}_${targetDateKey}`;
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
-                    await setDoc(docRef, dataToSave);
-                } catch (e) { 
-                    console.error("Erro ao salvar:", e); 
-                }
-            }, 1000);
-        };
-
-        const setupRealtimeListener = () => {
-            if (unsubscribeRealtime) unsubscribeRealtime();
-            if (!db) return;
-            const dateKey = getDateKey(selectedDate);
-            const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
-            unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
-                let hasData = false;
-                snapshot.forEach((doc) => {
-                    if (doc.id.includes(dateKey)) {
-                        const ovenName = doc.id.replace(`_${dateKey}`, '');
-                        if (ovenList.includes(ovenName)) {
-                            ovenDataStore[ovenName] = doc.data();
-                            hasData = true;
-                        }
-                    }
-                });
-                if(!hasData) resetStore(); 
-                renderContent();
-            });
-        };
-
+        // ==========================================
+        // INIT
+        // ==========================================
         const init = async () => {
             resetStore();
             updateDateUI();
@@ -646,7 +652,7 @@
                     } else {
                         await signInAnonymously(auth);
                     }
-                } catch (e) { console.error("Auth falhou:", e); }
+                } catch (e) { console.error("Falha na autenticação:", e); }
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) setupRealtimeListener();
@@ -655,9 +661,7 @@
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    // Evita submeter formulários se não for o de senha
                     if (document.activeElement.id === 'admin-password') return;
-                    
                     e.preventDefault();
                     const inputs = Array.from(document.querySelectorAll('.nav-input'));
                     const idx = inputs.indexOf(e.target);
