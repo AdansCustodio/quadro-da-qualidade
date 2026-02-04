@@ -42,9 +42,23 @@
         /* Modal de Senha */
         #password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
         .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+
+        /* Alerta de Configuração Faltante */
+        #missing-config-alert { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
+        .alert-box { background: #dc2626; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="bg-gray-200 p-4">
+
+    <!-- ALERTA DE CONFIGURAÇÃO -->
+    <div id="missing-config-alert">
+        <div class="alert-box">
+            <h2 class="text-2xl font-bold mb-4">⚠️ Configuração Necessária</h2>
+            <p class="mb-4 text-sm">O sistema não detectou as chaves do Firebase.</p>
+            <p class="mb-4 text-sm">Para salvar dados no GitHub/Hospedagem externa, você precisa editar o arquivo <strong>index.html</strong> e preencher a variável <code>githubFirebaseConfig</code> com os dados do seu projeto Firebase.</p>
+            <button onclick="document.getElementById('missing-config-alert').style.display='none'" class="bg-white text-red-600 font-bold py-2 px-4 rounded hover:bg-gray-100">Entendi (Modo Apenas Leitura)</button>
+        </div>
+    </div>
 
     <!-- Navegação Superior -->
     <div class="max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
@@ -125,20 +139,24 @@
         // ==========================================
         // CONFIGURAÇÃO FIREBASE
         // ==========================================
+        // [IMPORTANTE] PREENCHA AQUI PARA GITHUB/HOSPEDAGEM EXTERNA
         const githubFirebaseConfig = {
-            apiKey: "",
-            authDomain: "",
-            projectId: "",
-            storageBucket: "",
-            messagingSenderId: "",
-            appId: ""
+            apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
+            authDomain: "quadro-da-qualidade.firebaseapp.com",
+            databaseURL: "https://quadro-da-qualidade-default-rtdb.firebaseio.com",
+            projectId: "quadro-da-qualidade",
+            storageBucket: "quadro-da-qualidade.firebasestorage.app",
+            messagingSenderId: "736566707005",
+            appId: "1:736566707005:web:f33e4450ea82e375b07b54",
+            measurementId: "G-JYGSP8BQW8"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : githubFirebaseConfig;
         
-        // Diagnóstico de Configuração
+        // Diagnóstico de Configuração e Exibição do Alerta
         if (!firebaseConfig.apiKey) {
-            console.error("ATENÇÃO: Chaves do Firebase não encontradas! O salvamento não funcionará.");
+            console.error("ATENÇÃO: Chaves do Firebase não encontradas!");
+            document.getElementById('missing-config-alert').style.display = 'flex';
         }
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -151,8 +169,6 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 console.log("Firebase inicializado com sucesso.");
-            } else {
-                console.warn("Firebase não inicializado (falta configuração). Modo offline ativo (dados não serão salvos).");
             }
         } catch (e) {
             console.error("Erro crítico na inicialização do Firebase:", e);
@@ -228,7 +244,6 @@
 
             // Verifica se existe dado para salvar
             if (!ovenDataStore[ovenId]) {
-                console.warn(`Tentativa de salvar dados inexistentes para ${ovenId}`);
                 return;
             }
 
@@ -243,7 +258,6 @@
                     const docId = `${ovenId}_${targetDateKey}`;
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
                     await setDoc(docRef, dataToSave);
-                    // console.log(`Dados salvos para ${ovenId}`);
                 } catch (e) { 
                     console.error("Erro ao salvar no Firebase:", e); 
                 }
