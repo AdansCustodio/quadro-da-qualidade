@@ -12,56 +12,94 @@
         th, td { border: 1px solid black; text-align: center; padding: 2px; }
         .header-blue { color: #2563eb; }
         .bg-gray-custom { background-color: #f3f4f6; }
+        /* A regra global de input afeta todos os inputs, mas classes utilitárias (Tailwind) têm prioridade */
         input, select { width: 100%; height: 100%; border: none; background: transparent; text-align: center; outline: none; font-size: 1rem; appearance: textfield; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .defect-input { width: 100%; border-bottom: 1px solid #ccc; padding: 1px 4px; text-align: left; font-size: 0.85rem; height: 1.4rem; }
-        .defect-input:last-child { border-bottom: none; }
-        .defect-input:focus { background-color: #fffde7; }
+        
+        /* Inputs Padrão */
+        .nav-input { width: 100%; height: 100%; }
+        
+        /* Inputs da Subdivisão (Defeitos/Quebras) */
+        .sub-row { display: flex; border-bottom: 1px solid #ccc; height: 1.4rem; align-items: center; }
+        .sub-row:last-child { border-bottom: none; }
+        
+        /* Larguras ajustadas */
+        .input-cod { width: 30px; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
+        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .input-val { width: 40px; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
+        
+        .input-cod:focus, .input-val:focus { background-color: #fffde7; }
+        
         .text-target-ok { color: #16a34a; font-weight: bold; }
         .text-target-low { color: #dc2626; font-weight: bold; }
         .shift-stamp { display: block; font-size: 0.55rem; color: #6b7280; line-height: 1; margin-top: 1px; text-transform: uppercase; }
         .tab-btn { transition: all 0.2s; border-bottom: 4px solid transparent; }
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: #eff6ff; }
+        
         .btn-presentation { background-color: #f59e0b; color: white; border-radius: 4px; }
         .btn-general { background-color: #1e293b; color: white; border-radius: 4px; }
         .btn-config { background-color: #4b5563; color: white; border-radius: 4px; }
         .btn-config.active { background-color: #374151; ring: 2px solid #9ca3af; }
         .btn-nav-date { background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; }
         .btn-nav-date:hover { background-color: #e5e7eb; }
-        .quebra-total-box { width: 60px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
+        
+        .quebra-total-box { width: 50px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
+        
         #presentation-overlay { display: none; position: fixed; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.85); color: white; padding: 15px 25px; border-radius: 8px; z-index: 1000; border-left: 5px solid #f59e0b; }
         
         .grid-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 10px; max-width: 100% !important; }
         @media (min-width: 1600px) { .grid-view-container { grid-template-columns: repeat(3, 1fr); } }
         .oven-card { background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #000; }
         
-        /* Estilos da Aba de Configuração */
-        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: 20px auto; border: 1px solid #e5e7eb; }
-
-        /* Modal de Senha */
+        /* Configuração Layout Expandido */
+        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
+        .defect-item { display: flex; border-bottom: 1px solid #eee; padding: 4px; align-items: center; font-size: 0.8rem; }
+        .defect-item:nth-child(even) { background-color: white; }
+        .defect-item input { text-align: left; }
+        
         #password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
         .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        
+        /* Estilos do Painel Flutuante de Consulta (NÃO BLOQUEANTE) - AJUSTADO */
+        #defect-lookup-panel { 
+            display: none; 
+            position: fixed; 
+            top: 90px; 
+            right: 20px; 
+            width: 350px; /* Largura Fixa Solicitada */
+            height: auto; /* Altura se ajusta ao conteúdo */
+            max-height: 85vh; /* Limite responsivo baseado na resolução da tela */
+            background: white; 
+            border: 2px solid #2563eb; 
+            border-radius: 8px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            z-index: 2000; /* Abaixo do modal de senha mas acima do resto */
+            flex-direction: column;
+        }
+        .lookup-header { background-color: #f0f9ff; padding: 10px; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; border-radius: 6px 6px 0 0; }
+        .lookup-content { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        .lookup-list { overflow-y: auto; border: 1px solid #eee; margin-top: 5px; flex-grow: 1; border-radius: 4px; background-color: #fafafa; }
+        
+        /* Botão Lupa no Header (Ajustado para ser mais discreto) */
+        .search-trigger { cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%; background-color: #f3f4f6; transition: all 0.2s; font-size: 0.85rem; color: #6b7280; }
+        .search-trigger:hover { background-color: #dbeafe; color: #1e40af; }
 
-        /* Alerta de Configuração Faltante */
-        #missing-config-alert { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; color: white; text-align: center; }
-        .alert-box { background: #dc2626; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        /* Sub-header styles */
+        .sub-header-row { display: flex; font-size: 0.6rem; font-weight: bold; background: #e5e7eb; border-bottom: 1px solid #000; }
+        .sh-cod { width: 30px; border-right: 1px solid #ccc; }
+        .sh-desc { flex-grow: 1; border-right: 1px solid #ccc; }
+        .sh-val { width: 40px; }
     </style>
 </head>
 <body class="bg-gray-200 p-4">
 
-    <!-- ALERTA DE CONFIGURAÇÃO -->
-    <div id="missing-config-alert">
-        <div class="alert-box">
-            <h2 class="text-2xl font-bold mb-4">⚠️ Configuração Necessária</h2>
-            <p class="mb-4 text-sm">O sistema não detectou as chaves do Firebase.</p>
-            <p class="mb-4 text-sm">Para salvar dados no GitHub/Hospedagem externa, você precisa editar o arquivo <strong>index.html</strong> e preencher a variável <code>githubFirebaseConfig</code> com os dados do seu projeto Firebase.</p>
-            <button onclick="document.getElementById('missing-config-alert').style.display='none'" class="bg-white text-red-600 font-bold py-2 px-4 rounded hover:bg-gray-100">Entendi (Modo Apenas Leitura)</button>
-        </div>
-    </div>
-
     <!-- Navegação Superior -->
     <div class="max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
+        <!-- Botões de Fornos -->
         <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1">Forno 1</button>
         <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
         <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
@@ -70,6 +108,7 @@
         <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
         <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
         
+        <!-- Navegação de Data -->
         <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2">
             <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" title="Dia Anterior">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -90,10 +129,7 @@
         </button>
 
         <button onclick="window.openPasswordModal()" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2" id="btn-CONFIG" title="Configurações">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
 
         <button onclick="window.togglePresentation()" class="btn-presentation px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap">
@@ -101,19 +137,34 @@
         </button>
     </div>
 
-    <!-- Modal de Senha -->
+    <!-- Modais e Overlays -->
     <div id="password-modal">
         <div class="pwd-content">
             <h3 class="text-lg font-bold mb-4 text-gray-800">Acesso Restrito</h3>
-            <p class="text-sm text-gray-600 mb-4">Digite a senha de administrador para acessar as configurações.</p>
-            
+            <p class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
             <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
-            
             <div class="flex justify-between gap-2">
                 <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
                 <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
             </div>
             <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
+        </div>
+    </div>
+
+    <!-- Painel Flutuante de Consulta (Lateral Direito) -->
+    <div id="defect-lookup-panel">
+        <div class="lookup-header">
+            <h3 class="font-bold text-gray-800 text-sm">Lista de Defeitos</h3>
+            <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
+        </div>
+        <div class="lookup-content">
+            <!-- Caixa de pesquisa redimensionada -->
+            <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar código ou nome..." oninput="window.renderDefectLookup()">
+            <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
+                <span class="w-12 text-center border-r">Cód</span>
+                <span class="pl-2">Descrição</span>
+            </div>
+            <div id="defect-lookup-list" class="lookup-list"></div>
         </div>
     </div>
 
@@ -128,7 +179,6 @@
     </div>
 
     <div id="main-content" class="max-w-7xl mx-auto"></div>
-
     <datalist id="ref-suggestions"></datalist>
 
     <script type="module">
@@ -136,10 +186,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        // CONFIGURAÇÃO FIREBASE
-        // ==========================================
-        // [IMPORTANTE] PREENCHA AQUI PARA GITHUB/HOSPEDAGEM EXTERNA
+        // CONFIGURAÇÃO FIREBASE FIXA
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
             authDomain: "quadro-da-qualidade.firebaseapp.com",
@@ -150,33 +197,41 @@
             appId: "1:736566707005:web:f33e4450ea82e375b07b54",
             measurementId: "G-JYGSP8BQW8"
         };
-
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : githubFirebaseConfig;
-        
-        // Diagnóstico de Configuração e Exibição do Alerta
-        if (!firebaseConfig.apiKey) {
-            console.error("ATENÇÃO: Chaves do Firebase não encontradas!");
-            document.getElementById('missing-config-alert').style.display = 'flex';
-        }
-
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Inicialização Segura
         let app, auth, db;
         try {
             if (firebaseConfig.apiKey) {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                console.log("Firebase inicializado com sucesso.");
+                console.log("Firebase inicializado.");
             }
-        } catch (e) {
-            console.error("Erro crítico na inicialização do Firebase:", e);
-        }
+        } catch (e) { console.error("Erro Firebase:", e); }
 
-        // ==========================================
-        // ESTADO GLOBAL
-        // ==========================================
+        // --- BANCO DE DEFEITOS (Inicialização) ---
+        const defaultDefectMap = {
+            "1": "Arranhado", "4": "Covinha", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
+            "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte",
+            "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral",
+            "30": "Sujeira de Forma", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta",
+            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada",
+            "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu",
+            "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu",
+            "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta",
+            "98": "Desc/ Empeno", "99": "Outros", "99 (2)": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa",
+            "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem",
+            "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
+        };
+        
+        let defectMap = { ...defaultDefectMap };
+        try {
+            const savedDefects = localStorage.getItem('cco_defect_map');
+            if(savedDefects) defectMap = JSON.parse(savedDefects);
+        } catch(e) { console.error("Erro ao carregar defeitos", e); }
+
+        // --- ESTADO GLOBAL ---
         const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
         const schedule = [
             { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
@@ -194,28 +249,27 @@
         let countdownInterval = null;
         let countdownSeconds = 30;
         let unsubscribeRealtime = null;
-        
         let configTargets = { quality: 97.0, breakage: 1.5 };
 
-        // Carregar config local
         try {
             const savedConfig = localStorage.getItem('cco_config_targets');
             if (savedConfig) configTargets = JSON.parse(savedConfig);
-        } catch(e) { console.error("Erro localStorage:", e); }
+        } catch(e) {}
         
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // ==========================================
-        // FUNÇÕES AUXILIARES
-        // ==========================================
+        // --- FUNÇÕES DE DADOS ---
+        const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
+
         const resetStore = () => {
             ovenList.forEach(ov => {
                 ovenDataStore[ov] = { 
                     linha: '', 
                     rows: Array(12).fill(null).map(() => ({ 
                         ref: '', turno: '', vol: '', qHora: '', 
-                        defects: ['', '', '', ''], quebras: ['', '', '', ''] 
+                        defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
+                        quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
                     })) 
                 };
             });
@@ -232,90 +286,61 @@
             const d = selectedDate.getDate().toString().padStart(2, '0');
             const m = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
             const y = selectedDate.getFullYear();
-            const display = document.getElementById('display-date');
-            if(display) display.innerText = `${d}/${m}/${y}`;
+            document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
         };
 
-        // ==========================================
-        // LÓGICA DE SALVAMENTO E SINCRONIZAÇÃO
-        // ==========================================
         const saveToFirebase = (ovenId) => {
-            if (!db) return; // Modo offline silencioso
-
-            // Verifica se existe dado para salvar
-            if (!ovenDataStore[ovenId]) {
-                return;
-            }
-
+            if (!db || !ovenDataStore[ovenId]) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
-            
-            // Cópia de segurança
             const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
             const targetDateKey = getDateKey(selectedDate);
-            
             saveTimeouts[ovenId] = setTimeout(async () => {
                 try {
                     const docId = `${ovenId}_${targetDateKey}`;
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
                     await setDoc(docRef, dataToSave);
-                } catch (e) { 
-                    console.error("Erro ao salvar no Firebase:", e); 
-                }
+                } catch (e) { console.error("Save error:", e); }
             }, 1000);
         };
 
         const setupRealtimeListener = () => {
             if (unsubscribeRealtime) unsubscribeRealtime();
             if (!db) return;
-
             const dateKey = getDateKey(selectedDate);
             const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
-            
             unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
                 let hasData = false;
                 snapshot.forEach((doc) => {
                     if (doc.id.includes(dateKey)) {
                         const ovenName = doc.id.replace(`_${dateKey}`, '');
                         if (ovenList.includes(ovenName)) {
-                            ovenDataStore[ovenName] = doc.data();
+                            let data = doc.data();
+                            data.rows.forEach(r => {
+                                if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                                if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                            });
+                            ovenDataStore[ovenName] = data;
                             hasData = true;
                         }
                     }
                 });
-                
-                // Se o snapshot veio vazio (dia novo), resetamos, mas mantemos o render
                 if(!hasData) resetStore(); 
-                
                 renderContent();
-            }, (error) => {
-                console.error("Erro no listener do Firebase:", error);
             });
         };
 
-        // ==========================================
-        // FUNÇÕES GLOBAIS (WINDOW)
-        // ==========================================
-        
-        // Navegação e View
+        // --- INTERAÇÕES DA TABELA ---
         window.setViewMode = (mode, oven = null) => {
             viewMode = mode;
             if (oven) currentOven = oven;
-            
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            const btnGeral = document.getElementById('btn-GERAL');
-            const btnConfig = document.getElementById('btn-CONFIG');
-            
-            if(btnGeral) btnGeral.classList.remove('bg-blue-600');
-            if(btnConfig) btnConfig.classList.remove('active');
+            document.getElementById('btn-GERAL')?.classList.remove('bg-blue-600');
+            document.getElementById('btn-CONFIG')?.classList.remove('active');
 
-            if (mode === 'grid') {
-                if(btnGeral) btnGeral.classList.add('bg-blue-600');
-            } else if (mode === 'config') {
-                if(btnConfig) btnConfig.classList.add('active');
-            } else {
-                const btn = document.getElementById(`btn-${currentOven}`);
-                if (btn) btn.classList.add('active');
-            }
+            if (mode === 'grid') document.getElementById('btn-GERAL')?.classList.add('bg-blue-600');
+            else if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active');
+            else document.getElementById(`btn-${currentOven}`)?.classList.add('active');
+            
             renderContent();
         };
 
@@ -327,16 +352,9 @@
             if (db) setupRealtimeListener();
         };
 
-        // Sincronização de Inputs
         window.syncData = (oven, row, field, val) => {
             ovenDataStore[oven].rows[row][field] = val;
             saveToFirebase(oven);
-        };
-
-        window.syncSub = (oven, row, field, sub, val) => {
-            ovenDataStore[oven].rows[row][field][sub] = val;
-            saveToFirebase(oven);
-            if (field === 'quebras') window.runQuebra(oven, row);
         };
 
         window.syncLinha = (oven, val) => {
@@ -344,7 +362,23 @@
             saveToFirebase(oven);
         };
 
-        // Cálculos e Lógica
+        window.updateSubStruct = (oven, row, type, index, field, val) => {
+            if (!ovenDataStore[oven].rows[row][type][index]) {
+                ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
+            }
+            ovenDataStore[oven].rows[row][type][index][field] = val;
+            
+            if (field === 'cod') {
+                const desc = defectMap[val] || (val ? "Desconhecido" : "");
+                ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
+                const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`);
+                if(descInput) descInput.value = desc;
+            }
+
+            saveToFirebase(oven);
+            if (type === 'quebras') window.runQuebra(oven, row);
+        };
+
         window.attachCalculations = (oven) => {
             window.runCalcs(oven);
             for(let i=0; i<12; i++) window.runQuebra(oven, i);
@@ -354,55 +388,39 @@
             const safeOven = oven.replace(/\s+/g, '-');
             let weightedScoreSum = 0; 
             let previousVolume = 0;   
-
             for (let i = 0; i < 12; i++) {
                 const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
                 const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
                 const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
-
                 if (!hInput || !aInput || !volInput) continue;
 
-                const hValStr = hInput.value.replace(',', '.');
-                const volValStr = volInput.value.replace('.', '').replace(',', '.');
-                const hVal = parseFloat(hValStr);
-                const volVal = parseFloat(volValStr);
+                const hVal = parseFloat(hInput.value.replace(',', '.'));
+                const volVal = parseFloat(volInput.value.replace('.', '').replace(',', '.'));
 
-                if (!isNaN(hVal)) {
-                    hInput.className = hVal >= configTargets.quality ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
-                } else {
-                    hInput.className = "input-quali-hora nav-input";
-                }
+                if (!isNaN(hVal)) hInput.className = hVal >= configTargets.quality ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
+                else hInput.className = "input-quali-hora nav-input";
 
                 if (!isNaN(volVal) && !isNaN(hVal)) {
                     let deltaVol = volVal - previousVolume;
                     weightedScoreSum += deltaVol * hVal;
-
                     if (volVal > 0) {
                         const avg = weightedScoreSum / volVal;
-                        aInput.value = avg.toFixed(2).replace('.', ',');
+                        aInput.value = avg.toFixed(1).replace('.', ',');
                         aInput.className = avg >= configTargets.quality ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
-                    } else {
-                        aInput.value = "";
-                        aInput.className = "input-quali-acum";
                     }
                     previousVolume = volVal;
-                } else if (!isNaN(volVal)) {
-                    previousVolume = volVal;
-                    aInput.value = "";
-                    aInput.className = "input-quali-acum";
-                } else {
-                    aInput.value = "";
-                    aInput.className = "input-quali-acum";
-                }
+                } else if (!isNaN(volVal)) previousVolume = volVal;
             }
         };
 
         window.runQuebra = (oven, row) => {
             const data = ovenDataStore[oven].rows[row].quebras;
             let total = 0;
-            data.forEach(s => {
-                const ms = String(s || '').replace(',', '.').match(/[-+]?[0-9]*\.?[0-9]+/g);
-                if (ms) ms.forEach(m => total += parseFloat(m));
+            data.forEach(item => {
+                if (item && item.val) {
+                    const v = parseFloat(item.val.replace(',', '.'));
+                    if (!isNaN(v)) total += v;
+                }
             });
             const display = document.getElementById(`total-${oven}-${row}`);
             if (display) {
@@ -425,53 +443,90 @@
             }
         };
 
-        // Configuração e Senha
-        window.openPasswordModal = () => {
-            const modal = document.getElementById('password-modal');
-            const input = document.getElementById('admin-password');
-            const error = document.getElementById('pwd-error');
-            
-            if (modal) {
-                input.value = '';
-                error.classList.add('hidden');
-                modal.style.display = 'flex';
-                setTimeout(() => input.focus(), 100);
+        // --- GESTÃO DE DEFEITOS ---
+        window.addDefect = () => {
+            const code = document.getElementById('new-defect-code').value.trim();
+            const desc = document.getElementById('new-defect-desc').value.trim();
+            if(code && desc) {
+                defectMap[code] = desc;
+                localStorage.setItem('cco_defect_map', JSON.stringify(defectMap));
+                document.getElementById('new-defect-code').value = '';
+                document.getElementById('new-defect-desc').value = '';
+                renderContent(); 
+            } else {
+                alert("Preencha código e descrição.");
             }
         };
 
-        window.closePasswordModal = () => {
-            document.getElementById('password-modal').style.display = 'none';
+        window.deleteDefect = (code) => {
+            if(confirm(`Remover defeito código ${code}?`)) {
+                delete defectMap[code];
+                localStorage.setItem('cco_defect_map', JSON.stringify(defectMap));
+                renderContent();
+            }
         };
 
+        window.updateDefectDesc = (code, newDesc) => {
+            if(defectMap[code]) {
+                defectMap[code] = newDesc;
+                localStorage.setItem('cco_defect_map', JSON.stringify(defectMap));
+            }
+        };
+        
+        // --- CONSULTA RÁPIDA DE DEFEITOS ---
+        window.toggleDefectList = () => {
+            const panel = document.getElementById('defect-lookup-panel');
+            const currentDisplay = panel.style.display;
+            if (currentDisplay === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'flex';
+                document.getElementById('defect-search').value = '';
+                document.getElementById('defect-search').focus();
+                window.renderDefectLookup();
+            }
+        };
+
+        window.renderDefectLookup = () => {
+            const filter = document.getElementById('defect-search').value.toLowerCase();
+            const container = document.getElementById('defect-lookup-list');
+            const sortedDefects = Object.entries(defectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
+            
+            container.innerHTML = sortedDefects
+                .filter(([code, desc]) => code.includes(filter) || desc.toLowerCase().includes(filter))
+                .map(([code, desc]) => `
+                    <div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default">
+                        <span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${code}</span>
+                        <span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${desc}</span>
+                    </div>
+                `).join('');
+        };
+
+        // --- CONFIGURAÇÃO E SENHA ---
+        window.openPasswordModal = () => {
+            document.getElementById('pwd-error').classList.add('hidden');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('password-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('admin-password').focus(), 100);
+        };
+        window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
         window.submitPassword = () => {
-            const input = document.getElementById('admin-password');
-            const error = document.getElementById('pwd-error');
-            if (input.value === "admin321") {
+            if (document.getElementById('admin-password').value === "admin321") {
                 window.closePasswordModal();
                 window.setViewMode('config');
             } else {
-                error.classList.remove('hidden');
-                input.value = '';
-                input.focus();
+                document.getElementById('pwd-error').classList.remove('hidden');
             }
         };
-
         window.saveConfig = () => {
             const q = parseFloat(document.getElementById('config-quality').value);
             const b = parseFloat(document.getElementById('config-breakage').value);
             if (!isNaN(q) && !isNaN(b)) {
-                configTargets.quality = q;
-                configTargets.breakage = b;
+                configTargets = { quality: q, breakage: b };
                 localStorage.setItem('cco_config_targets', JSON.stringify(configTargets));
-                const saveBtn = document.querySelector('.config-container button:last-child');
-                saveBtn.innerText = "Salvo!";
-                saveBtn.classList.replace('bg-blue-600', 'bg-green-600');
-                setTimeout(() => window.setViewMode('single', currentOven || 'FORNO 1'), 500);
-            } else {
-                alert("Valores inválidos.");
-            }
+                window.setViewMode('single', currentOven || 'FORNO 1');
+            } else alert("Valores inválidos.");
         };
-
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 1');
 
         window.togglePresentation = () => {
@@ -480,16 +535,15 @@
             if (presentationInterval) {
                 clearInterval(presentationInterval); clearInterval(countdownInterval);
                 presentationInterval = null; 
-                if(overlay) overlay.style.display = 'none';
+                overlay.style.display = 'none';
             } else {
                 const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
                 window.setViewMode('single', startOven);
-                if(overlay) overlay.style.display = 'block';
+                overlay.style.display = 'block';
                 countdownSeconds = 30;
                 countdownInterval = setInterval(() => {
                     countdownSeconds--; if (countdownSeconds < 0) countdownSeconds = 29;
-                    const timer = document.getElementById('presentation-timer');
-                    if(timer) timer.innerText = countdownSeconds;
+                    document.getElementById('presentation-timer').innerText = countdownSeconds;
                 }, 1000);
                 presentationInterval = setInterval(() => {
                     const currentIdx = cycleList.indexOf(currentOven);
@@ -500,29 +554,74 @@
             }
         };
 
-        // ==========================================
-        // RENDERIZAÇÃO
-        // ==========================================
-        const generateConfigHTML = () => {
-            return `
-                <div class="config-container">
-                    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800 border-b pb-4">Configuração de Metas</h2>
-                    <div class="mb-6">
-                        <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Qualidade (%):</label>
-                        <input type="number" step="0.1" id="config-quality" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-blue-600 focus:border-blue-500 outline-none" value="${configTargets.quality}">
-                        <p class="text-sm text-gray-500 mt-2 text-center">Acima deste valor = <span class="text-green-600 font-bold">VERDE</span></p>
+        // --- RENDERIZAÇÃO ---
+        const generateDefectListHTML = () => {
+            const sortedDefects = Object.entries(defectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
+            return sortedDefects.map(([code, desc]) => `
+                <div class="defect-item">
+                    <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
+                    <div class="flex-grow px-2">
+                        <input type="text" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
+                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
                     </div>
-                    <div class="mb-8">
-                        <label class="block text-lg font-bold text-gray-700 mb-2">Meta de Quebra (%):</label>
-                        <input type="number" step="0.1" id="config-breakage" class="w-full border-2 border-gray-300 rounded-lg p-3 text-center text-xl font-bold text-red-600 focus:border-red-500 outline-none" value="${configTargets.breakage}">
-                        <p class="text-sm text-gray-500 mt-2 text-center">Abaixo deste valor = <span class="text-green-600 font-bold">VERDE</span></p>
-                    </div>
-                    <div class="flex justify-between gap-4">
-                        <button onclick="window.cancelConfig()" class="w-1/2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg">Cancelar</button>
-                        <button onclick="window.saveConfig()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md">Salvar</button>
+                    <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2" title="Remover">✕</button>
+                </div>
+            `).join('');
+        };
+
+        const generateConfigHTML = () => `
+            <div class="config-container">
+                <div class="config-header">
+                    <h2 class="text-2xl font-bold text-gray-800">Configurações do Sistema</h2>
+                </div>
+                
+                <!-- Coluna 1: Metas -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Metas de Produção</h3>
+                    <div class="mb-6"><label class="block font-bold text-gray-600 mb-1">Meta de Qualidade (%):</label><input type="number" step="0.1" id="config-quality" class="w-full border border-gray-300 rounded p-2 text-center font-bold text-blue-600" value="${configTargets.quality}"><p class="text-xs text-gray-400 mt-1 text-center">Referência para cor VERDE</p></div>
+                    <div class="mb-8"><label class="block font-bold text-gray-600 mb-1">Meta de Quebra (%):</label><input type="number" step="0.1" id="config-breakage" class="w-full border border-gray-300 rounded p-2 text-center font-bold text-red-600" value="${configTargets.breakage}"><p class="text-xs text-gray-400 mt-1 text-center">Referência para cor VERDE</p></div>
+                    <div class="flex flex-col gap-3 mt-8">
+                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full">Salvar Metas e Sair</button>
+                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full">Cancelar</button>
                     </div>
                 </div>
-            `;
+
+                <!-- Coluna 2: Defeitos -->
+                <div>
+                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                    
+                    <div class="flex gap-2 mb-2 bg-blue-50 p-2 rounded border border-blue-100">
+                        <input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center text-sm font-bold bg-white">
+                        <input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm bg-white">
+                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm">+</button>
+                    </div>
+
+                    <div class="flex text-xs font-bold text-gray-500 px-2 mb-1">
+                        <span class="w-16 text-center">Cód</span>
+                        <span class="flex-grow">Descrição (Editável)</span>
+                        <span class="w-6"></span>
+                    </div>
+                    
+                    <div class="defect-list-container">
+                        ${generateDefectListHTML()}
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 text-center">Alterações na lista são salvas automaticamente.</p>
+                </div>
+            </div>`;
+
+        const generateSubColumnHTML = (oven, row, type, dataArray) => {
+            return dataArray.map((item, i) => `
+                <div class="sub-row">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod" placeholder="Cd" 
+                        value="${item.cod || ''}" 
+                        oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="input-desc" readonly 
+                        value="${item.desc || ''}" tabindex="-1">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val" placeholder="%" inputmode="decimal"
+                        value="${item.val || ''}" 
+                        oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
+                </div>
+            `).join('');
         };
 
         const generateOvenHTML = (ovenName, isMini = false) => {
@@ -540,8 +639,7 @@
                             ${item.time}<span class="shift-stamp">${item.shift}</span>
                         </td>
                         <td class="border-black">
-                            <input type="text" id="input-${safeOven}-${index}-ref" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" 
-                                oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')">
+                            <input type="text" id="input-${safeOven}-${index}-ref" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')">
                         </td>
                         <td class="border-black">
                             <select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)">
@@ -551,26 +649,22 @@
                                 <option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option>
                             </select>
                         </td>
-                        <td class="border-black">
-                            <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" 
-                                oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')">
-                        </td>
-                        <td class="border-black">
-                            <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" 
-                                data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')">
-                        </td>
-                        <td class="border-black">
-                            <input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00">
-                        </td>
-                        <td class="border-black p-0">
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00"></td>
+                        
+                        <!-- Coluna DEFEITOS -->
+                        <td class="border-black p-0 w-[150px]">
                             <div class="flex flex-col">
-                                ${[0,1,2,3].map(i => `<input type="text" id="input-${safeOven}-${index}-defect-${i}" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.defects[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'defects', ${i}, this.value)">`).join('')}
+                                ${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects)}
                             </div>
                         </td>
-                        <td class="border-black p-0">
+
+                        <!-- Coluna QUEBRA (Largura ajustada para 200px) -->
+                        <td class="border-black p-0 w-[200px]">
                             <div class="flex h-full">
                                 <div class="flex flex-col flex-grow">
-                                    ${[0,1,2,3].map(i => `<input type="text" id="input-${safeOven}-${index}-quebra-${i}" class="defect-input nav-input" placeholder="${i+1}." value="${rowData.quebras[i] || ''}" oninput="window.syncSub('${ovenName}', ${index}, 'quebras', ${i}, this.value)">`).join('')}
+                                    ${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras)}
                                 </div>
                                 <div class="quebra-total-box">
                                     <div class="quebra-total-header uppercase">Total</div>
@@ -601,9 +695,27 @@
                 <table class="w-full">
                     <thead>
                         <tr class="header-blue font-bold ${tableFontSize} leading-tight bg-gray-50">
-                            <th class="w-12">Hora</th><th class="w-24">Referência</th><th class="w-14">Turno Esmaltação</th>
-                            <th class="w-12">Volume</th><th class="w-16">Qualidade Hora (%)</th><th class="w-16">Qualidade Acumulada (%)</th>
-                            <th class="w-24 italic">Defeitos</th><th class="w-32 text-red-600">Quebra (%)</th>
+                            <th class="w-14">Hora</th><th class="w-48">Referência</th><th class="w-12">Turno</th>
+                            <th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
+                            <th class="w-[150px] p-0">
+                                <div class="text-center border-b border-black">Defeitos</div>
+                                <div class="sub-header-row">
+                                    <span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span>
+                                </div>
+                            </th>
+                            <th class="w-[200px] text-red-600 p-0">
+                                <div class="text-center border-b border-black">Quebra</div>
+                                <div class="flex">
+                                    <div class="flex-grow">
+                                        <div class="sub-header-row" style="border-bottom:none;">
+                                             <span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList()" title="Lista de Defeitos">
+                                        🔍
+                                    </div>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>${rowsHTML}</tbody>
@@ -614,28 +726,18 @@
         const renderContent = () => {
             const activeElement = document.activeElement;
             let focusedId = null;
-            let cursorStart = null;
-            let cursorEnd = null;
-
-            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
+            let cursorStart = null, cursorEnd = null;
+            if (activeElement && activeElement.tagName === 'INPUT') {
                 focusedId = activeElement.id;
-                if (activeElement.type !== 'number' && activeElement.tagName === 'INPUT') {
-                    try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch (e) {}
-                }
+                try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){}
             }
 
             const mainContent = document.getElementById('main-content');
-            if(!mainContent) return;
-
-            if (viewMode === 'config') {
-                mainContent.className = "max-w-7xl mx-auto";
-                mainContent.innerHTML = generateConfigHTML();
-                return;
-            } else if (viewMode === 'grid') {
+            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML();
+            else if (viewMode === 'grid') {
                 mainContent.className = "grid-view-container";
-                const gridOvens = ovenList.filter(ov => ov !== 'FORNO 1');
-                mainContent.innerHTML = gridOvens.map(ov => `<div class="oven-card p-1 rounded">${generateOvenHTML(ov, true)}</div>`).join('');
-                gridOvens.forEach(ov => window.attachCalculations(ov));
+                mainContent.innerHTML = ovenList.filter(o => o!=='FORNO 1').map(o => `<div class="oven-card p-1 rounded">${generateOvenHTML(o, true)}</div>`).join('');
+                ovenList.filter(o => o!=='FORNO 1').forEach(o => window.attachCalculations(o));
             } else {
                 mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
                 mainContent.innerHTML = generateOvenHTML(currentOven);
@@ -644,42 +746,103 @@
 
             if (focusedId) {
                 const el = document.getElementById(focusedId);
-                if (el) {
-                    el.focus();
-                    if (cursorStart !== null && cursorEnd !== null) try { el.setSelectionRange(cursorStart, cursorEnd); } catch (e) {}
-                }
+                if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} }
             }
         };
 
-        // ==========================================
-        // INIT
-        // ==========================================
         const init = async () => {
             resetStore();
             updateDateUI();
             renderContent();
-            
             if(auth) {
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (e) { console.error("Falha na autenticação:", e); }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) setupRealtimeListener();
-                });
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                    else await signInAnonymously(auth);
+                } catch (e) {}
+                onAuthStateChanged(auth, user => { if(user) setupRealtimeListener(); });
             }
 
+            // Custom Keydown for Navigation
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    if (document.activeElement.id === 'admin-password') return;
+                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return;
                     e.preventDefault();
-                    const inputs = Array.from(document.querySelectorAll('.nav-input'));
-                    const idx = inputs.indexOf(e.target);
-                    if (idx >= 0 && idx < inputs.length - 1) inputs[idx + 1].focus();
+                    
+                    const el = document.activeElement;
+                    if (!el) return;
+                    const tagName = el.tagName;
+                    if (tagName !== 'INPUT' && tagName !== 'SELECT') return;
+
+                    const id = el.id;
+                    
+                    // Navegação na Sub-estrutura (Defeitos/Quebras)
+                    // Formato ID: input-FORNO 1-0-defects-0-cod
+                    const subMatch = id.match(/input-(.+)-(\d+)-(defects|quebras)-(\d+)-(cod|val)/);
+                    if (subMatch) {
+                        const [_, oven, rowStr, type, idxStr, field] = subMatch;
+                        const row = parseInt(rowStr);
+                        const idx = parseInt(idxStr);
+                        
+                        if (field === 'cod') {
+                            // Cód -> Valor
+                            const nextId = `input-${oven}-${row}-${type}-${idx}-val`;
+                            document.getElementById(nextId)?.focus();
+                        } else if (field === 'val') {
+                            if (idx < 3) {
+                                // Próxima linha mesmo tipo
+                                const nextId = `input-${oven}-${row}-${type}-${idx+1}-cod`;
+                                document.getElementById(nextId)?.focus();
+                            } else {
+                                // Fim deste tipo
+                                if (type === 'defects') {
+                                    // Defeitos -> Quebras
+                                    const nextId = `input-${oven}-${row}-quebras-0-cod`;
+                                    document.getElementById(nextId)?.focus();
+                                } else {
+                                    // Quebras -> Referência Próxima Linha
+                                    if (row < 11) {
+                                        // Oven aqui tem espaços (FORNO 1), ID da Ref precisa de traços (FORNO-1)
+                                        const nextOvenSafe = oven.replace(/\s+/g, '-');
+                                        const nextId = `input-${nextOvenSafe}-${row+1}-ref`;
+                                        document.getElementById(nextId)?.focus();
+                                    }
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    // Navegação Principal
+                    // Formato ID: input-FORNO-1-0-ref (com traços)
+                    const mainMatch = id.match(/input-(.+)-(\d+)-(ref|vol|qHora)/);
+                    if (mainMatch) {
+                        const [_, oven, rowStr, field] = mainMatch;
+                        const row = parseInt(rowStr);
+                        
+                        if (field === 'ref') {
+                            // Ref -> Vol (Pula Turno)
+                            const nextId = `input-${oven}-${row}-vol`;
+                            document.getElementById(nextId)?.focus();
+                        } else if (field === 'vol') {
+                            // Vol -> qHora
+                            const nextId = `input-${oven}-${row}-qHora`;
+                            document.getElementById(nextId)?.focus();
+                        } else if (field === 'qHora') {
+                            // qHora -> Defeitos 0 Cód
+                            // Oven aqui tem traços (FORNO-1), ID de Defeitos precisa de espaços (FORNO 1)
+                            const originalOven = oven.replace(/-/g, ' ');
+                            const nextId = `input-${originalOven}-${row}-defects-0-cod`;
+                            document.getElementById(nextId)?.focus();
+                        }
+                        return;
+                    }
+                    
+                    // Fallback
+                    const inputs = Array.from(document.querySelectorAll('input, select'));
+                    const currentIdx = inputs.indexOf(el);
+                    if (currentIdx >= 0 && currentIdx < inputs.length - 1) {
+                         inputs[currentIdx + 1].focus();
+                    }
                 }
             });
         };
