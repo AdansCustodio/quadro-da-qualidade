@@ -36,7 +36,6 @@
         .tab-btn { transition: all 0.2s; border-bottom: 4px solid transparent; }
         .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: #eff6ff; }
         
-        .btn-presentation { background-color: #f59e0b; color: white; border-radius: 4px; }
         .btn-general { background-color: #1e293b; color: white; border-radius: 4px; }
         .btn-config { background-color: #4b5563; color: white; border-radius: 4px; }
         .btn-config.active { background-color: #374151; ring: 2px solid #9ca3af; }
@@ -45,8 +44,6 @@
         
         .quebra-total-box { width: 50px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
-        
-        #presentation-overlay { display: none; position: fixed; top: 20px; right: 20px; background: rgba(0, 0, 0, 0.85); color: white; padding: 15px 25px; border-radius: 8px; z-index: 1000; border-left: 5px solid #f59e0b; }
         
         .grid-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 10px; max-width: 100% !important; }
         @media (min-width: 1600px) { .grid-view-container { grid-template-columns: repeat(3, 1fr); } }
@@ -93,6 +90,26 @@
         .sh-cod { width: 30px; border-right: 1px solid #ccc; }
         .sh-desc { flex-grow: 1; border-right: 1px solid #ccc; }
         .sh-val { width: 40px; }
+
+        /* Loading Indicator */
+        #loading-indicator {
+            display: none;
+            margin-left: 10px;
+            font-size: 0.75rem;
+            color: #2563eb;
+            font-weight: bold;
+            align-items: center;
+            gap: 5px;
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #2563eb;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-gray-200 p-4">
@@ -121,6 +138,11 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
             </button>
         </div>
+        
+        <!-- Indicador de Carregamento -->
+        <div id="loading-indicator">
+            <div class="spinner"></div> Carregando...
+        </div>
 
         <div class="flex-grow"></div>
 
@@ -130,10 +152,6 @@
 
         <button onclick="window.openPasswordModal()" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2" id="btn-CONFIG" title="Configurações">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        </button>
-
-        <button onclick="window.togglePresentation()" class="btn-presentation px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap">
-            Apresentação
         </button>
     </div>
 
@@ -165,16 +183,6 @@
                 <span class="pl-2">Descrição</span>
             </div>
             <div id="defect-lookup-list" class="lookup-list"></div>
-        </div>
-    </div>
-
-    <div id="presentation-overlay">
-        <div class="flex flex-col items-center">
-            <span class="text-xs uppercase opacity-70 mb-1">Ciclo Ativo</span>
-            <div class="flex items-center gap-4">
-                <span class="font-bold">Troca em: <span id="presentation-timer">30</span>s</span>
-                <button onclick="window.togglePresentation()" class="bg-red-600 hover:bg-red-700 text-white text-[10px] px-2 py-1 rounded font-bold uppercase">Sair</button>
-            </div>
         </div>
     </div>
 
@@ -245,9 +253,6 @@
         let currentOven = 'FORNO 1';
         let viewMode = 'single';
         let selectedDate = new Date();
-        let presentationInterval = null;
-        let countdownInterval = null;
-        let countdownSeconds = 30;
         let unsubscribeRealtime = null;
         let configTargets = { quality: 97.0, breakage: 1.5 };
 
@@ -303,11 +308,19 @@
             }, 1000);
         };
 
+        const toggleLoading = (show) => {
+            const el = document.getElementById('loading-indicator');
+            if(el) el.style.display = show ? 'flex' : 'none';
+        };
+
         const setupRealtimeListener = () => {
             if (unsubscribeRealtime) unsubscribeRealtime();
             if (!db) return;
+            
+            toggleLoading(true);
             const dateKey = getDateKey(selectedDate);
             const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+            
             unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
                 let hasData = false;
                 snapshot.forEach((doc) => {
@@ -326,6 +339,10 @@
                 });
                 if(!hasData) resetStore(); 
                 renderContent();
+                toggleLoading(false);
+            }, (error) => {
+                console.error("Erro na busca de dados:", error);
+                toggleLoading(false); // Remove loading se der erro
             });
         };
 
@@ -353,6 +370,27 @@
         };
 
         window.syncData = (oven, row, field, val) => {
+            // Lógica de Autocorreção para Forno Parado
+            if (field === 'ref') {
+                const safeOven = oven.replace(/\s+/g, '-');
+                const elementId = `input-${safeOven}-${row}-ref`;
+                const el = document.getElementById(elementId);
+                
+                if (val.trim().toLowerCase() === 'forno parado') {
+                    val = "❌FORNO PARADO⚠️";
+                    if(el) {
+                        el.value = val;
+                    }
+                }
+
+                // Aplica estilo visual dinamicamente
+                if (val === "❌FORNO PARADO⚠️") {
+                    if(el) el.classList.add('text-red-600', 'font-black');
+                } else {
+                    if(el) el.classList.remove('text-red-600', 'font-black');
+                }
+            }
+
             ovenDataStore[oven].rows[row][field] = val;
             saveToFirebase(oven);
         };
@@ -529,31 +567,6 @@
         };
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 1');
 
-        window.togglePresentation = () => {
-            const overlay = document.getElementById('presentation-overlay');
-            const cycleList = ovenList.filter(o => o !== 'FORNO 1');
-            if (presentationInterval) {
-                clearInterval(presentationInterval); clearInterval(countdownInterval);
-                presentationInterval = null; 
-                overlay.style.display = 'none';
-            } else {
-                const startOven = cycleList.includes(currentOven) ? currentOven : cycleList[0];
-                window.setViewMode('single', startOven);
-                overlay.style.display = 'block';
-                countdownSeconds = 30;
-                countdownInterval = setInterval(() => {
-                    countdownSeconds--; if (countdownSeconds < 0) countdownSeconds = 29;
-                    document.getElementById('presentation-timer').innerText = countdownSeconds;
-                }, 1000);
-                presentationInterval = setInterval(() => {
-                    const currentIdx = cycleList.indexOf(currentOven);
-                    const nextIdx = (currentIdx + 1) % cycleList.length;
-                    window.setViewMode('single', cycleList[nextIdx]);
-                    countdownSeconds = 30;
-                }, 30000);
-            }
-        };
-
         // --- RENDERIZAÇÃO ---
         const generateDefectListHTML = () => {
             const sortedDefects = Object.entries(defectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
@@ -633,13 +646,18 @@
             let rowsHTML = schedule.map((item, index) => {
                 const rowData = data.rows[index];
                 const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
+                
+                // Lógica visual para "Forno Parado"
+                const isStopped = rowData.ref === "❌FORNO PARADO⚠️";
+                const refClasses = isStopped ? "nav-input ref-input text-red-600 font-black" : "nav-input ref-input";
+
                 return `
                     <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
                         <td class="font-bold border-black ${isMini ? 'text-[0.7rem]' : 'text-sm'} p-0">
                             ${item.time}<span class="shift-stamp">${item.shift}</span>
                         </td>
                         <td class="border-black">
-                            <input type="text" id="input-${safeOven}-${index}-ref" class="nav-input ref-input" list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')">
+                            <input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')">
                         </td>
                         <td class="border-black">
                             <select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)">
