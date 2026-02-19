@@ -74,9 +74,25 @@
         #loading-indicator { display: none; margin-left: 10px; font-size: 0.75rem; color: #2563eb; font-weight: bold; align-items: center; gap: 5px; }
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* TELA DE BLOQUEIO DE VERSÃO/LOCAL */
+        #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
     </style>
 </head>
 <body class="bg-gray-200 p-4">
+
+    <!-- OVERLAY DE BLOQUEIO DE SEGURANÇA -->
+    <div id="version-blocker">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-red-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h1 class="text-4xl font-black text-red-500 mb-4 uppercase tracking-wider">Acesso Bloqueado</h1>
+        <h2 id="version-blocker-title" class="text-2xl font-bold mb-4 text-gray-200">Você está usando uma versão obsoleta ou não oficial.</h2>
+        <p id="version-blocker-desc" class="mb-8 text-gray-400 max-w-lg text-lg">Para garantir que os dados não sejam perdidos e sejam salvos no servidor oficial, é necessário acessar o sistema pelo link correto da fábrica.</p>
+        <button onclick="window.location.href='https://mohawkllc.sharepoint.com/sites/QuadrodaQualidade/SitePages/Quadro-da-Qualidade---SC2.aspx?csf=1&web=1&share=IQAqn6oOhn5LR42F7_vGWyHNAdBd3R5izEZRhLTPc8jNSy4&e=Cy8NON&ovuser=04eca944-6c51-44b3-968f-d0b53acd3878%2cadans.custodio%40mohawkbr.com&OR=Teams-HL&CT=1771538670760&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiI0OS8yNjAxMTUxMTExOCJ9&CID=bba1f8a1-a0ce-b000-ad7a-a59511aaaae4&cidOR=SPO'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-transform hover:scale-105 uppercase tracking-wide">
+            Acessar Sistema Oficial
+        </button>
+    </div>
 
     <!-- Navegação Superior -->
     <div class="max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
@@ -103,6 +119,11 @@
             <button onclick="window.blinkRefresh()" class="btn-force-reload" title="Forçar atualização dos dados">
                 Carregar Dados
             </button>
+        </div>
+
+        <div id="save-status" class="text-[0.65rem] font-bold text-gray-400 ml-4 flex items-center gap-1 min-w-[120px]">
+            <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span>
+            <span id="save-text">Nuvem Sincronizada</span>
         </div>
         
         <div id="loading-indicator">
@@ -150,6 +171,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- SISTEMA DE CONTROLE DE VERSÃO ---
+        const APP_VERSION = 3.3;
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -204,13 +228,6 @@
         let grinderDefectMap = { ...defaultGrinderDefects };
         let configDefectMode = 'ovens';
 
-        try {
-            const savedOven = localStorage.getItem('cco_defect_map');
-            if(savedOven) ovenDefectMap = JSON.parse(savedOven);
-            const savedGrinder = localStorage.getItem('cco_grinder_defect_map');
-            if(savedGrinder) grinderDefectMap = JSON.parse(savedGrinder);
-        } catch(e) { }
-
         const getDefectMapForOven = (ovenName) => {
             if (ovenName && ovenName.includes('RETÍFICA')) return grinderDefectMap;
             return ovenDefectMap;
@@ -242,16 +259,16 @@
         let lastKnownDay = new Date().getDate();
         let unsubscribeRealtime = null;
 
-        // ESTRUTURA GLOBAL DE CONFIGURAÇÃO (Salva no Firebase settings/global)
         let globalConfig = {
             ovens: { quality: 97.0, breakage: 1.2 },
-            grinders: { quality: 97.0, breakage: 1.2 }
+            grinders: { quality: 97.0, breakage: 1.2 },
+            minVersion: APP_VERSION 
         };
 
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // --- FETCH GLOBAL CONFIG ---
+        // --- FETCH DE CONFIGURAÇÕES E DEFEITOS (FIREBASE) ---
         const loadGlobalConfig = async () => {
             if(!db) return;
             try {
@@ -259,9 +276,14 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     globalConfig = docSnap.data();
-                    console.log("Configurações globais carregadas:", globalConfig);
+                    
+                    if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
+                        document.getElementById('version-blocker-title').innerText = "Atualização Necessária";
+                        document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas o sistema exige a versão ${globalConfig.minVersion} ou superior para evitar corrupção de dados.`;
+                        document.getElementById('version-blocker').style.display = 'flex';
+                        return; 
+                    }
                 } else {
-                    // Se não existe, cria com padrão
                     await setDoc(docRef, globalConfig);
                 }
             } catch(e) { console.error("Erro carregando config:", e); }
@@ -270,9 +292,37 @@
         const saveGlobalConfigFirebase = async () => {
             if(!db) return;
             try {
+                globalConfig.minVersion = APP_VERSION;
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
                 await setDoc(docRef, globalConfig);
             } catch(e) { console.error("Erro salvando config:", e); alert("Erro ao salvar."); }
+        };
+
+        // NOVO: Carregar defeitos da Nuvem
+        const loadDefectsFromFirebase = async () => {
+            if(!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.ovens) ovenDefectMap = data.ovens;
+                    if (data.grinders) grinderDefectMap = data.grinders;
+                } else {
+                    // Se não houver arquivo na nuvem, cria ele com as listas padrões do sistema
+                    await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
+                }
+            } catch(e) { console.error("Erro carregando defeitos da nuvem:", e); }
+        };
+
+        // NOVO: Salvar defeitos na Nuvem
+        const saveDefectsToFirebase = async () => {
+            if(!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
+                await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
+                console.log("Defeitos salvos no Firebase.");
+            } catch(e) { console.error("Erro salvando defeitos:", e); alert("Erro ao sincronizar os defeitos com a nuvem."); }
         };
 
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
@@ -281,7 +331,7 @@
             ovenList.forEach(ov => {
                 ovenDataStore[ov] = { 
                     linha: '', 
-                    targets: null, // Armazenará as metas históricas deste dia específico
+                    targets: null, 
                     rows: Array(12).fill(null).map(() => ({ 
                         ref: '', turno: '', vol: '', qHora: '', 
                         defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
@@ -306,12 +356,38 @@
             document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
         };
 
-        // --- LÓGICA DE SALVAMENTO COM METAS ---
+        // --- LÓGICA DE INDICADOR VISUAL DE SALVAMENTO ---
+        const setSaveStatus = (status) => {
+            const dot = document.getElementById('save-dot');
+            const text = document.getElementById('save-text');
+            if(!dot || !text) return;
+            if(status === 'saving') {
+                dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+                text.innerText = "Salvando...";
+                text.className = "text-yellow-600";
+            } else if(status === 'saved') {
+                dot.className = "w-2 h-2 rounded-full bg-green-500";
+                text.innerText = "Salvo na Nuvem";
+                text.className = "text-green-600";
+                setTimeout(() => {
+                    dot.className = "w-2 h-2 rounded-full bg-gray-400";
+                    text.innerText = "Nuvem Sincronizada";
+                    text.className = "text-gray-400";
+                }, 3000);
+            } else if(status === 'error') {
+                dot.className = "w-2 h-2 rounded-full bg-red-600";
+                text.innerText = "Erro ao Salvar";
+                text.className = "text-red-600";
+            }
+        };
+
+        // --- LÓGICA DE SALVAMENTO DE REGISTROS ---
         const saveToFirebase = (ovenId) => {
             if (!db || !ovenDataStore[ovenId]) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
             
-            // SE O REGISTRO AINDA NÃO TEM METAS DEFINIDAS (É NOVO), INJETA AS GLOBAIS ATUAIS
+            setSaveStatus('saving');
+
             if (!ovenDataStore[ovenId].targets) {
                 const type = ovenId.includes('RETÍFICA') ? 'grinders' : 'ovens';
                 ovenDataStore[ovenId].targets = { ...globalConfig[type] };
@@ -325,7 +401,11 @@
                     const docId = `${ovenId}_${targetDateKey}`;
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
                     await setDoc(docRef, dataToSave);
-                } catch (e) { console.error("Save error:", e); }
+                    setSaveStatus('saved');
+                } catch (e) { 
+                    console.error("Save error:", e); 
+                    setSaveStatus('error');
+                }
             }, 1000);
         };
 
@@ -354,8 +434,6 @@
                                 if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
                             });
                             if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
-                            
-                            // Compatibilidade: Se registro antigo não tem targets, assume null (será tratado no render com fallback global)
                             if (!data.targets) data.targets = null;
 
                             ovenDataStore[ovenName] = data;
@@ -373,7 +451,6 @@
         };
 
         window.blinkRefresh = async () => {
-            console.log("Executando Blink Refresh...");
             toggleLoading(true);
             const originalDate = new Date(selectedDate);
             selectedDate.setDate(selectedDate.getDate() - 1);
@@ -490,16 +567,12 @@
             for(let i=0; i<12; i++) window.runQuebra(oven, i);
         };
 
-        // --- CÁLCULOS COM METAS CONTEXTUAIS (HISTÓRICAS) ---
         window.runCalcs = (oven) => {
             const safeOven = oven.replace(/\s+/g, '-');
-            
-            // Determina qual meta usar: Do registro (histórico) ou Global (se novo)
             let targetQ = 97.0; 
             if (ovenDataStore[oven] && ovenDataStore[oven].targets) {
                 targetQ = ovenDataStore[oven].targets.quality;
             } else {
-                // Fallback para global atual
                 const type = oven.includes('RETÍFICA') ? 'grinders' : 'ovens';
                 targetQ = globalConfig[type].quality;
             }
@@ -532,7 +605,6 @@
         };
 
         window.runQuebra = (oven, row) => {
-            // Determina meta de quebra
             let targetB = 1.2;
             if (ovenDataStore[oven] && ovenDataStore[oven].targets) {
                 targetB = ovenDataStore[oven].targets.breakage;
@@ -575,17 +647,17 @@
             renderContent();
         };
 
-        window.addDefect = () => {
+        // --- INTEGRAÇÃO COM A NUVEM PARA EDIÇÃO DE DEFEITOS ---
+        window.addDefect = async () => {
             const code = document.getElementById('new-defect-code').value.trim();
             const desc = document.getElementById('new-defect-desc').value.trim();
             if(code && desc) {
                 if (configDefectMode === 'ovens') {
                     ovenDefectMap[code] = desc;
-                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
                 } else {
                     grinderDefectMap[code] = desc;
-                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
                 }
+                await saveDefectsToFirebase();
                 document.getElementById('new-defect-code').value = '';
                 document.getElementById('new-defect-desc').value = '';
                 renderContent(); 
@@ -594,32 +666,31 @@
             }
         };
 
-        window.deleteDefect = (code) => {
+        window.deleteDefect = async (code) => {
             if(confirm(`Remover defeito código ${code}?`)) {
                 if (configDefectMode === 'ovens') {
                     delete ovenDefectMap[code];
-                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
                 } else {
                     delete grinderDefectMap[code];
-                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
                 }
+                await saveDefectsToFirebase();
                 renderContent();
             }
         };
 
-        window.updateDefectDesc = (code, newDesc) => {
+        window.updateDefectDesc = async (code, newDesc) => {
             if (configDefectMode === 'ovens') {
                 if(ovenDefectMap[code]) {
                     ovenDefectMap[code] = newDesc;
-                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
                 }
             } else {
                 if(grinderDefectMap[code]) {
                     grinderDefectMap[code] = newDesc;
-                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
                 }
             }
+            await saveDefectsToFirebase();
         };
+        // --------------------------------------------------------
         
         window.toggleDefectList = () => {
             const panel = document.getElementById('defect-lookup-panel');
@@ -667,7 +738,6 @@
             }
         };
         
-        // --- SALVAR CONFIGURAÇÃO NO FIREBASE E ATUALIZAR DIA ATUAL ---
         window.saveConfig = () => {
             const oQ = parseFloat(document.getElementById('config-quality-oven').value);
             const oB = parseFloat(document.getElementById('config-breakage-oven').value);
@@ -677,11 +747,11 @@
             if (!isNaN(oQ) && !isNaN(oB) && !isNaN(gQ) && !isNaN(gB)) {
                 globalConfig = {
                     ovens: { quality: oQ, breakage: oB },
-                    grinders: { quality: gQ, breakage: gB }
+                    grinders: { quality: gQ, breakage: gB },
+                    minVersion: APP_VERSION // Salva a versão atual como requisito mínimo
                 };
                 saveGlobalConfigFirebase();
 
-                // Aplica a nova meta EM TODOS OS FORNOS do dia atual que está sendo visualizado
                 ovenList.forEach(ov => {
                     if (ovenDataStore[ov]) {
                         const type = ov.includes('RETÍFICA') ? 'grinders' : 'ovens';
@@ -692,8 +762,6 @@
 
                 alert("Configurações salvas e aplicadas para o dia atual e dias futuros!");
                 window.setViewMode('single', currentOven || 'FORNO 2');
-                
-                // Força recálculo imediato de cores
                 setTimeout(() => window.triggerMultiRefresh(), 150);
             } else alert("Valores inválidos.");
         };
@@ -905,6 +973,15 @@
         };
 
         const init = async () => {
+
+            // TRAVA 1: VERIFICA SE ESTÁ RODANDO COMO ARQUIVO LOCAL (file://)
+            if (window.location.protocol === 'file:') {
+                document.getElementById('version-blocker-title').innerText = "Execução Local Bloqueada";
+                document.getElementById('version-blocker-desc').innerText = "O sistema não pode ser executado a partir de um arquivo salvo no seu computador. Por favor, feche este arquivo e acesse o link oficial pelo navegador.";
+                document.getElementById('version-blocker').style.display = 'flex';
+                return; // Paralisa completamente o sistema aqui.
+            }
+
             resetStore();
             updateDateUI();
             renderContent();
@@ -927,7 +1004,9 @@
                 
                 onAuthStateChanged(auth, async user => { 
                     if(user) {
+                        // O SISTEMA AGORA CARREGA CONFIGURAÇÕES GLOBAIS E DEFEITOS DIRETAMENTE DA NUVEM ANTES DE CARREGAR A TELA
                         await loadGlobalConfig();
+                        await loadDefectsFromFirebase();
                         window.triggerMultiRefresh();
                     }
                 });
