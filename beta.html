@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Qualidade - CCO Fornos e Retíficas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-size: 1.1rem; }
+        .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid black; text-align: center; padding: 2px; }
+        .header-blue { color: #2563eb; }
+        .bg-gray-custom { background-color: #f3f4f6; }
+        .bg-gray-dark-custom { background-color: #9ca3af; } 
+        
+        input, select { width: 100%; height: 100%; border: none; background: transparent; text-align: center; outline: none; font-size: 1rem; appearance: textfield; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .nav-input { width: 100%; height: 100%; }
+        .sub-row { display: flex; border-bottom: 1px solid #ccc; height: 1.4rem; align-items: center; }
+        .sub-row:last-child { border-bottom: none; }
+        
+        .input-cod { width: 30px; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
+        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .input-val { width: 40px; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
+        .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
+        .input-cod:focus, .input-val:focus { background-color: #fffde7; }
+        
+        .text-target-ok { color: #16a34a; font-weight: bold; }
+        .text-target-low { color: #dc2626; font-weight: bold; }
+        .text-stop-alert { color: #dc2626; font-weight: 900; font-size: 0.75rem; letter-spacing: 0.5px; }
+        
+        .shift-stamp { display: block; font-size: 0.55rem; color: #6b7280; line-height: 1; margin-top: 1px; text-transform: uppercase; }
+        .tab-btn { transition: all 0.2s; border-bottom: 4px solid transparent; }
+        .tab-btn.active { border-bottom-color: #2563eb; color: #2563eb; background-color: #eff6ff; }
+        
+        .btn-general { background-color: #1e293b; color: white; border-radius: 4px; }
+        .btn-config { background-color: #4b5563; color: white; border-radius: 4px; }
+        .btn-config.active { background-color: #374151; ring: 2px solid #9ca3af; }
+        .btn-nav-date { background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; }
+        .btn-nav-date:hover { background-color: #e5e7eb; }
+        .btn-force-reload { background-color: #16a34a; color: white; font-weight: bold; font-size: 0.7rem; border-radius: 4px; padding: 4px 8px; margin-left: 8px; text-transform: uppercase; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: background-color 0.2s; }
+        .btn-force-reload:hover { background-color: #15803d; }
+        
+        .quebra-total-box { width: 50px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
+        .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
+        
+        .grid-view-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; padding: 10px; max-width: 100% !important; }
+        @media (min-width: 1600px) { .grid-view-container { grid-template-columns: repeat(3, 1fr); } }
+        .oven-card { background: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #000; }
+        
+        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
+        .defect-item { display: flex; border-bottom: 1px solid #eee; padding: 4px; align-items: center; font-size: 0.8rem; }
+        .defect-item:nth-child(even) { background-color: white; }
+        .defect-item input { text-align: left; }
+        
+        #password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
+        .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        
+        #defect-lookup-panel { display: none; position: fixed; top: 90px; right: 20px; width: 350px; height: auto; max-height: 85vh; background: white; border: 2px solid #2563eb; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 2000; flex-direction: column; }
+        .lookup-header { background-color: #f0f9ff; padding: 10px; border-bottom: 1px solid #bae6fd; display: flex; justify-content: space-between; align-items: center; border-radius: 6px 6px 0 0; }
+        .lookup-content { padding: 10px; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        .lookup-list { overflow-y: auto; border: 1px solid #eee; margin-top: 5px; flex-grow: 1; border-radius: 4px; background-color: #fafafa; }
+        .search-trigger { cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%; background-color: #f3f4f6; transition: all 0.2s; font-size: 0.85rem; color: #6b7280; }
+        .search-trigger:hover { background-color: #dbeafe; color: #1e40af; }
+        .sub-header-row { display: flex; font-size: 0.6rem; font-weight: bold; background: #e5e7eb; border-bottom: 1px solid #000; }
+        .sh-cod { width: 30px; border-right: 1px solid #ccc; }
+        .sh-desc { flex-grow: 1; border-right: 1px solid #ccc; }
+        .sh-val { width: 40px; }
+        #loading-indicator { display: none; margin-left: 10px; font-size: 0.75rem; color: #2563eb; font-weight: bold; align-items: center; gap: 5px; }
+        .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* TELA DE BLOQUEIO DE VERSÃO/LOCAL */
+        #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
+    </style>
+</head>
+<body class="bg-gray-200 p-4">
+
+    <!-- OVERLAY DE BLOQUEIO DE SEGURANÇA -->
+    <div id="version-blocker">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-red-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h1 class="text-4xl font-black text-red-500 mb-4 uppercase tracking-wider">Acesso Bloqueado</h1>
+        <h2 id="version-blocker-title" class="text-2xl font-bold mb-4 text-gray-200">Você está usando uma versão obsoleta ou não oficial.</h2>
+        <p id="version-blocker-desc" class="mb-8 text-gray-400 max-w-lg text-lg">Para garantir que os dados não sejam perdidos e sejam salvos no servidor oficial, é necessário acessar o sistema pelo link correto da fábrica.</p>
+        <button onclick="window.location.reload(true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-transform hover:scale-105 uppercase tracking-wide">
+            Recarregar Sistema Oficial
+        </button>
+    </div>
+
+    <!-- Navegação Superior -->
+    <div class="max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
+        <!-- Botões de Fornos - FORNO 1 OCULTO -->
+        <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1" style="display:none;">Forno 1</button>
+        <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
+        <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
+        <button onclick="window.setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
+        <button onclick="window.setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
+        <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
+        <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
+        
+        <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2">
+            <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" title="Dia Anterior">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <div class="flex flex-col items-center min-w-[100px]">
+                <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
+                <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
+            </div>
+            <button onclick="window.changeDate(1)" class="btn-nav-date p-1" title="Próximo Dia">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </button>
+            <button onclick="window.blinkRefresh()" class="btn-force-reload" title="Forçar atualização dos dados">
+                Carregar Dados
+            </button>
+        </div>
+
+        <div id="save-status" class="text-[0.65rem] font-bold text-gray-400 ml-4 flex items-center gap-1 min-w-[120px]">
+            <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span>
+            <span id="save-text">Nuvem Sincronizada</span>
+        </div>
+        
+        <div id="loading-indicator">
+            <div class="spinner"></div> Carregando...
+        </div>
+        <div class="flex-grow"></div>
+        <button onclick="window.setViewMode('grid')" class="btn-general px-4 py-2 font-bold uppercase text-xs shadow-sm flex items-center gap-2 whitespace-nowrap mr-2" id="btn-GERAL">GERAL</button>
+        <button onclick="window.openPasswordModal()" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2" id="btn-CONFIG" title="Configurações">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        </button>
+    </div>
+
+    <div id="password-modal">
+        <div class="pwd-content">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Acesso Restrito</h3>
+            <p class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
+            <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
+            <div class="flex justify-between gap-2">
+                <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
+                <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
+            </div>
+            <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
+        </div>
+    </div>
+
+    <div id="defect-lookup-panel">
+        <div class="lookup-header">
+            <h3 class="font-bold text-gray-800 text-sm" id="lookup-title">Lista de Defeitos</h3>
+            <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
+        </div>
+        <div class="lookup-content">
+            <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar código ou nome..." oninput="window.renderDefectLookup()">
+            <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
+                <span class="w-12 text-center border-r">Cód</span>
+                <span class="pl-2">Descrição</span>
+            </div>
+            <div id="defect-lookup-list" class="lookup-list"></div>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-7xl mx-auto"></div>
+    <datalist id="ref-suggestions"></datalist>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- SISTEMA DE CONTROLE DE VERSÃO ---
+        const APP_VERSION = 3.2;
+
+        const githubFirebaseConfig = {
+            apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
+            authDomain: "quadro-da-qualidade.firebaseapp.com",
+            databaseURL: "https://quadro-da-qualidade-default-rtdb.firebaseio.com",
+            projectId: "quadro-da-qualidade",
+            storageBucket: "quadro-da-qualidade.firebasestorage.app",
+            messagingSenderId: "736566707005",
+            appId: "1:736566707005:web:f33e4450ea82e375b07b54",
+            measurementId: "G-JYGSP8BQW8"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : githubFirebaseConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let app, auth, db;
+        try {
+            if (firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) { console.error("Erro Firebase:", e); }
+
+        const defaultOvenDefects = {
+            "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
+            "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte",
+            "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral",
+            "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta",
+            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada",
+            "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu",
+            "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu",
+            "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta",
+            "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa",
+            "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem",
+            "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
+        };
+        
+        const defaultGrinderDefects = {
+            "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu",
+            "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha",
+            "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
+            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte",
+            "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", "64": "Pingo d'água",
+            "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu",
+            "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", "99": "Outros", "111": "Reprensado",
+            "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador",
+            "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno",
+            "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica"
+        };
+
+        let ovenDefectMap = { ...defaultOvenDefects };
+        let grinderDefectMap = { ...defaultGrinderDefects };
+        let configDefectMode = 'ovens';
+
+        try {
+            const savedOven = localStorage.getItem('cco_defect_map');
+            if(savedOven) ovenDefectMap = JSON.parse(savedOven);
+            const savedGrinder = localStorage.getItem('cco_grinder_defect_map');
+            if(savedGrinder) grinderDefectMap = JSON.parse(savedGrinder);
+        } catch(e) { }
+
+        const getDefectMapForOven = (ovenName) => {
+            if (ovenName && ovenName.includes('RETÍFICA')) return grinderDefectMap;
+            return ovenDefectMap;
+        };
+
+        const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
+        
+        const scheduleOvens = [
+            { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, 
+            { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" },
+            { time: "05:30", shift: "TA" }, { time: "07:30", shift: "TA" }, 
+            { time: "09:30", shift: "TA" }, { time: "11:30", shift: "TA" },
+            { time: "13:30", shift: "TB" }, { time: "15:30", shift: "TB" }, 
+            { time: "17:30", shift: "TB" }, { time: "19:30", shift: "TB" }
+        ];
+
+        const scheduleGrinders = [
+            { time: "23:00", shift: "TC" }, { time: "01:00", shift: "TC" },
+            { time: "03:00", shift: "TC" }, { time: "05:00", shift: "TC" },
+            { time: "07:00", shift: "TA" }, { time: "09:00", shift: "TA" },
+            { time: "11:00", shift: "TA" }, { time: "13:00", shift: "TA" },
+            { time: "15:00", shift: "TB" }, { time: "17:00", shift: "TB" },
+            { time: "19:00", shift: "TB" }, { time: "21:00", shift: "TB" }
+        ];
+
+        let currentOven = 'FORNO 2';
+        let viewMode = 'single';
+        let selectedDate = new Date();
+        let lastKnownDay = new Date().getDate();
+        let unsubscribeRealtime = null;
+
+        // ESTRUTURA GLOBAL DE CONFIGURAÇÃO (Salva no Firebase settings/global)
+        let globalConfig = {
+            ovens: { quality: 97.0, breakage: 1.2 },
+            grinders: { quality: 97.0, breakage: 1.2 },
+            minVersion: APP_VERSION // Inicia com a versão atual no primeiro setup
+        };
+
+        const saveTimeouts = {};
+        const ovenDataStore = {};
+
+        // --- FETCH GLOBAL CONFIG ---
+        const loadGlobalConfig = async () => {
+            if(!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    globalConfig = docSnap.data();
+                    console.log("Configurações globais carregadas:", globalConfig);
+                    
+                    // TRAVA DE VERSÃO DA NUVEM
+                    if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
+                        document.getElementById('version-blocker-title').innerText = "Atualização Necessária";
+                        document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas o sistema exige a versão ${globalConfig.minVersion} ou superior para evitar corrupção de dados.`;
+                        document.getElementById('version-blocker').style.display = 'flex';
+                        return; // Impede que o resto carregue se estiver obsoleto
+                    }
+
+                } else {
+                    // Se não existe, cria com padrão
+                    await setDoc(docRef, globalConfig);
+                }
+            } catch(e) { console.error("Erro carregando config:", e); }
+        };
+
+        const saveGlobalConfigFirebase = async () => {
+            if(!db) return;
+            try {
+                // Ao salvar, mantém a versão mínima atual no banco para travar os navegadores velhos
+                globalConfig.minVersion = APP_VERSION;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+                await setDoc(docRef, globalConfig);
+            } catch(e) { console.error("Erro salvando config:", e); alert("Erro ao salvar."); }
+        };
+
+        const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
+
+        const resetStore = () => {
+            ovenList.forEach(ov => {
+                ovenDataStore[ov] = { 
+                    linha: '', 
+                    targets: null, 
+                    rows: Array(12).fill(null).map(() => ({ 
+                        ref: '', turno: '', vol: '', qHora: '', 
+                        defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
+                        quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
+                    })),
+                    closing: [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ]
+                };
+            });
+        };
+
+        const getDateKey = (date) => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+
+        const updateDateUI = () => {
+            const d = selectedDate.getDate().toString().padStart(2, '0');
+            const m = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+            const y = selectedDate.getFullYear();
+            document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
+        };
+
+        // --- LÓGICA DE INDICADOR VISUAL DE SALVAMENTO ---
+        const setSaveStatus = (status) => {
+            const dot = document.getElementById('save-dot');
+            const text = document.getElementById('save-text');
+            if(!dot || !text) return;
+            if(status === 'saving') {
+                dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+                text.innerText = "Salvando...";
+                text.className = "text-yellow-600";
+            } else if(status === 'saved') {
+                dot.className = "w-2 h-2 rounded-full bg-green-500";
+                text.innerText = "Salvo na Nuvem";
+                text.className = "text-green-600";
+                setTimeout(() => {
+                    dot.className = "w-2 h-2 rounded-full bg-gray-400";
+                    text.innerText = "Nuvem Sincronizada";
+                    text.className = "text-gray-400";
+                }, 3000);
+            } else if(status === 'error') {
+                dot.className = "w-2 h-2 rounded-full bg-red-600";
+                text.innerText = "Erro ao Salvar";
+                text.className = "text-red-600";
+            }
+        };
+
+        // --- LÓGICA DE SALVAMENTO COM METAS ---
+        const saveToFirebase = (ovenId) => {
+            if (!db || !ovenDataStore[ovenId]) return;
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
+            
+            setSaveStatus('saving');
+
+            // SE O REGISTRO AINDA NÃO TEM METAS DEFINIDAS (É NOVO), INJETA AS GLOBAIS ATUAIS
+            if (!ovenDataStore[ovenId].targets) {
+                const type = ovenId.includes('RETÍFICA') ? 'grinders' : 'ovens';
+                ovenDataStore[ovenId].targets = { ...globalConfig[type] };
+            }
+
+            const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
+            const targetDateKey = getDateKey(selectedDate);
+            
+            saveTimeouts[ovenId] = setTimeout(async () => {
+                try {
+                    const docId = `${ovenId}_${targetDateKey}`;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                    await setDoc(docRef, dataToSave);
+                    setSaveStatus('saved');
+                } catch (e) { 
+                    console.error("Save error:", e); 
+                    setSaveStatus('error');
+                }
+            }, 1000);
+        };
+
+        const toggleLoading = (show) => {
+            const el = document.getElementById('loading-indicator');
+            if(el) el.style.display = show ? 'flex' : 'none';
+        };
+
+        const setupRealtimeListener = () => {
+            if (unsubscribeRealtime) unsubscribeRealtime();
+            if (!db) return;
+            
+            toggleLoading(true);
+            const dateKey = getDateKey(selectedDate);
+            const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+            
+            unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
+                let hasData = false;
+                snapshot.forEach((doc) => {
+                    if (doc.id.includes(dateKey)) {
+                        const ovenName = doc.id.replace(`_${dateKey}`, '');
+                        if (ovenList.includes(ovenName)) {
+                            let data = doc.data();
+                            data.rows.forEach(r => {
+                                if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                                if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                            });
+                            if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
+                            if (!data.targets) data.targets = null;
+
+                            ovenDataStore[ovenName] = data;
+                            hasData = true;
+                        }
+                    }
+                });
+                if(!hasData) resetStore(); 
+                renderContent();
+                toggleLoading(false);
+            }, (error) => {
+                console.error("Erro na busca de dados:", error);
+                toggleLoading(false); 
+            });
+        };
+
+        window.blinkRefresh = async () => {
+            toggleLoading(true);
+            const originalDate = new Date(selectedDate);
+            selectedDate.setDate(selectedDate.getDate() - 1);
+            updateDateUI();
+            resetStore();
+            renderContent();
+            await new Promise(r => setTimeout(r, 50));
+            selectedDate = originalDate;
+            updateDateUI();
+            resetStore();
+            renderContent();
+            setupRealtimeListener();
+            toggleLoading(false);
+        };
+
+        window.triggerMultiRefresh = () => {
+            window.blinkRefresh();
+            setTimeout(() => window.blinkRefresh(), 1000);
+        };
+
+        window.setViewMode = (mode, oven = null) => {
+            viewMode = mode;
+            if (oven) currentOven = oven;
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('btn-GERAL')?.classList.remove('bg-blue-600');
+            document.getElementById('btn-CONFIG')?.classList.remove('active');
+
+            if (mode === 'grid') document.getElementById('btn-GERAL')?.classList.add('bg-blue-600');
+            else if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active');
+            else {
+                document.getElementById(`btn-${currentOven}`)?.classList.add('active');
+                setTimeout(() => window.triggerMultiRefresh(), 50);
+            }
+            renderContent();
+        };
+
+        window.changeDate = (offset) => {
+            selectedDate.setDate(selectedDate.getDate() + offset);
+            updateDateUI();
+            resetStore();
+            renderContent(); 
+            if (db) setupRealtimeListener();
+        };
+
+        window.syncData = (oven, row, field, val) => {
+            if (field === 'ref') {
+                const elementId = `input-${oven.replace(/\s+/g, '-')}-${row}-ref`;
+                const el = document.getElementById(elementId);
+                
+                if (oven.includes('RETÍFICA')) {
+                    if (val.trim().toUpperCase() === 'X') {
+                        val = "EQUIPAMENTO PARADO";
+                        if(el) { el.value = val; el.classList.add('text-stop-alert'); }
+                    } else if (val === "EQUIPAMENTO PARADO") {
+                        if(el) el.classList.add('text-stop-alert');
+                    } else {
+                        if(el) el.classList.remove('text-stop-alert');
+                    }
+                } else {
+                    if (val.trim().toLowerCase() === 'x') {
+                        val = "❌FORNO PARADO⚠️";
+                        if(el) el.value = val;
+                    }
+                    if (val === "❌FORNO PARADO⚠️") {
+                        if(el) el.classList.add('text-red-600', 'font-black');
+                    } else {
+                        if(el) el.classList.remove('text-red-600', 'font-black');
+                    }
+                }
+            }
+            ovenDataStore[oven].rows[row][field] = val;
+            saveToFirebase(oven);
+        };
+
+        window.syncClosing = (oven, index, field, val) => {
+            ovenDataStore[oven].closing[index][field] = val;
+            saveToFirebase(oven);
+        };
+
+        window.syncLinha = (oven, val) => {
+            ovenDataStore[oven].linha = val;
+            saveToFirebase(oven);
+        };
+
+        window.updateSubStruct = (oven, row, type, index, field, val) => {
+            if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
+            ovenDataStore[oven].rows[row][type][index][field] = val;
+            
+            if (field === 'cod') {
+                const currentMap = getDefectMapForOven(oven);
+                const desc = currentMap[val] || (val ? "Desconhecido" : "");
+                ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
+                const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`);
+                if(descInput) {
+                    descInput.value = desc;
+                    if (val === '99') {
+                        descInput.removeAttribute('readonly');
+                        descInput.classList.remove('bg-gray-50', 'text-gray-500');
+                        descInput.classList.add('input-desc-editable');
+                        descInput.focus();
+                    } else {
+                        descInput.setAttribute('readonly', true);
+                        descInput.classList.add('bg-gray-50', 'text-gray-500');
+                        descInput.classList.remove('input-desc-editable');
+                    }
+                }
+            }
+            saveToFirebase(oven);
+            if (type === 'quebras') window.runQuebra(oven, row);
+        };
+
+        window.attachCalculations = (oven) => {
+            window.runCalcs(oven);
+            for(let i=0; i<12; i++) window.runQuebra(oven, i);
+        };
+
+        window.runCalcs = (oven) => {
+            const safeOven = oven.replace(/\s+/g, '-');
+            let targetQ = 97.0; 
+            if (ovenDataStore[oven] && ovenDataStore[oven].targets) {
+                targetQ = ovenDataStore[oven].targets.quality;
+            } else {
+                const type = oven.includes('RETÍFICA') ? 'grinders' : 'ovens';
+                targetQ = globalConfig[type].quality;
+            }
+
+            let weightedScoreSum = 0; 
+            let previousVolume = 0;   
+            for (let i = 0; i < 12; i++) {
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
+                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
+                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+                if (!hInput || !aInput || !volInput) continue;
+
+                const hVal = parseFloat(hInput.value.replace(',', '.'));
+                const volVal = parseFloat(volInput.value.replace('.', '').replace(',', '.'));
+
+                if (!isNaN(hVal)) hInput.className = hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low";
+                else hInput.className = "input-quali-hora nav-input";
+
+                if (!isNaN(volVal) && !isNaN(hVal)) {
+                    let deltaVol = volVal - previousVolume;
+                    weightedScoreSum += deltaVol * hVal;
+                    if (volVal > 0) {
+                        const avg = weightedScoreSum / volVal;
+                        aInput.value = avg.toFixed(1).replace('.', ',');
+                        aInput.className = avg >= targetQ ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                    }
+                    previousVolume = volVal;
+                } else if (!isNaN(volVal)) previousVolume = volVal;
+            }
+        };
+
+        window.runQuebra = (oven, row) => {
+            let targetB = 1.2;
+            if (ovenDataStore[oven] && ovenDataStore[oven].targets) {
+                targetB = ovenDataStore[oven].targets.breakage;
+            } else {
+                const type = oven.includes('RETÍFICA') ? 'grinders' : 'ovens';
+                targetB = globalConfig[type].breakage;
+            }
+
+            const data = ovenDataStore[oven].rows[row].quebras;
+            let total = 0;
+            data.forEach(item => {
+                if (item && item.val) {
+                    const v = parseFloat(item.val.replace(',', '.'));
+                    if (!isNaN(v)) total += v;
+                }
+            });
+            const display = document.getElementById(`total-${oven}-${row}`);
+            if (display) {
+                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                display.className = `flex-grow flex items-center justify-center font-bold ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`;
+            }
+        };
+
+        window.sugerirReferencia = (input, oven) => {
+            const rowIndex = parseInt(input.closest('tr').dataset.row);
+            const refDatalist = document.getElementById('ref-suggestions');
+            if(!refDatalist) return;
+            refDatalist.innerHTML = '';
+            if (rowIndex > 0) {
+                const prev = ovenDataStore[oven].rows[rowIndex - 1].ref;
+                if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) {
+                    const opt = document.createElement('option'); opt.value = prev;
+                    refDatalist.appendChild(opt);
+                }
+            }
+        };
+
+        window.setConfigDefectMode = (mode) => {
+            configDefectMode = mode;
+            renderContent();
+        };
+
+        window.addDefect = () => {
+            const code = document.getElementById('new-defect-code').value.trim();
+            const desc = document.getElementById('new-defect-desc').value.trim();
+            if(code && desc) {
+                if (configDefectMode === 'ovens') {
+                    ovenDefectMap[code] = desc;
+                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
+                } else {
+                    grinderDefectMap[code] = desc;
+                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
+                }
+                document.getElementById('new-defect-code').value = '';
+                document.getElementById('new-defect-desc').value = '';
+                renderContent(); 
+            } else {
+                alert("Preencha código e descrição.");
+            }
+        };
+
+        window.deleteDefect = (code) => {
+            if(confirm(`Remover defeito código ${code}?`)) {
+                if (configDefectMode === 'ovens') {
+                    delete ovenDefectMap[code];
+                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
+                } else {
+                    delete grinderDefectMap[code];
+                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
+                }
+                renderContent();
+            }
+        };
+
+        window.updateDefectDesc = (code, newDesc) => {
+            if (configDefectMode === 'ovens') {
+                if(ovenDefectMap[code]) {
+                    ovenDefectMap[code] = newDesc;
+                    localStorage.setItem('cco_defect_map', JSON.stringify(ovenDefectMap));
+                }
+            } else {
+                if(grinderDefectMap[code]) {
+                    grinderDefectMap[code] = newDesc;
+                    localStorage.setItem('cco_grinder_defect_map', JSON.stringify(grinderDefectMap));
+                }
+            }
+        };
+        
+        window.toggleDefectList = () => {
+            const panel = document.getElementById('defect-lookup-panel');
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'flex';
+                document.getElementById('defect-search').value = '';
+                document.getElementById('defect-search').focus();
+                const title = document.getElementById('lookup-title');
+                if (title) title.innerText = currentOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)";
+                window.renderDefectLookup();
+            }
+        };
+
+        window.renderDefectLookup = () => {
+            const filter = document.getElementById('defect-search').value.toLowerCase();
+            const container = document.getElementById('defect-lookup-list');
+            const activeMap = getDefectMapForOven(currentOven);
+            const sortedDefects = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
+            
+            container.innerHTML = sortedDefects
+                .filter(([code, desc]) => code.includes(filter) || desc.toLowerCase().includes(filter))
+                .map(([code, desc]) => `
+                    <div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default">
+                        <span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${code}</span>
+                        <span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${desc}</span>
+                    </div>
+                `).join('');
+        };
+
+        window.openPasswordModal = () => {
+            document.getElementById('pwd-error').classList.add('hidden');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('password-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('admin-password').focus(), 100);
+        };
+        window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
+        window.submitPassword = () => {
+            if (document.getElementById('admin-password').value === "admin321") {
+                window.closePasswordModal();
+                window.setViewMode('config');
+            } else {
+                document.getElementById('pwd-error').classList.remove('hidden');
+            }
+        };
+        
+        window.saveConfig = () => {
+            const oQ = parseFloat(document.getElementById('config-quality-oven').value);
+            const oB = parseFloat(document.getElementById('config-breakage-oven').value);
+            const gQ = parseFloat(document.getElementById('config-quality-grinder').value);
+            const gB = parseFloat(document.getElementById('config-breakage-grinder').value);
+
+            if (!isNaN(oQ) && !isNaN(oB) && !isNaN(gQ) && !isNaN(gB)) {
+                globalConfig = {
+                    ovens: { quality: oQ, breakage: oB },
+                    grinders: { quality: gQ, breakage: gB },
+                    minVersion: APP_VERSION // Salva a versão atual como requisito mínimo
+                };
+                saveGlobalConfigFirebase();
+
+                ovenList.forEach(ov => {
+                    if (ovenDataStore[ov]) {
+                        const type = ov.includes('RETÍFICA') ? 'grinders' : 'ovens';
+                        ovenDataStore[ov].targets = { ...globalConfig[type] };
+                        saveToFirebase(ov);
+                    }
+                });
+
+                alert("Configurações salvas e aplicadas para o dia atual e dias futuros!");
+                window.setViewMode('single', currentOven || 'FORNO 2');
+                setTimeout(() => window.triggerMultiRefresh(), 150);
+            } else alert("Valores inválidos.");
+        };
+        window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
+
+        const generateDefectListHTML = () => {
+            const activeMap = configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap;
+            const sortedDefects = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
+            return sortedDefects.map(([code, desc]) => `
+                <div class="defect-item">
+                    <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
+                    <div class="flex-grow px-2">
+                        <input type="text" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
+                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                    </div>
+                    <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2" title="Remover">✕</button>
+                </div>
+            `).join('');
+        };
+
+        const generateConfigHTML = () => `
+            <div class="config-container">
+                <div class="config-header">
+                    <h2 class="text-2xl font-bold text-gray-800">Configurações do Sistema</h2>
+                    <p class="text-xs text-gray-500">Alterações aqui afetam o dia atual visualizado e todos os registros futuros.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Metas de Produção</h3>
+                    
+                    <div class="p-3 bg-blue-50 rounded mb-4 border border-blue-100">
+                        <h4 class="font-bold text-blue-800 mb-2">FORNOS (Std)</h4>
+                        <div class="mb-2"><label class="block text-xs font-bold text-gray-600">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-oven" class="w-full border bg-white border-gray-300 rounded p-1 text-center font-bold text-blue-600" value="${globalConfig.ovens.quality}"></div>
+                        <div><label class="block text-xs font-bold text-gray-600">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-oven" class="w-full border bg-white border-gray-300 rounded p-1 text-center font-bold text-red-600" value="${globalConfig.ovens.breakage}"></div>
+                    </div>
+
+                    <div class="p-3 bg-gray-100 rounded mb-4 border border-gray-200">
+                        <h4 class="font-bold text-gray-700 mb-2">RETÍFICAS (Std)</h4>
+                        <div class="mb-2"><label class="block text-xs font-bold text-gray-600">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-grinder" class="w-full border bg-white border-gray-300 rounded p-1 text-center font-bold text-blue-600" value="${globalConfig.grinders.quality}"></div>
+                        <div><label class="block text-xs font-bold text-gray-600">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-grinder" class="w-full border bg-white border-gray-300 rounded p-1 text-center font-bold text-red-600" value="${globalConfig.grinders.breakage}"></div>
+                    </div>
+
+                    <div class="flex flex-col gap-3 mt-8">
+                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full">Salvar Metas Globais</button>
+                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full">Cancelar</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                    <div class="flex justify-center gap-4 mb-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="defect-mode" ${configDefectMode === 'ovens' ? 'checked' : ''} onchange="window.setConfigDefectMode('ovens')">
+                            <span class="font-bold text-sm text-gray-700">Fornos</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="defect-mode" ${configDefectMode === 'grinders' ? 'checked' : ''} onchange="window.setConfigDefectMode('grinders')">
+                            <span class="font-bold text-sm text-gray-700">Retíficas</span>
+                        </label>
+                    </div>
+                    <div class="flex gap-2 mb-2 bg-blue-50 p-2 rounded border border-blue-100">
+                        <input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center text-sm font-bold bg-white">
+                        <input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm bg-white">
+                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm">+</button>
+                    </div>
+                    <div class="flex text-xs font-bold text-gray-500 px-2 mb-1">
+                        <span class="w-16 text-center">Cód</span>
+                        <span class="flex-grow">Descrição (${configDefectMode === 'ovens' ? 'Fornos' : 'Retíficas'})</span>
+                        <span class="w-6"></span>
+                    </div>
+                    <div class="defect-list-container">${generateDefectListHTML()}</div>
+                </div>
+            </div>`;
+
+        const generateSubColumnHTML = (oven, row, type, dataArray) => {
+            return dataArray.map((item, i) => `
+                <div class="sub-row">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod" placeholder="Cd" 
+                        value="${item.cod || ''}" 
+                        oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="${item.cod === '99' ? 'input-desc input-desc-editable' : 'input-desc'}" ${item.cod === '99' ? '' : 'readonly'}
+                        value="${item.desc || ''}" tabindex="-1" 
+                        oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
+                    <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val" placeholder="%" inputmode="decimal"
+                        value="${item.val || ''}" 
+                        oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
+                </div>
+            `).join('');
+        };
+
+        const generateClosingRow = (ovenName, closingIndex, data) => {
+            const closingData = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
+            const safeOven = ovenName.replace(/\s+/g, '-');
+            return `
+            <tr class="bg-gray-dark-custom h-8 border-t border-b border-black">
+                <td colspan="6" class="font-bold text-sm text-center align-middle border-r border-black">Fechamento do Turno</td>
+                <td class="border-r border-black p-0">
+                    <div class="flex justify-between items-center px-2 h-full">
+                        <span class="text-[0.65rem] font-bold whitespace-nowrap mr-1">Volume Produção</span>
+                        <div class="flex items-center bg-white/50 rounded px-1">
+                            <input type="text" id="closing-${safeOven}-${closingIndex}-prod" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent" value="${closingData.prod || ''}" oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)">
+                            <span class="text-[0.6rem] font-bold ml-1">m²</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="p-0">
+                    <div class="flex justify-between items-center px-2 h-full">
+                        <span class="text-[0.65rem] font-bold whitespace-nowrap mr-1">Volume Quebra</span>
+                        <div class="flex items-center bg-white/50 rounded px-1">
+                            <input type="text" id="closing-${safeOven}-${closingIndex}-quebra" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent" value="${closingData.quebra || ''}" oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)">
+                            <span class="text-[0.6rem] font-bold ml-1">m²</span>
+                        </div>
+                    </div>
+                </td>
+            </tr>`;
+        };
+
+        const generateOvenHTML = (ovenName, isMini = false) => {
+            const data = ovenDataStore[ovenName];
+            const headerSize = isMini ? 'text-xs py-1' : 'text-xl py-2';
+            const tableFontSize = isMini ? 'text-[0.6rem]' : 'text-xs';
+            const safeOven = ovenName.replace(/\s+/g, '-');
+            let rowsHTML = '';
+            const currentSchedule = (ovenName.includes('RETÍFICA')) ? scheduleGrinders : scheduleOvens;
+
+            currentSchedule.forEach((item, index) => {
+                const rowData = data.rows[index];
+                const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
+                let refClasses = "nav-input ref-input";
+                if (ovenName.includes('RETÍFICA')) {
+                    if (rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert";
+                } else {
+                    if (rowData.ref === "❌FORNO PARADO⚠️") refClasses += " text-red-600 font-black";
+                }
+                const refInputStyle = isMini ? "text-[0.55rem] min-w-[120px]" : "";
+
+                rowsHTML += `
+                    <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
+                        <td class="font-bold border-black ${isMini ? 'text-[0.7rem]' : 'text-sm'} p-0">${item.time}<span class="shift-stamp">${item.shift}</span></td>
+                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses} ${refInputStyle}" list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
+                        <td class="border-black">
+                            <select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)">
+                                <option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option>
+                                <option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option>
+                                <option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option>
+                                <option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option>
+                                <option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option>
+                                <option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option>
+                                <option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option>
+                            </select>
+                        </td>
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" data-oven="${ovenName}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" data-oven="${ovenName}" readonly placeholder="0.00"></td>
+                        <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects)}</div></td>
+                        <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold ${isMini ? 'text-[0.6rem]' : 'text-xs'}" id="total-${ovenName}-${index}">0,00</div></div></div></td>
+                    </tr>
+                `;
+                if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data);
+            });
+
+            return `
+                <div class="border-b border-black text-center ${headerSize} font-bold uppercase bg-gray-50">Acompanhamento - ${ovenName}</div>
+                <div class="flex border-b border-black font-bold uppercase text-[0.6rem] bg-white">
+                    <div class="w-1/2 border-r border-black p-1 flex justify-center items-center">${ovenName}</div>
+                    <div class="w-1/2 p-1 flex justify-center items-center gap-1">
+                        <span>Linha:</span>
+                        <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600">
+                            <option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option>
+                        </select>
+                    </div>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="header-blue font-bold ${tableFontSize} leading-tight bg-gray-50">
+                            <th class="w-14">Hora</th><th class="w-48">Referência</th><th class="w-12">Turno</th><th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
+                            <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
+                            <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList()" title="Lista de Defeitos">🔍</div></div></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHTML}</tbody>
+                </table>
+            `;
+        };
+        
+        const renderContent = () => {
+            const activeElement = document.activeElement;
+            let focusedId = null;
+            let cursorStart = null, cursorEnd = null;
+            if (activeElement && activeElement.tagName === 'INPUT') {
+                focusedId = activeElement.id;
+                try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){}
+            }
+
+            const mainContent = document.getElementById('main-content');
+            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML();
+            else if (viewMode === 'grid') {
+                mainContent.className = "grid-view-container";
+                mainContent.innerHTML = ovenList.filter(o => o!=='FORNO 1').map(o => `<div class="oven-card p-1 rounded">${generateOvenHTML(o, true)}</div>`).join('');
+                ovenList.filter(o => o!=='FORNO 1').forEach(o => window.attachCalculations(o));
+            } else {
+                mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
+                mainContent.innerHTML = generateOvenHTML(currentOven);
+                window.attachCalculations(currentOven);
+            }
+
+            if (focusedId) {
+                const el = document.getElementById(focusedId);
+                if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} }
+            }
+        };
+
+        const init = async () => {
+
+            // TRAVA 1: VERIFICA SE ESTÁ RODANDO COMO ARQUIVO LOCAL (file://)
+            if (window.location.protocol === 'file:') {
+                document.getElementById('version-blocker-title').innerText = "Execução Local Bloqueada";
+                document.getElementById('version-blocker-desc').innerText = "O sistema não pode ser executado a partir de um arquivo salvo no seu computador. Por favor, feche este arquivo e acesse o link oficial pelo navegador.";
+                document.getElementById('version-blocker').style.display = 'flex';
+                return; // Paralisa completamente o sistema aqui.
+            }
+
+            resetStore();
+            updateDateUI();
+            renderContent();
+            
+            setInterval(() => {
+                const now = new Date();
+                const currentDay = now.getDate();
+                if (currentDay !== lastKnownDay) {
+                    lastKnownDay = currentDay;
+                    selectedDate = now;
+                    window.blinkRefresh();
+                }
+            }, 60000);
+
+            if(auth) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                    else await signInAnonymously(auth);
+                } catch (e) {}
+                
+                onAuthStateChanged(auth, async user => { 
+                    if(user) {
+                        await loadGlobalConfig();
+                        window.triggerMultiRefresh();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return;
+                    e.preventDefault();
+                    
+                    const el = document.activeElement;
+                    if (!el) return;
+                    const tagName = el.tagName;
+                    if (tagName !== 'INPUT' && tagName !== 'SELECT') return;
+
+                    const id = el.id;
+                    const subMatch = id.match(/input-(.+)-(\d+)-(defects|quebras)-(\d+)-(cod|val|desc)/);
+                    if (subMatch) {
+                        const [_, oven, rowStr, type, idxStr, field] = subMatch;
+                        const row = parseInt(rowStr);
+                        const idx = parseInt(idxStr);
+                        
+                        if (field === 'cod') {
+                            const descInput = document.getElementById(`input-${oven}-${row}-${type}-${idx}-desc`);
+                            if (descInput && !descInput.hasAttribute('readonly')) descInput.focus();
+                            else document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
+                        } else if (field === 'desc') {
+                             document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
+                        } else if (field === 'val') {
+                            if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus();
+                            else {
+                                if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus();
+                                else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus();
+                            }
+                        }
+                        return;
+                    }
+                    const inputs = Array.from(document.querySelectorAll('input, select'));
+                    const currentIdx = inputs.indexOf(el);
+                    if (currentIdx >= 0 && currentIdx < inputs.length - 1) inputs[currentIdx + 1].focus();
+                }
+            });
+        };
+
+        init();
+    </script>
+</body>
+</html>
