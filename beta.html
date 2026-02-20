@@ -173,7 +173,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 3.3;
+        const APP_VERSION = 3.5;
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -298,7 +298,7 @@
             } catch(e) { console.error("Erro salvando config:", e); alert("Erro ao salvar."); }
         };
 
-        // NOVO: Carregar defeitos da Nuvem
+        // Carregar defeitos da Nuvem
         const loadDefectsFromFirebase = async () => {
             if(!db) return;
             try {
@@ -309,20 +309,24 @@
                     if (data.ovens) ovenDefectMap = data.ovens;
                     if (data.grinders) grinderDefectMap = data.grinders;
                 } else {
-                    // Se não houver arquivo na nuvem, cria ele com as listas padrões do sistema
                     await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
                 }
             } catch(e) { console.error("Erro carregando defeitos da nuvem:", e); }
         };
 
-        // NOVO: Salvar defeitos na Nuvem
+        // Salvar defeitos na Nuvem (Tempo Real, não usa o botão de metas)
         const saveDefectsToFirebase = async () => {
             if(!db) return;
+            setSaveStatus('saving');
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
                 await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
-                console.log("Defeitos salvos no Firebase.");
-            } catch(e) { console.error("Erro salvando defeitos:", e); alert("Erro ao sincronizar os defeitos com a nuvem."); }
+                setSaveStatus('saved');
+            } catch(e) { 
+                console.error("Erro salvando defeitos:", e); 
+                setSaveStatus('error');
+                alert(`Erro ao sincronizar os defeitos com a nuvem.\nDetalhe: ${e.message}`); 
+            }
         };
 
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
@@ -647,7 +651,7 @@
             renderContent();
         };
 
-        // --- INTEGRAÇÃO COM A NUVEM PARA EDIÇÃO DE DEFEITOS ---
+        // --- INTEGRAÇÃO COM A NUVEM PARA EDIÇÃO DE DEFEITOS EM TEMPO REAL ---
         window.addDefect = async () => {
             const code = document.getElementById('new-defect-code').value.trim();
             const desc = document.getElementById('new-defect-desc').value.trim();
@@ -657,7 +661,7 @@
                 } else {
                     grinderDefectMap[code] = desc;
                 }
-                await saveDefectsToFirebase();
+                await saveDefectsToFirebase(); // Salva silenciosamente e instantaneamente
                 document.getElementById('new-defect-code').value = '';
                 document.getElementById('new-defect-desc').value = '';
                 renderContent(); 
@@ -738,6 +742,7 @@
             }
         };
         
+        // --- BOTÃO DE SALVAR APENAS PARA METAS DE PRODUÇÃO ---
         window.saveConfig = () => {
             const oQ = parseFloat(document.getElementById('config-quality-oven').value);
             const oB = parseFloat(document.getElementById('config-breakage-oven').value);
@@ -752,19 +757,22 @@
                 };
                 saveGlobalConfigFirebase();
 
+                // CORREÇÃO DO BUG CRÍTICO DE PERDA DE DADOS:
+                // Atualiza APENAS a variável local (na memória da sua tela).
+                // NÃO executa o saveToFirebase() varrendo tudo para não sobrescrever o que já está salvo no banco.
                 ovenList.forEach(ov => {
                     if (ovenDataStore[ov]) {
                         const type = ov.includes('RETÍFICA') ? 'grinders' : 'ovens';
                         ovenDataStore[ov].targets = { ...globalConfig[type] };
-                        saveToFirebase(ov);
                     }
                 });
 
-                alert("Configurações salvas e aplicadas para o dia atual e dias futuros!");
+                alert("Novas Metas Globais cadastradas no servidor com sucesso!\nElas serão aplicadas nos próximos dados digitados.");
                 window.setViewMode('single', currentOven || 'FORNO 2');
                 setTimeout(() => window.triggerMultiRefresh(), 150);
-            } else alert("Valores inválidos.");
+            } else alert("Valores de metas inválidos.");
         };
+
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
 
         const generateDefectListHTML = () => {
@@ -775,7 +783,7 @@
                     <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
                     <div class="flex-grow px-2">
                         <input type="text" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
-                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)" title="Edite e clique fora para salvar automaticamente">
                     </div>
                     <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2" title="Remover">✕</button>
                 </div>
@@ -786,7 +794,7 @@
             <div class="config-container">
                 <div class="config-header">
                     <h2 class="text-2xl font-bold text-gray-800">Configurações do Sistema</h2>
-                    <p class="text-xs text-gray-500">Alterações aqui afetam o dia atual visualizado e todos os registros futuros.</p>
+                    <p class="text-xs text-gray-500">Alterações de Metas afetam apenas as cores e não excluem dados. Alterações de Defeitos são salvas automaticamente em Tempo Real.</p>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Metas de Produção</h3>
@@ -804,12 +812,15 @@
                     </div>
 
                     <div class="flex flex-col gap-3 mt-8">
-                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full">Salvar Metas Globais</button>
-                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full">Cancelar</button>
+                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full uppercase text-sm">Salvar Metas Globais</button>
+                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full uppercase text-sm">Voltar</button>
                     </div>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="text-lg font-bold text-gray-700">Cadastro de Defeitos</h3>
+                        <span class="text-[0.6rem] bg-green-100 text-green-800 font-bold px-2 py-1 rounded border border-green-300">✓ Salva Sozinho na Nuvem</span>
+                    </div>
                     <div class="flex justify-center gap-4 mb-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="defect-mode" ${configDefectMode === 'ovens' ? 'checked' : ''} onchange="window.setConfigDefectMode('ovens')">
@@ -823,7 +834,7 @@
                     <div class="flex gap-2 mb-2 bg-blue-50 p-2 rounded border border-blue-100">
                         <input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center text-sm font-bold bg-white">
                         <input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm bg-white">
-                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm">+</button>
+                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm" title="Adicionar">+</button>
                     </div>
                     <div class="flex text-xs font-bold text-gray-500 px-2 mb-1">
                         <span class="w-16 text-center">Cód</span>
