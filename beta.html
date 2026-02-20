@@ -684,13 +684,9 @@
 
         window.updateDefectDesc = async (code, newDesc) => {
             if (configDefectMode === 'ovens') {
-                if(ovenDefectMap[code]) {
-                    ovenDefectMap[code] = newDesc;
-                }
+                ovenDefectMap[code] = newDesc; // Removido o IF para não falhar caso você apague o nome acidentalmente
             } else {
-                if(grinderDefectMap[code]) {
-                    grinderDefectMap[code] = newDesc;
-                }
+                grinderDefectMap[code] = newDesc; // Removido o IF para não falhar caso você apague o nome acidentalmente
             }
             await saveDefectsToFirebase();
         };
