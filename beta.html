@@ -173,7 +173,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 3.5;
+        const APP_VERSION = 3.6;
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -197,7 +197,9 @@
             }
         } catch (e) { console.error("Erro Firebase:", e); }
 
-        const defaultOvenDefects = {
+        // SEMENTES DE DADOS (Seed) - Serão usadas APENAS caso o banco de dados seja acidentalmente apagado ou comece do zero.
+        // O sistema agora puxa e respeita 100% o que estiver salvo no Firebase.
+        const seedOvenDefects = {
             "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
             "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte",
             "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral",
@@ -211,7 +213,7 @@
             "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
         };
         
-        const defaultGrinderDefects = {
+        const seedGrinderDefects = {
             "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu",
             "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha",
             "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
@@ -224,8 +226,9 @@
             "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica"
         };
 
-        let ovenDefectMap = { ...defaultOvenDefects };
-        let grinderDefectMap = { ...defaultGrinderDefects };
+        // As variáveis ativas que rodarão na memória do app (agora iniciam vazias e são preenchidas pelo Firebase)
+        let ovenDefectMap = {};
+        let grinderDefectMap = {};
         let configDefectMode = 'ovens';
 
         const getDefectMapForOven = (ovenName) => {
@@ -258,6 +261,7 @@
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
         let unsubscribeRealtime = null;
+        let unsubscribeDefects = null; // Listener para sincronização de defeitos
 
         let globalConfig = {
             ovens: { quality: 97.0, breakage: 1.2 },
@@ -268,7 +272,7 @@
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // --- FETCH DE CONFIGURAÇÕES E DEFEITOS (FIREBASE) ---
+        // --- FETCH DE CONFIGURAÇÕES GLOBAIS ---
         const loadGlobalConfig = async () => {
             if(!db) return;
             try {
@@ -276,7 +280,6 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     globalConfig = docSnap.data();
-                    
                     if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
                         document.getElementById('version-blocker-title').innerText = "Atualização Necessária";
                         document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas o sistema exige a versão ${globalConfig.minVersion} ou superior para evitar corrupção de dados.`;
@@ -298,23 +301,31 @@
             } catch(e) { console.error("Erro salvando config:", e); alert("Erro ao salvar."); }
         };
 
-        // Carregar defeitos da Nuvem
-        const loadDefectsFromFirebase = async () => {
-            if(!db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
-                const docSnap = await getDoc(docRef);
+        // --- LISTENER TEMPO REAL PARA A LISTA DE DEFEITOS (V3.6) ---
+        const setupDefectsListener = () => {
+            if (!db) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
+            
+            // O onSnapshot mantem o aplicativo sempre atualizado com o que está na nuvem
+            unsubscribeDefects = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if (data.ovens) ovenDefectMap = data.ovens;
-                    if (data.grinders) grinderDefectMap = data.grinders;
+                    ovenDefectMap = data.ovens || {};
+                    grinderDefectMap = data.grinders || {};
+                    
+                    // Se estivermos na tela de config ou se a janelinha estiver aberta, atualizamos a tela para refletir as mudanças
+                    if (viewMode === 'config') renderContent();
+                    const panel = document.getElementById('defect-lookup-panel');
+                    if (panel && panel.style.display === 'flex') window.renderDefectLookup();
                 } else {
-                    await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
+                    // Se for a primeira vez na vida que o app roda e não existe o documento, semeia o banco de dados
+                    setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
                 }
-            } catch(e) { console.error("Erro carregando defeitos da nuvem:", e); }
+            }, (error) => {
+                console.error("Erro ao ouvir defeitos:", error);
+            });
         };
 
-        // Salvar defeitos na Nuvem (Tempo Real, não usa o botão de metas)
         const saveDefectsToFirebase = async () => {
             if(!db) return;
             setSaveStatus('saving');
@@ -360,7 +371,6 @@
             document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
         };
 
-        // --- LÓGICA DE INDICADOR VISUAL DE SALVAMENTO ---
         const setSaveStatus = (status) => {
             const dot = document.getElementById('save-dot');
             const text = document.getElementById('save-text');
@@ -385,7 +395,6 @@
             }
         };
 
-        // --- LÓGICA DE SALVAMENTO DE REGISTROS ---
         const saveToFirebase = (ovenId) => {
             if (!db || !ovenDataStore[ovenId]) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
@@ -651,7 +660,6 @@
             renderContent();
         };
 
-        // --- INTEGRAÇÃO COM A NUVEM PARA EDIÇÃO DE DEFEITOS EM TEMPO REAL ---
         window.addDefect = async () => {
             const code = document.getElementById('new-defect-code').value.trim();
             const desc = document.getElementById('new-defect-desc').value.trim();
@@ -661,10 +669,9 @@
                 } else {
                     grinderDefectMap[code] = desc;
                 }
-                await saveDefectsToFirebase(); // Salva silenciosamente e instantaneamente
+                await saveDefectsToFirebase();
                 document.getElementById('new-defect-code').value = '';
                 document.getElementById('new-defect-desc').value = '';
-                renderContent(); 
             } else {
                 alert("Preencha código e descrição.");
             }
@@ -678,19 +685,17 @@
                     delete grinderDefectMap[code];
                 }
                 await saveDefectsToFirebase();
-                renderContent();
             }
         };
 
         window.updateDefectDesc = async (code, newDesc) => {
             if (configDefectMode === 'ovens') {
-                ovenDefectMap[code] = newDesc; // Removido o IF para não falhar caso você apague o nome acidentalmente
+                ovenDefectMap[code] = newDesc; 
             } else {
-                grinderDefectMap[code] = newDesc; // Removido o IF para não falhar caso você apague o nome acidentalmente
+                grinderDefectMap[code] = newDesc;
             }
             await saveDefectsToFirebase();
         };
-        // --------------------------------------------------------
         
         window.toggleDefectList = () => {
             const panel = document.getElementById('defect-lookup-panel');
@@ -738,7 +743,6 @@
             }
         };
         
-        // --- BOTÃO DE SALVAR APENAS PARA METAS DE PRODUÇÃO ---
         window.saveConfig = () => {
             const oQ = parseFloat(document.getElementById('config-quality-oven').value);
             const oB = parseFloat(document.getElementById('config-breakage-oven').value);
@@ -749,13 +753,10 @@
                 globalConfig = {
                     ovens: { quality: oQ, breakage: oB },
                     grinders: { quality: gQ, breakage: gB },
-                    minVersion: APP_VERSION // Salva a versão atual como requisito mínimo
+                    minVersion: APP_VERSION
                 };
                 saveGlobalConfigFirebase();
 
-                // CORREÇÃO DO BUG CRÍTICO DE PERDA DE DADOS:
-                // Atualiza APENAS a variável local (na memória da sua tela).
-                // NÃO executa o saveToFirebase() varrendo tudo para não sobrescrever o que já está salvo no banco.
                 ovenList.forEach(ov => {
                     if (ovenDataStore[ov]) {
                         const type = ov.includes('RETÍFICA') ? 'grinders' : 'ovens';
@@ -778,7 +779,7 @@
                 <div class="defect-item">
                     <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
                     <div class="flex-grow px-2">
-                        <input type="text" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
+                        <input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
                             value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)" title="Edite e clique fora para salvar automaticamente">
                     </div>
                     <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2" title="Remover">✕</button>
@@ -1011,9 +1012,8 @@
                 
                 onAuthStateChanged(auth, async user => { 
                     if(user) {
-                        // O SISTEMA AGORA CARREGA CONFIGURAÇÕES GLOBAIS E DEFEITOS DIRETAMENTE DA NUVEM ANTES DE CARREGAR A TELA
                         await loadGlobalConfig();
-                        await loadDefectsFromFirebase();
+                        setupDefectsListener(); // <- NOVO: Escuta os defeitos em tempo real na nuvem
                         window.triggerMultiRefresh();
                     }
                 });
