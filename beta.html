@@ -172,10 +172,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Import do getDocs adicionado para permitir a busca cirúrgica de backups
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 3.7; // Versão de Blindagem e Backup
+        const APP_VERSION = 3.8; // Versão de Blindagem, Lista Viva e Restauração UI
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -226,9 +227,11 @@
             "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica"
         };
 
-        let ovenDefectMap = {};
-        let grinderDefectMap = {};
+        // CORREÇÃO: Variáveis já iniciam com a semente para NUNCA ficarem em branco, mesmo sem internet
+        let ovenDefectMap = { ...seedOvenDefects };
+        let grinderDefectMap = { ...seedGrinderDefects };
         let configDefectMode = 'ovens';
+        let lookupOven = 'FORNO 2'; // Variável nova para a Lupa não se perder no grid
 
         const getDefectMapForOven = (ovenName) => {
             if (ovenName && ovenName.includes('RETÍFICA')) return grinderDefectMap;
@@ -260,10 +263,10 @@
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
         
-        // VARIÁVEIS DE SEGURANÇA E GERENCIAMENTO DE ESTADO
-        let isDataLoaded = false; // TRAVA PRINCIPAL DE SEGURANÇA
-        let unsubscribeRealtimeList = []; // Lista de conexões cirúrgicas
+        let isDataLoaded = false; 
+        let unsubscribeRealtimeList = []; 
         let unsubscribeDefects = null; 
+        let availableBackups = []; // Guardará as opções de backup carregadas da nuvem
 
         let globalConfig = {
             ovens: { quality: 97.0, breakage: 1.2 },
@@ -274,17 +277,15 @@
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // --- SISTEMA DE BACKUP AUTOMÁTICO (COFRE) ---
+        // --- SISTEMA DE BACKUP E RESTAURAÇÃO (NOVO) ---
         window.runManualBackup = async () => {
             if (!db || !isDataLoaded) return;
             setSaveStatus('saving');
             const dateKey = getDateKey(selectedDate);
-            // Formata hora para o nome do arquivo (ex: 14h30)
             const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
             try {
                 for (const oven of ovenList) {
                     const data = ovenDataStore[oven];
-                    // Salva apenas se o forno tiver alguma movimentação (volume ou referência preenchidos)
                     if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
                         const backupDocId = `${oven}_${dateKey}_[${timestamp}]`;
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
@@ -299,10 +300,92 @@
             }
         };
 
-        // Backup Silencioso Automático a cada 1 Hora
         setInterval(() => {
             if(isDataLoaded && db) window.runManualBackup();
         }, 3600000);
+
+        window.searchBackups = async () => {
+            const oven = document.getElementById('backup-oven-select').value;
+            const date = document.getElementById('backup-date-select').value;
+            if (!db || !oven || !date) return;
+            
+            setSaveStatus('saving');
+            document.getElementById('save-text').innerText = "Buscando...";
+            
+            try {
+                const backupsRef = collection(db, 'artifacts', appId, 'public', 'data', 'backups');
+                const snapshot = await getDocs(backupsRef); // Puxa todos os backups criados
+                
+                availableBackups = [];
+                const searchPrefix = `${oven}_${date}`;
+                
+                snapshot.forEach(doc => {
+                    if (doc.id.startsWith(searchPrefix)) availableBackups.push({ id: doc.id, data: doc.data() });
+                });
+                
+                const container = document.getElementById('backup-results-container');
+                const select = document.getElementById('backup-file-select');
+                
+                if (availableBackups.length > 0) {
+                    // Ordena pela hora do mais recente para o mais antigo
+                    availableBackups.sort((a, b) => b.id.localeCompare(a.id));
+                    select.innerHTML = availableBackups.map((b, index) => {
+                        const timeMatch = b.id.match(/\[(.*?)\]/);
+                        const timeStr = timeMatch ? timeMatch[1] : 'Hora Desconhecida';
+                        return `<option value="${index}">Cópia salva às ${timeStr}</option>`;
+                    }).join('');
+                    
+                    container.style.display = 'block';
+                    setSaveStatus('saved');
+                    document.getElementById('save-text').innerText = `${availableBackups.length} cópias achadas`;
+                } else {
+                    container.style.display = 'none';
+                    alert(`Nenhum backup encontrado para ${oven} no dia ${date}.`);
+                    setSaveStatus('saved');
+                }
+            } catch (error) {
+                console.error("Erro ao buscar backups:", error);
+                setSaveStatus('error');
+            }
+        };
+
+        window.restoreBackup = async () => {
+            const select = document.getElementById('backup-file-select');
+            const selectedIndex = select.value;
+            if (selectedIndex === "" || !availableBackups[selectedIndex]) return;
+            
+            const backupToRestore = availableBackups[selectedIndex];
+            const oven = document.getElementById('backup-oven-select').value;
+            const date = document.getElementById('backup-date-select').value;
+            
+            if (confirm(`⚠️ ALERTA VERMELHO! ⚠️\n\nVocê está prestes a APAGAR e SUBSTITUIR todos os dados que estão hoje no ${oven} (Data: ${date}) pelos dados dessa cópia de segurança.\n\nTem certeza absoluta disso?`)) {
+                try {
+                    setSaveStatus('saving');
+                    const docId = `${oven}_${date}`; 
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                    
+                    // Substitui os dados "oficiais" da nuvem pela cópia de backup
+                    await setDoc(docRef, backupToRestore.data);
+                    
+                    alert("✅ Cópia de segurança restaurada com sucesso! O sistema será atualizado e carregará os dados antigos.");
+                    setSaveStatus('saved');
+                    
+                    // Muda a tela para o forno restaurado e a data restaurada para o usuário conferir na hora
+                    window.setViewMode('single', oven);
+                    const [y, m, d] = date.split('-');
+                    selectedDate = new Date(y, m - 1, d);
+                    updateDateUI();
+                    
+                    // Dispara a renovação total da memória da tela
+                    window.setupRealtimeListener(); 
+                    
+                } catch(error) {
+                    console.error("Erro ao restaurar", error);
+                    setSaveStatus('error');
+                    alert("Ocorreu um erro ao tentar restaurar os dados.");
+                }
+            }
+        };
 
         // --- FETCH DE CONFIGURAÇÕES GLOBAIS ---
         const loadGlobalConfig = async () => {
@@ -340,13 +423,15 @@
             unsubscribeDefects = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    ovenDefectMap = data.ovens || {};
-                    grinderDefectMap = data.grinders || {};
+                    // Atualiza a memória com o que veio da nuvem
+                    if(data.ovens) ovenDefectMap = data.ovens;
+                    if(data.grinders) grinderDefectMap = data.grinders;
                     
                     if (viewMode === 'config') renderContent();
                     const panel = document.getElementById('defect-lookup-panel');
                     if (panel && panel.style.display === 'flex') window.renderDefectLookup();
                 } else {
+                    // Semeia no banco caso seja a primeira execução na vida do sistema
                     setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
                 }
             }, (error) => {
@@ -423,7 +508,6 @@
         };
 
         const saveToFirebase = (ovenId) => {
-            // TRAVA DE SEGURANÇA: Se a memória principal ainda não recebeu o 'OK' do Firebase, ele PROÍBE O SALVAMENTO DE QUALQUER COISA PARA NÃO APAGAR A NUVEM.
             if (!db || !ovenDataStore[ovenId] || !isDataLoaded) return;
             
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
@@ -455,21 +539,18 @@
             if(el) el.style.display = show ? 'flex' : 'none';
         };
 
-        // --- SISTEMA DE BUSCA CIRÚRGICA (OTIMIZADO E BLINDADO V3.7) ---
         window.setupRealtimeListener = () => {
             if (!db) return;
             
-            // Limpa as conexões velhas
             unsubscribeRealtimeList.forEach(unsub => unsub());
             unsubscribeRealtimeList = [];
             
-            // Bloqueia a tela e prepara o carregamento
             isDataLoaded = false;
             renderContent(); 
             toggleLoading(true);
 
             const dateKey = getDateKey(selectedDate);
-            let loadedCount = 0; // Vai contar até os 7 equipamentos terminarem de carregar
+            let loadedCount = 0; 
 
             ovenList.forEach(ovenName => {
                 const docId = `${ovenName}_${dateKey}`;
@@ -478,7 +559,6 @@
                 const unsub = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         let data = docSnap.data();
-                        // Reestrutura arrays antigos para não dar erro
                         data.rows.forEach(r => {
                             if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
                             if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
@@ -488,18 +568,15 @@
 
                         ovenDataStore[ovenName] = data;
                     } else {
-                        // Se não existe na nuvem, aí sim criamos o esqueleto vazio NA MEMÓRIA
                         ovenDataStore[ovenName] = createEmptyOvenData();
                     }
 
-                    // Verifica se todos os 7 equipamentos já responderam
                     loadedCount++;
                     if (loadedCount >= ovenList.length) {
-                        isDataLoaded = true; // DESTRAVA A SEGURANÇA. AGORA PODE SALVAR.
+                        isDataLoaded = true;
                         toggleLoading(false);
                         renderContent();
                     } else if (isDataLoaded) {
-                        // Se os dados mudarem depois que já carregou a tela
                         renderContent();
                     }
                 }, (error) => {
@@ -516,7 +593,6 @@
             selectedDate.setDate(selectedDate.getDate() + offset);
             updateDateUI();
             resetStore();
-            // A própria função setupRealtimeListener agora cuida de travar a tela e renderizar.
             window.setupRealtimeListener(); 
         };
 
@@ -536,7 +612,7 @@
         };
 
         window.syncData = (oven, row, field, val) => {
-            if (!isDataLoaded) return; // Trava de Segurança Secundária
+            if (!isDataLoaded) return; 
             if (field === 'ref') {
                 const elementId = `input-${oven.replace(/\s+/g, '-')}-${row}-ref`;
                 const el = document.getElementById(elementId);
@@ -728,7 +804,9 @@
             await saveDefectsToFirebase();
         };
         
-        window.toggleDefectList = () => {
+        // CORREÇÃO: A Lupa agora sabe de qual equipamento o clique veio
+        window.toggleDefectList = (ovenName = currentOven) => {
+            lookupOven = ovenName; // Salva o nome do equipamento para puxar a lista correta
             const panel = document.getElementById('defect-lookup-panel');
             if (panel.style.display === 'flex') {
                 panel.style.display = 'none';
@@ -737,7 +815,7 @@
                 document.getElementById('defect-search').value = '';
                 document.getElementById('defect-search').focus();
                 const title = document.getElementById('lookup-title');
-                if (title) title.innerText = currentOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)";
+                if (title) title.innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)";
                 window.renderDefectLookup();
             }
         };
@@ -745,7 +823,7 @@
         window.renderDefectLookup = () => {
             const filter = document.getElementById('defect-search').value.toLowerCase();
             const container = document.getElementById('defect-lookup-list');
-            const activeMap = getDefectMapForOven(currentOven);
+            const activeMap = getDefectMapForOven(lookupOven); // Usa o equipamento selecionado na Lupa
             const sortedDefects = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
             
             container.innerHTML = sortedDefects
@@ -843,10 +921,28 @@
                         <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full uppercase text-sm">Voltar</button>
                     </div>
 
+                    <!-- NOVO: TELA DE RESTAURAÇÃO DE BACKUP -->
                     <div class="mt-8 p-3 bg-yellow-50 rounded border border-yellow-200">
-                        <h4 class="font-bold text-yellow-800 mb-2 text-sm uppercase">Recuperação e Segurança</h4>
-                        <p class="text-[0.65rem] text-yellow-700 mb-3 text-justify">O sistema cria backups automáticos de hora em hora. Para prevenir perda de dados em atualizações, você pode gerar uma cópia fotográfica exata das tabelas atuais na Nuvem.</p>
-                        <button onclick="window.runManualBackup()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all">Gerar Backup Manual Agora</button>
+                        <h4 class="font-bold text-yellow-800 mb-2 text-sm uppercase">Cofre de Segurança (Restaurar)</h4>
+                        <p class="text-[0.65rem] text-yellow-700 mb-3 text-justify">Selecione o equipamento e a data para buscar cópias automáticas ou manuais na Nuvem para recuperação imediata.</p>
+                        
+                        <div class="flex gap-2 mb-2">
+                            <select id="backup-oven-select" class="border border-yellow-300 p-1 text-xs rounded bg-white w-1/2 font-bold text-gray-700">
+                                ${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}
+                            </select>
+                            <input type="date" id="backup-date-select" class="border border-yellow-300 p-1 text-xs rounded bg-white w-1/2 font-bold text-gray-700" value="${getDateKey(selectedDate)}">
+                        </div>
+                        <button onclick="window.searchBackups()" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all mb-2">1. Localizar Cópias na Nuvem</button>
+                        
+                        <!-- Lista que aparece após a busca -->
+                        <div id="backup-results-container" style="display:none;" class="mt-4 border-t border-yellow-300 pt-3">
+                            <label class="block text-[0.65rem] font-bold text-yellow-800 mb-1">Selecione o Horário do Backup:</label>
+                            <select id="backup-file-select" class="border border-red-300 p-2 text-xs rounded bg-red-50 text-red-800 font-bold w-full mb-2 outline-none focus:ring-2 focus:ring-red-400">
+                            </select>
+                            <button onclick="window.restoreBackup()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">2. Restaurar Dados Selecionados</button>
+                        </div>
+                        
+                        <button onclick="window.runManualBackup()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded shadow text-[0.6rem] w-full uppercase transition-all mt-4">Gerar Backup Fotográfico Agora</button>
                     </div>
                 </div>
                 <div>
@@ -965,6 +1061,7 @@
                 if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data);
             });
 
+            // CORREÇÃO: Passando explicitamente o ovenName na lupa para puxar o defeito certo
             return `
                 <div class="border-b border-black text-center ${headerSize} font-bold uppercase bg-gray-50">Acompanhamento - ${ovenName}</div>
                 <div class="flex border-b border-black font-bold uppercase text-[0.6rem] bg-white">
@@ -981,7 +1078,7 @@
                         <tr class="header-blue font-bold ${tableFontSize} leading-tight bg-gray-50">
                             <th class="w-14">Hora</th><th class="w-48">Referência</th><th class="w-12">Turno</th><th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
                             <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
-                            <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList()" title="Lista de Defeitos">🔍</div></div></th>
+                            <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
                         </tr>
                     </thead>
                     <tbody>${rowsHTML}</tbody>
@@ -1000,13 +1097,12 @@
 
             const mainContent = document.getElementById('main-content');
             
-            // LOGICA DA TRAVA VISUAL DE SEGURANÇA
             if (!isDataLoaded) {
                 mainContent.style.opacity = '0.5';
-                mainContent.style.pointerEvents = 'none'; // IMPEDE CLIQUES ANTES DO CARREGAMENTO
+                mainContent.style.pointerEvents = 'none'; 
             } else {
                 mainContent.style.opacity = '1';
-                mainContent.style.pointerEvents = 'auto'; // LIBERA CLIQUES
+                mainContent.style.pointerEvents = 'auto'; 
             }
 
             if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML();
@@ -1039,14 +1135,13 @@
             updateDateUI();
             renderContent();
             
-            // Fica checando o relógio se virou meia-noite
             setInterval(() => {
                 const now = new Date();
                 const currentDay = now.getDate();
                 if (currentDay !== lastKnownDay) {
                     lastKnownDay = currentDay;
                     selectedDate = now;
-                    window.setupRealtimeListener(); // Recarrega os dados com a nova data e liga a trava de segurança
+                    window.setupRealtimeListener(); 
                 }
             }, 60000);
 
@@ -1065,7 +1160,6 @@
                 });
             }
 
-            // Gerenciador do Teclado (Avanço com ENTER)
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return;
