@@ -71,6 +71,7 @@
         .sh-cod { width: 30px; border-right: 1px solid #ccc; }
         .sh-desc { flex-grow: 1; border-right: 1px solid #ccc; }
         .sh-val { width: 40px; }
+        
         #loading-indicator { display: none; margin-left: 10px; font-size: 0.75rem; color: #2563eb; font-weight: bold; align-items: center; gap: 5px; }
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -116,7 +117,7 @@
             <button onclick="window.changeDate(1)" class="btn-nav-date p-1" title="Próximo Dia">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
             </button>
-            <button onclick="window.blinkRefresh()" class="btn-force-reload" title="Forçar atualização dos dados">
+            <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização dos dados">
                 Carregar Dados
             </button>
         </div>
@@ -164,16 +165,18 @@
         </div>
     </div>
 
-    <div id="main-content" class="max-w-7xl mx-auto"></div>
+    <!-- AREA BLINDADA DURANTE O CARREGAMENTO -->
+    <div id="main-content" class="max-w-7xl mx-auto transition-opacity duration-300"></div>
     <datalist id="ref-suggestions"></datalist>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Import do getDocs adicionado para permitir a busca cirúrgica de backups
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 3.3;
+        const APP_VERSION = 3.8; // Versão de Blindagem, Lista Viva e Restauração UI
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -197,7 +200,7 @@
             }
         } catch (e) { console.error("Erro Firebase:", e); }
 
-        const defaultOvenDefects = {
+        const seedOvenDefects = {
             "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
             "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte",
             "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral",
@@ -211,7 +214,7 @@
             "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
         };
         
-        const defaultGrinderDefects = {
+        const seedGrinderDefects = {
             "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu",
             "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha",
             "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
@@ -224,9 +227,11 @@
             "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica"
         };
 
-        let ovenDefectMap = { ...defaultOvenDefects };
-        let grinderDefectMap = { ...defaultGrinderDefects };
+        // CORREÇÃO: Variáveis já iniciam com a semente para NUNCA ficarem em branco, mesmo sem internet
+        let ovenDefectMap = { ...seedOvenDefects };
+        let grinderDefectMap = { ...seedGrinderDefects };
         let configDefectMode = 'ovens';
+        let lookupOven = 'FORNO 2'; // Variável nova para a Lupa não se perder no grid
 
         const getDefectMapForOven = (ovenName) => {
             if (ovenName && ovenName.includes('RETÍFICA')) return grinderDefectMap;
@@ -257,7 +262,11 @@
         let viewMode = 'single';
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
-        let unsubscribeRealtime = null;
+        
+        let isDataLoaded = false; 
+        let unsubscribeRealtimeList = []; 
+        let unsubscribeDefects = null; 
+        let availableBackups = []; // Guardará as opções de backup carregadas da nuvem
 
         let globalConfig = {
             ovens: { quality: 97.0, breakage: 1.2 },
@@ -268,7 +277,117 @@
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // --- FETCH DE CONFIGURAÇÕES E DEFEITOS (FIREBASE) ---
+        // --- SISTEMA DE BACKUP E RESTAURAÇÃO (NOVO) ---
+        window.runManualBackup = async () => {
+            if (!db || !isDataLoaded) return;
+            setSaveStatus('saving');
+            const dateKey = getDateKey(selectedDate);
+            const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+            try {
+                for (const oven of ovenList) {
+                    const data = ovenDataStore[oven];
+                    if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
+                        const backupDocId = `${oven}_${dateKey}_[${timestamp}]`;
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
+                        await setDoc(docRef, data);
+                    }
+                }
+                alert("Backup de segurança salvo com sucesso na Nuvem!");
+                setSaveStatus('saved');
+            } catch(e) {
+                console.error("Erro ao realizar backup", e);
+                setSaveStatus('error');
+            }
+        };
+
+        setInterval(() => {
+            if(isDataLoaded && db) window.runManualBackup();
+        }, 3600000);
+
+        window.searchBackups = async () => {
+            const oven = document.getElementById('backup-oven-select').value;
+            const date = document.getElementById('backup-date-select').value;
+            if (!db || !oven || !date) return;
+            
+            setSaveStatus('saving');
+            document.getElementById('save-text').innerText = "Buscando...";
+            
+            try {
+                const backupsRef = collection(db, 'artifacts', appId, 'public', 'data', 'backups');
+                const snapshot = await getDocs(backupsRef); // Puxa todos os backups criados
+                
+                availableBackups = [];
+                const searchPrefix = `${oven}_${date}`;
+                
+                snapshot.forEach(doc => {
+                    if (doc.id.startsWith(searchPrefix)) availableBackups.push({ id: doc.id, data: doc.data() });
+                });
+                
+                const container = document.getElementById('backup-results-container');
+                const select = document.getElementById('backup-file-select');
+                
+                if (availableBackups.length > 0) {
+                    // Ordena pela hora do mais recente para o mais antigo
+                    availableBackups.sort((a, b) => b.id.localeCompare(a.id));
+                    select.innerHTML = availableBackups.map((b, index) => {
+                        const timeMatch = b.id.match(/\[(.*?)\]/);
+                        const timeStr = timeMatch ? timeMatch[1] : 'Hora Desconhecida';
+                        return `<option value="${index}">Cópia salva às ${timeStr}</option>`;
+                    }).join('');
+                    
+                    container.style.display = 'block';
+                    setSaveStatus('saved');
+                    document.getElementById('save-text').innerText = `${availableBackups.length} cópias achadas`;
+                } else {
+                    container.style.display = 'none';
+                    alert(`Nenhum backup encontrado para ${oven} no dia ${date}.`);
+                    setSaveStatus('saved');
+                }
+            } catch (error) {
+                console.error("Erro ao buscar backups:", error);
+                setSaveStatus('error');
+            }
+        };
+
+        window.restoreBackup = async () => {
+            const select = document.getElementById('backup-file-select');
+            const selectedIndex = select.value;
+            if (selectedIndex === "" || !availableBackups[selectedIndex]) return;
+            
+            const backupToRestore = availableBackups[selectedIndex];
+            const oven = document.getElementById('backup-oven-select').value;
+            const date = document.getElementById('backup-date-select').value;
+            
+            if (confirm(`⚠️ ALERTA VERMELHO! ⚠️\n\nVocê está prestes a APAGAR e SUBSTITUIR todos os dados que estão hoje no ${oven} (Data: ${date}) pelos dados dessa cópia de segurança.\n\nTem certeza absoluta disso?`)) {
+                try {
+                    setSaveStatus('saving');
+                    const docId = `${oven}_${date}`; 
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                    
+                    // Substitui os dados "oficiais" da nuvem pela cópia de backup
+                    await setDoc(docRef, backupToRestore.data);
+                    
+                    alert("✅ Cópia de segurança restaurada com sucesso! O sistema será atualizado e carregará os dados antigos.");
+                    setSaveStatus('saved');
+                    
+                    // Muda a tela para o forno restaurado e a data restaurada para o usuário conferir na hora
+                    window.setViewMode('single', oven);
+                    const [y, m, d] = date.split('-');
+                    selectedDate = new Date(y, m - 1, d);
+                    updateDateUI();
+                    
+                    // Dispara a renovação total da memória da tela
+                    window.setupRealtimeListener(); 
+                    
+                } catch(error) {
+                    console.error("Erro ao restaurar", error);
+                    setSaveStatus('error');
+                    alert("Ocorreu um erro ao tentar restaurar os dados.");
+                }
+            }
+        };
+
+        // --- FETCH DE CONFIGURAÇÕES GLOBAIS ---
         const loadGlobalConfig = async () => {
             if(!db) return;
             try {
@@ -276,7 +395,6 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     globalConfig = docSnap.data();
-                    
                     if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
                         document.getElementById('version-blocker-title').innerText = "Atualização Necessária";
                         document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas o sistema exige a versão ${globalConfig.minVersion} ou superior para evitar corrupção de dados.`;
@@ -298,48 +416,57 @@
             } catch(e) { console.error("Erro salvando config:", e); alert("Erro ao salvar."); }
         };
 
-        // NOVO: Carregar defeitos da Nuvem
-        const loadDefectsFromFirebase = async () => {
-            if(!db) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
-                const docSnap = await getDoc(docRef);
+        const setupDefectsListener = () => {
+            if (!db) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
+            
+            unsubscribeDefects = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if (data.ovens) ovenDefectMap = data.ovens;
-                    if (data.grinders) grinderDefectMap = data.grinders;
+                    // Atualiza a memória com o que veio da nuvem
+                    if(data.ovens) ovenDefectMap = data.ovens;
+                    if(data.grinders) grinderDefectMap = data.grinders;
+                    
+                    if (viewMode === 'config') renderContent();
+                    const panel = document.getElementById('defect-lookup-panel');
+                    if (panel && panel.style.display === 'flex') window.renderDefectLookup();
                 } else {
-                    // Se não houver arquivo na nuvem, cria ele com as listas padrões do sistema
-                    await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
+                    // Semeia no banco caso seja a primeira execução na vida do sistema
+                    setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
                 }
-            } catch(e) { console.error("Erro carregando defeitos da nuvem:", e); }
+            }, (error) => {
+                console.error("Erro ao ouvir defeitos:", error);
+            });
         };
 
-        // NOVO: Salvar defeitos na Nuvem
         const saveDefectsToFirebase = async () => {
             if(!db) return;
+            setSaveStatus('saving');
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
                 await setDoc(docRef, { ovens: ovenDefectMap, grinders: grinderDefectMap });
-                console.log("Defeitos salvos no Firebase.");
-            } catch(e) { console.error("Erro salvando defeitos:", e); alert("Erro ao sincronizar os defeitos com a nuvem."); }
+                setSaveStatus('saved');
+            } catch(e) { 
+                console.error("Erro salvando defeitos:", e); 
+                setSaveStatus('error');
+            }
         };
 
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
 
+        const createEmptyOvenData = () => ({
+            linha: '', 
+            targets: null, 
+            rows: Array(12).fill(null).map(() => ({ 
+                ref: '', turno: '', vol: '', qHora: '', 
+                defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
+                quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
+            })),
+            closing: [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ]
+        });
+
         const resetStore = () => {
-            ovenList.forEach(ov => {
-                ovenDataStore[ov] = { 
-                    linha: '', 
-                    targets: null, 
-                    rows: Array(12).fill(null).map(() => ({ 
-                        ref: '', turno: '', vol: '', qHora: '', 
-                        defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
-                        quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
-                    })),
-                    closing: [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ]
-                };
-            });
+            ovenList.forEach(ov => { ovenDataStore[ov] = createEmptyOvenData(); });
         };
 
         const getDateKey = (date) => {
@@ -356,7 +483,6 @@
             document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
         };
 
-        // --- LÓGICA DE INDICADOR VISUAL DE SALVAMENTO ---
         const setSaveStatus = (status) => {
             const dot = document.getElementById('save-dot');
             const text = document.getElementById('save-text');
@@ -381,11 +507,10 @@
             }
         };
 
-        // --- LÓGICA DE SALVAMENTO DE REGISTROS ---
         const saveToFirebase = (ovenId) => {
-            if (!db || !ovenDataStore[ovenId]) return;
-            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
+            if (!db || !ovenDataStore[ovenId] || !isDataLoaded) return;
             
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
             setSaveStatus('saving');
 
             if (!ovenDataStore[ovenId].targets) {
@@ -414,61 +539,61 @@
             if(el) el.style.display = show ? 'flex' : 'none';
         };
 
-        const setupRealtimeListener = () => {
-            if (unsubscribeRealtime) unsubscribeRealtime();
+        window.setupRealtimeListener = () => {
             if (!db) return;
             
-            toggleLoading(true);
-            const dateKey = getDateKey(selectedDate);
-            const ovensCollection = collection(db, 'artifacts', appId, 'public', 'data', 'records');
+            unsubscribeRealtimeList.forEach(unsub => unsub());
+            unsubscribeRealtimeList = [];
             
-            unsubscribeRealtime = onSnapshot(ovensCollection, (snapshot) => {
-                let hasData = false;
-                snapshot.forEach((doc) => {
-                    if (doc.id.includes(dateKey)) {
-                        const ovenName = doc.id.replace(`_${dateKey}`, '');
-                        if (ovenList.includes(ovenName)) {
-                            let data = doc.data();
-                            data.rows.forEach(r => {
-                                if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
-                                if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
-                            });
-                            if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
-                            if (!data.targets) data.targets = null;
+            isDataLoaded = false;
+            renderContent(); 
+            toggleLoading(true);
 
-                            ovenDataStore[ovenName] = data;
-                            hasData = true;
-                        }
+            const dateKey = getDateKey(selectedDate);
+            let loadedCount = 0; 
+
+            ovenList.forEach(ovenName => {
+                const docId = `${ovenName}_${dateKey}`;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
+                
+                const unsub = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        let data = docSnap.data();
+                        data.rows.forEach(r => {
+                            if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                            if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
+                        });
+                        if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
+                        if (!data.targets) data.targets = null;
+
+                        ovenDataStore[ovenName] = data;
+                    } else {
+                        ovenDataStore[ovenName] = createEmptyOvenData();
                     }
+
+                    loadedCount++;
+                    if (loadedCount >= ovenList.length) {
+                        isDataLoaded = true;
+                        toggleLoading(false);
+                        renderContent();
+                    } else if (isDataLoaded) {
+                        renderContent();
+                    }
+                }, (error) => {
+                    console.error("Erro na conexão com Firebase:", error);
+                    loadedCount++;
+                    if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); }
                 });
-                if(!hasData) resetStore(); 
-                renderContent();
-                toggleLoading(false);
-            }, (error) => {
-                console.error("Erro na busca de dados:", error);
-                toggleLoading(false); 
+                
+                unsubscribeRealtimeList.push(unsub);
             });
         };
 
-        window.blinkRefresh = async () => {
-            toggleLoading(true);
-            const originalDate = new Date(selectedDate);
-            selectedDate.setDate(selectedDate.getDate() - 1);
+        window.changeDate = (offset) => {
+            selectedDate.setDate(selectedDate.getDate() + offset);
             updateDateUI();
             resetStore();
-            renderContent();
-            await new Promise(r => setTimeout(r, 50));
-            selectedDate = originalDate;
-            updateDateUI();
-            resetStore();
-            renderContent();
-            setupRealtimeListener();
-            toggleLoading(false);
-        };
-
-        window.triggerMultiRefresh = () => {
-            window.blinkRefresh();
-            setTimeout(() => window.blinkRefresh(), 1000);
+            window.setupRealtimeListener(); 
         };
 
         window.setViewMode = (mode, oven = null) => {
@@ -482,20 +607,12 @@
             else if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active');
             else {
                 document.getElementById(`btn-${currentOven}`)?.classList.add('active');
-                setTimeout(() => window.triggerMultiRefresh(), 50);
             }
             renderContent();
         };
 
-        window.changeDate = (offset) => {
-            selectedDate.setDate(selectedDate.getDate() + offset);
-            updateDateUI();
-            resetStore();
-            renderContent(); 
-            if (db) setupRealtimeListener();
-        };
-
         window.syncData = (oven, row, field, val) => {
+            if (!isDataLoaded) return; 
             if (field === 'ref') {
                 const elementId = `input-${oven.replace(/\s+/g, '-')}-${row}-ref`;
                 const el = document.getElementById(elementId);
@@ -526,16 +643,19 @@
         };
 
         window.syncClosing = (oven, index, field, val) => {
+            if (!isDataLoaded) return;
             ovenDataStore[oven].closing[index][field] = val;
             saveToFirebase(oven);
         };
 
         window.syncLinha = (oven, val) => {
+            if (!isDataLoaded) return;
             ovenDataStore[oven].linha = val;
             saveToFirebase(oven);
         };
 
         window.updateSubStruct = (oven, row, type, index, field, val) => {
+            if (!isDataLoaded) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
             
@@ -647,7 +767,6 @@
             renderContent();
         };
 
-        // --- INTEGRAÇÃO COM A NUVEM PARA EDIÇÃO DE DEFEITOS ---
         window.addDefect = async () => {
             const code = document.getElementById('new-defect-code').value.trim();
             const desc = document.getElementById('new-defect-desc').value.trim();
@@ -660,7 +779,6 @@
                 await saveDefectsToFirebase();
                 document.getElementById('new-defect-code').value = '';
                 document.getElementById('new-defect-desc').value = '';
-                renderContent(); 
             } else {
                 alert("Preencha código e descrição.");
             }
@@ -674,25 +792,21 @@
                     delete grinderDefectMap[code];
                 }
                 await saveDefectsToFirebase();
-                renderContent();
             }
         };
 
         window.updateDefectDesc = async (code, newDesc) => {
             if (configDefectMode === 'ovens') {
-                if(ovenDefectMap[code]) {
-                    ovenDefectMap[code] = newDesc;
-                }
+                ovenDefectMap[code] = newDesc; 
             } else {
-                if(grinderDefectMap[code]) {
-                    grinderDefectMap[code] = newDesc;
-                }
+                grinderDefectMap[code] = newDesc;
             }
             await saveDefectsToFirebase();
         };
-        // --------------------------------------------------------
         
-        window.toggleDefectList = () => {
+        // CORREÇÃO: A Lupa agora sabe de qual equipamento o clique veio
+        window.toggleDefectList = (ovenName = currentOven) => {
+            lookupOven = ovenName; // Salva o nome do equipamento para puxar a lista correta
             const panel = document.getElementById('defect-lookup-panel');
             if (panel.style.display === 'flex') {
                 panel.style.display = 'none';
@@ -701,7 +815,7 @@
                 document.getElementById('defect-search').value = '';
                 document.getElementById('defect-search').focus();
                 const title = document.getElementById('lookup-title');
-                if (title) title.innerText = currentOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)";
+                if (title) title.innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)";
                 window.renderDefectLookup();
             }
         };
@@ -709,7 +823,7 @@
         window.renderDefectLookup = () => {
             const filter = document.getElementById('defect-search').value.toLowerCase();
             const container = document.getElementById('defect-lookup-list');
-            const activeMap = getDefectMapForOven(currentOven);
+            const activeMap = getDefectMapForOven(lookupOven); // Usa o equipamento selecionado na Lupa
             const sortedDefects = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]));
             
             container.innerHTML = sortedDefects
@@ -748,7 +862,7 @@
                 globalConfig = {
                     ovens: { quality: oQ, breakage: oB },
                     grinders: { quality: gQ, breakage: gB },
-                    minVersion: APP_VERSION // Salva a versão atual como requisito mínimo
+                    minVersion: APP_VERSION
                 };
                 saveGlobalConfigFirebase();
 
@@ -756,15 +870,14 @@
                     if (ovenDataStore[ov]) {
                         const type = ov.includes('RETÍFICA') ? 'grinders' : 'ovens';
                         ovenDataStore[ov].targets = { ...globalConfig[type] };
-                        saveToFirebase(ov);
                     }
                 });
 
-                alert("Configurações salvas e aplicadas para o dia atual e dias futuros!");
+                alert("Novas Metas Globais cadastradas no servidor com sucesso!\nElas serão aplicadas nos próximos dados digitados.");
                 window.setViewMode('single', currentOven || 'FORNO 2');
-                setTimeout(() => window.triggerMultiRefresh(), 150);
-            } else alert("Valores inválidos.");
+            } else alert("Valores de metas inválidos.");
         };
+
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
 
         const generateDefectListHTML = () => {
@@ -774,8 +887,8 @@
                 <div class="defect-item">
                     <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
                     <div class="flex-grow px-2">
-                        <input type="text" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
-                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                        <input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" 
+                            value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)" title="Edite e clique fora para salvar automaticamente">
                     </div>
                     <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2" title="Remover">✕</button>
                 </div>
@@ -786,7 +899,7 @@
             <div class="config-container">
                 <div class="config-header">
                     <h2 class="text-2xl font-bold text-gray-800">Configurações do Sistema</h2>
-                    <p class="text-xs text-gray-500">Alterações aqui afetam o dia atual visualizado e todos os registros futuros.</p>
+                    <p class="text-xs text-gray-500">Alterações de Metas afetam apenas as cores e não excluem dados. Alterações de Defeitos são salvas automaticamente em Tempo Real.</p>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Metas de Produção</h3>
@@ -804,12 +917,39 @@
                     </div>
 
                     <div class="flex flex-col gap-3 mt-8">
-                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full">Salvar Metas Globais</button>
-                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full">Cancelar</button>
+                        <button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-md w-full uppercase text-sm">Salvar Metas Globais</button>
+                        <button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded w-full uppercase text-sm">Voltar</button>
+                    </div>
+
+                    <!-- NOVO: TELA DE RESTAURAÇÃO DE BACKUP -->
+                    <div class="mt-8 p-3 bg-yellow-50 rounded border border-yellow-200">
+                        <h4 class="font-bold text-yellow-800 mb-2 text-sm uppercase">Cofre de Segurança (Restaurar)</h4>
+                        <p class="text-[0.65rem] text-yellow-700 mb-3 text-justify">Selecione o equipamento e a data para buscar cópias automáticas ou manuais na Nuvem para recuperação imediata.</p>
+                        
+                        <div class="flex gap-2 mb-2">
+                            <select id="backup-oven-select" class="border border-yellow-300 p-1 text-xs rounded bg-white w-1/2 font-bold text-gray-700">
+                                ${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}
+                            </select>
+                            <input type="date" id="backup-date-select" class="border border-yellow-300 p-1 text-xs rounded bg-white w-1/2 font-bold text-gray-700" value="${getDateKey(selectedDate)}">
+                        </div>
+                        <button onclick="window.searchBackups()" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all mb-2">1. Localizar Cópias na Nuvem</button>
+                        
+                        <!-- Lista que aparece após a busca -->
+                        <div id="backup-results-container" style="display:none;" class="mt-4 border-t border-yellow-300 pt-3">
+                            <label class="block text-[0.65rem] font-bold text-yellow-800 mb-1">Selecione o Horário do Backup:</label>
+                            <select id="backup-file-select" class="border border-red-300 p-2 text-xs rounded bg-red-50 text-red-800 font-bold w-full mb-2 outline-none focus:ring-2 focus:ring-red-400">
+                            </select>
+                            <button onclick="window.restoreBackup()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">2. Restaurar Dados Selecionados</button>
+                        </div>
+                        
+                        <button onclick="window.runManualBackup()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded shadow text-[0.6rem] w-full uppercase transition-all mt-4">Gerar Backup Fotográfico Agora</button>
                     </div>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-gray-700 mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 class="text-lg font-bold text-gray-700">Cadastro de Defeitos</h3>
+                        <span class="text-[0.6rem] bg-green-100 text-green-800 font-bold px-2 py-1 rounded border border-green-300">✓ Salva Sozinho na Nuvem</span>
+                    </div>
                     <div class="flex justify-center gap-4 mb-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="defect-mode" ${configDefectMode === 'ovens' ? 'checked' : ''} onchange="window.setConfigDefectMode('ovens')">
@@ -823,7 +963,7 @@
                     <div class="flex gap-2 mb-2 bg-blue-50 p-2 rounded border border-blue-100">
                         <input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center text-sm font-bold bg-white">
                         <input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm bg-white">
-                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm">+</button>
+                        <button onclick="window.addDefect()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 rounded text-sm" title="Adicionar">+</button>
                     </div>
                     <div class="flex text-xs font-bold text-gray-500 px-2 mb-1">
                         <span class="w-16 text-center">Cód</span>
@@ -921,6 +1061,7 @@
                 if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data);
             });
 
+            // CORREÇÃO: Passando explicitamente o ovenName na lupa para puxar o defeito certo
             return `
                 <div class="border-b border-black text-center ${headerSize} font-bold uppercase bg-gray-50">Acompanhamento - ${ovenName}</div>
                 <div class="flex border-b border-black font-bold uppercase text-[0.6rem] bg-white">
@@ -937,7 +1078,7 @@
                         <tr class="header-blue font-bold ${tableFontSize} leading-tight bg-gray-50">
                             <th class="w-14">Hora</th><th class="w-48">Referência</th><th class="w-12">Turno</th><th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
                             <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
-                            <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList()" title="Lista de Defeitos">🔍</div></div></th>
+                            <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
                         </tr>
                     </thead>
                     <tbody>${rowsHTML}</tbody>
@@ -955,18 +1096,27 @@
             }
 
             const mainContent = document.getElementById('main-content');
+            
+            if (!isDataLoaded) {
+                mainContent.style.opacity = '0.5';
+                mainContent.style.pointerEvents = 'none'; 
+            } else {
+                mainContent.style.opacity = '1';
+                mainContent.style.pointerEvents = 'auto'; 
+            }
+
             if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML();
             else if (viewMode === 'grid') {
-                mainContent.className = "grid-view-container";
+                mainContent.className = "grid-view-container transition-opacity duration-300";
                 mainContent.innerHTML = ovenList.filter(o => o!=='FORNO 1').map(o => `<div class="oven-card p-1 rounded">${generateOvenHTML(o, true)}</div>`).join('');
                 ovenList.filter(o => o!=='FORNO 1').forEach(o => window.attachCalculations(o));
             } else {
-                mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black";
+                mainContent.className = "max-w-7xl mx-auto bg-white shadow-lg border-t border-black transition-opacity duration-300";
                 mainContent.innerHTML = generateOvenHTML(currentOven);
                 window.attachCalculations(currentOven);
             }
 
-            if (focusedId) {
+            if (focusedId && isDataLoaded) {
                 const el = document.getElementById(focusedId);
                 if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} }
             }
@@ -974,12 +1124,11 @@
 
         const init = async () => {
 
-            // TRAVA 1: VERIFICA SE ESTÁ RODANDO COMO ARQUIVO LOCAL (file://)
             if (window.location.protocol === 'file:') {
                 document.getElementById('version-blocker-title').innerText = "Execução Local Bloqueada";
                 document.getElementById('version-blocker-desc').innerText = "O sistema não pode ser executado a partir de um arquivo salvo no seu computador. Por favor, feche este arquivo e acesse o link oficial pelo navegador.";
                 document.getElementById('version-blocker').style.display = 'flex';
-                return; // Paralisa completamente o sistema aqui.
+                return; 
             }
 
             resetStore();
@@ -992,7 +1141,7 @@
                 if (currentDay !== lastKnownDay) {
                     lastKnownDay = currentDay;
                     selectedDate = now;
-                    window.blinkRefresh();
+                    window.setupRealtimeListener(); 
                 }
             }, 60000);
 
@@ -1004,10 +1153,9 @@
                 
                 onAuthStateChanged(auth, async user => { 
                     if(user) {
-                        // O SISTEMA AGORA CARREGA CONFIGURAÇÕES GLOBAIS E DEFEITOS DIRETAMENTE DA NUVEM ANTES DE CARREGAR A TELA
                         await loadGlobalConfig();
-                        await loadDefectsFromFirebase();
-                        window.triggerMultiRefresh();
+                        setupDefectsListener();
+                        window.setupRealtimeListener();
                     }
                 });
             }
