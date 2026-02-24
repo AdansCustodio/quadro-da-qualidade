@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <!-- Meta tag essencial para responsividade e bloqueio de zoom indesejado em inputs no iOS -->
+    <!-- Meta tag essencial para responsividade. Adicionado minimum-scale=1.0 como padrão do desktop -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard de Qualidade - CCO Fornos e Retíficas</title>
     
     <!-- Framework CSS -->
@@ -233,7 +233,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.4; // Identidade Visual + Mobile c/ Zoom + Proteção Histórico + Otimização de Backup Diário
+        const APP_VERSION = 4.5; // Identidade Visual + Mobile c/ Zoom Out + Proteção Histórico + Otimização de Backup Diário
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -606,9 +606,9 @@
                 btn.classList.add('active');
                 text.innerText = '💻 MODO DESKTOP';
                 
-                // Liberta o zoom de pinça no modo smartphone (até 5x de zoom)
+                // Liberta o zoom de pinça no modo smartphone (até 5x de zoom) e permite zoom out (até 0.1)
                 if (viewportMeta) {
-                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=5.0, user-scalable=yes');
                 }
             } else {
                 document.body.classList.remove('mobile-mode');
@@ -617,7 +617,7 @@
                 
                 // Bloqueia o zoom no modo desktop para manter a proporção rígida da tabela
                 if (viewportMeta) {
-                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no');
                 }
             }
         };
