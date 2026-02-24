@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <!-- Meta tag essencial para responsividade e bloqueio de zoom indesejado em inputs no iOS -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard de Qualidade - CCO Fornos e Retíficas</title>
@@ -60,7 +59,7 @@
         .quebra-total-box { width: 50px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
         
-        /* Container de Rolagem Horizontal Suave (Essencial para não quebrar tabelas grandes) */
+        /* Container de Rolagem Horizontal Suave (Essencial para não quebrar tabelas grandes no modo normal) */
         .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         
         .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -100,12 +99,14 @@
         
         /* Navbar no modo mobile */
         body.mobile-mode .navbar-container { padding: 0.5rem; overflow-x: auto; flex-wrap: nowrap; border-radius: 0; margin-bottom: 0; }
-        body.mobile-mode .tab-btn { padding: 0.75rem 1rem; font-size: 0.8rem; } /* Área de toque maior (Acessibilidade) */
+        body.mobile-mode .tab-btn { padding: 0.75rem 1rem; font-size: 0.8rem; } /* Área de toque maior */
         
-        /* Container principal vira 100vw */
-        body.mobile-mode #main-content { max-width: 100vw; margin: 0; border: none; box-shadow: none; }
+        /* NOVO AJUSTE: Remove a rolagem horizontal interna no modo Mobile para permitir o Zoom Out do navegador */
+        body.mobile-mode .table-responsive-wrapper { overflow-x: visible !important; }
         
-        /* Força a tabela a ter uma largura mínima para manter integridade dos dados, gerando scroll interno */
+        /* Container principal sem restrição de largura para o canvas expandir */
+        body.mobile-mode #main-content { max-width: none; margin: 0; border: none; box-shadow: none; }
+        
         body.mobile-mode table { min-width: 1100px; }
         body.mobile-mode th, body.mobile-mode td { font-size: 0.85rem; padding: 4px; }
         
@@ -233,7 +234,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.4; // Identidade Visual + Mobile c/ Zoom + Proteção Histórico + Otimização de Backup Diário
+        const APP_VERSION = 4.6; // Correção Definitiva do Zoom-Out Mobile (Fixed Viewport)
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -606,16 +607,18 @@
                 btn.classList.add('active');
                 text.innerText = '💻 MODO DESKTOP';
                 
-                // Liberta o zoom de pinça no modo smartphone (até 5x de zoom)
+                // MÁGICA DO ZOOM-OUT:
+                // Define que o site tem 1200px de largura e tira a barra de rolagem.
+                // O celular automaticamente fará o zoom-out (encolherá a tela) para mostrar a tabela toda.
                 if (viewportMeta) {
-                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+                    viewportMeta.setAttribute('content', 'width=1200, user-scalable=yes');
                 }
             } else {
                 document.body.classList.remove('mobile-mode');
                 btn.classList.remove('active');
                 text.innerText = '📱 ABRIR NO SMARTPHONE';
                 
-                // Bloqueia o zoom no modo desktop para manter a proporção rígida da tabela
+                // Retorna ao modo estrito e responsivo do desktop
                 if (viewportMeta) {
                     viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
                 }
