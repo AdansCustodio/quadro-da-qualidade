@@ -305,6 +305,7 @@
         
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
+        let lastBackupHour = new Date().getHours(); // NOVO: Controle exato de hora para o Cofre
         let isDataLoaded = false; 
         let unsubscribeRealtimeList = []; 
         let unsubscribeDefects = null; 
@@ -320,26 +321,43 @@
         const ovenDataStore = {};
 
         // --- SISTEMA DE BACKUP E RESTAURAÇÃO ---
-        window.runManualBackup = async () => {
+        window.runManualBackup = async (overrideDate = null, isAuto = false) => {
             if (!db || !isDataLoaded) return;
             setSaveStatus('saving');
-            const dateKey = getDateKey(selectedDate);
+            
+            // Usar data de override se fornecida (na virada de meia-noite), senão usa a data atual
+            const targetDate = overrideDate instanceof Date ? overrideDate : selectedDate;
+            const dateKey = getDateKey(targetDate);
             const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+            
             try {
+                // Clona os dados na memória AGORA para evitar corrida de dados se a tela limpar
+                const dataSnapshot = {};
                 for (const oven of ovenList) {
-                    const data = ovenDataStore[oven];
+                    if (ovenDataStore[oven]) {
+                        dataSnapshot[oven] = JSON.parse(JSON.stringify(ovenDataStore[oven]));
+                    }
+                }
+
+                for (const oven of ovenList) {
+                    const data = dataSnapshot[oven];
+                    // Salva apenas se o equipamento teve alguma produção ou apontamento
                     if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
                         const backupDocId = `${oven}_${dateKey}_[${timestamp}]`;
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
                         await setDoc(docRef, data);
                     }
                 }
-                alert("Backup de segurança salvo com sucesso na Nuvem!");
+                
+                // Exibe o alerta APENAS se foi clicado manualmente pelo botão amarelo (não exibe nos automáticos)
+                if (!isAuto) alert("Backup de segurança salvo com sucesso na Nuvem!");
+                
                 setSaveStatus('saved');
-            } catch(e) { console.error("Erro ao realizar backup", e); setSaveStatus('error'); }
+            } catch(e) { 
+                console.error("Erro ao realizar backup", e); 
+                setSaveStatus('error'); 
+            }
         };
-
-        setInterval(() => { if(isDataLoaded && db) window.runManualBackup(); }, 3600000);
 
         window.searchBackups = async () => {
             const oven = document.getElementById('backup-oven-select').value;
@@ -788,9 +806,34 @@
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); renderContent();
             
+            // Relógio Interno Robusto: Verifica a cada minuto para Backup e Mudança de Dia
             setInterval(() => {
                 const now = new Date();
-                if (now.getDate() !== lastKnownDay) { lastKnownDay = now.getDate(); selectedDate = now; window.setupRealtimeListener(); }
+                
+                // 1. Virada de Meia-Noite (Mudança de Dia)
+                if (now.getDate() !== lastKnownDay) { 
+                    const oldDate = new Date(selectedDate);
+                    lastKnownDay = now.getDate(); 
+                    selectedDate = now; 
+                    updateDateUI(); // Atualiza a data visual na tela de imediato
+                    
+                    // Força um último backup fotográfico do dia que acabou (modo silencioso)
+                    if (isDataLoaded && db) {
+                        window.runManualBackup(oldDate, true); 
+                    }
+                    
+                    window.setupRealtimeListener(); 
+                    lastBackupHour = now.getHours(); // Reseta para evitar disparo duplo de hora
+                    return;
+                }
+
+                // 2. Backup de Hora em Hora (Sincronizado na virada do relógio, ex: 01:00, 02:00)
+                if (now.getHours() !== lastBackupHour) {
+                    lastBackupHour = now.getHours();
+                    if (isDataLoaded && db) {
+                        window.runManualBackup(null, true); // (null = data atual, true = sem alert)
+                    }
+                }
             }, 60000);
 
             if(auth) {
