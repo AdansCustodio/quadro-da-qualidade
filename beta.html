@@ -153,9 +153,14 @@
             <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" aria-label="Dia Anterior" title="Dia Anterior">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div class="flex flex-col items-center min-w-[100px]">
+            <div class="flex flex-col items-center min-w-[100px] relative">
                 <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
                 <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
+                
+                <!-- Ícone de Cadeado de Histórico -->
+                <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;">
+                    <span id="lock-icon" class="text-[10px]">🔒</span>
+                </div>
             </div>
             <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia" title="Próximo Dia">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
@@ -184,7 +189,7 @@
         </button>
         
         <!-- Botão de Configurações -->
-        <button onclick="window.openPasswordModal()" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG" aria-label="Configurações do Sistema" title="Configurações">
+        <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG" aria-label="Configurações do Sistema" title="Configurações">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
         </button>
     </div>
@@ -192,8 +197,8 @@
     <!-- Modais e Menus Flutuantes -->
     <div id="password-modal">
         <div class="pwd-content">
-            <h3 class="text-lg font-bold mb-4 text-gray-800">Acesso Restrito</h3>
-            <p class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
+            <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
+            <p id="pwd-desc" class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
             <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
             <div class="flex justify-between gap-2">
                 <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
@@ -229,7 +234,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.0; // Identidade Visual Headers + Smartphone Mode + Remove Grid
+        const APP_VERSION = 4.2; // Identidade Visual + Mobile + Proteção de Histórico
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -285,8 +290,6 @@
         let configDefectMode = 'ovens';
         let lookupOven = 'FORNO 2';
 
-        const getDefectMapForOven = (ovenName) => ovenName && ovenName.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
-
         const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
         const scheduleOvens = [
             { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" },
@@ -300,13 +303,18 @@
         ];
 
         let currentOven = 'FORNO 2';
-        let viewMode = 'single'; // Somente 'single' ou 'config' a partir da v4.0
-        let isMobileLayoutActive = false; // Controle de layout Mobile Responsive
+        let viewMode = 'single'; 
+        let isMobileLayoutActive = false; 
         
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
-        let lastBackupHour = new Date().getHours(); // NOVO: Controle exato de hora para o Cofre
+        let lastBackupHour = new Date().getHours(); 
         let isDataLoaded = false; 
+        
+        // CONTROLES DE SEGURANÇA HISTÓRICA
+        let isAdminUnlocked = false;
+        let passwordContext = 'config'; // 'config' ou 'unlock'
+        
         let unsubscribeRealtimeList = []; 
         let unsubscribeDefects = null; 
         let availableBackups = [];
@@ -320,18 +328,42 @@
         const saveTimeouts = {};
         const ovenDataStore = {};
 
+        // --- LÓGICA DE BLOQUEIO DE TEMPO ---
+        const getDiffDays = () => {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+            return Math.floor((today - selected) / (1000 * 60 * 60 * 24));
+        };
+
+        const isDateLocked = () => {
+            if (isAdminUnlocked) return false;
+            return getDiffDays() > 3; // + de 3 dias no passado = travado
+        };
+
+        window.handleLockClick = () => {
+            const diffDays = getDiffDays();
+            if (diffDays > 3) {
+                if (!isAdminUnlocked) {
+                    window.openPasswordModal('unlock');
+                } else {
+                    isAdminUnlocked = false; // Permite ao admin bloquear manualmente de novo
+                    updateDateUI();
+                    renderContent();
+                }
+            }
+        };
+
         // --- SISTEMA DE BACKUP E RESTAURAÇÃO ---
         window.runManualBackup = async (overrideDate = null, isAuto = false) => {
             if (!db || !isDataLoaded) return;
             setSaveStatus('saving');
             
-            // Usar data de override se fornecida (na virada de meia-noite), senão usa a data atual
             const targetDate = overrideDate instanceof Date ? overrideDate : selectedDate;
             const dateKey = getDateKey(targetDate);
             const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
             
             try {
-                // Clona os dados na memória AGORA para evitar corrida de dados se a tela limpar
                 const dataSnapshot = {};
                 for (const oven of ovenList) {
                     if (ovenDataStore[oven]) {
@@ -341,7 +373,6 @@
 
                 for (const oven of ovenList) {
                     const data = dataSnapshot[oven];
-                    // Salva apenas se o equipamento teve alguma produção ou apontamento
                     if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
                         const backupDocId = `${oven}_${dateKey}_[${timestamp}]`;
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
@@ -349,9 +380,7 @@
                     }
                 }
                 
-                // Exibe o alerta APENAS se foi clicado manualmente pelo botão amarelo (não exibe nos automáticos)
                 if (!isAuto) alert("Backup de segurança salvo com sucesso na Nuvem!");
-                
                 setSaveStatus('saved');
             } catch(e) { 
                 console.error("Erro ao realizar backup", e); 
@@ -410,6 +439,7 @@
                     window.setViewMode('single', oven);
                     const [y, m, d] = date.split('-');
                     selectedDate = new Date(y, m - 1, d);
+                    isAdminUnlocked = false;
                     updateDateUI();
                     window.setupRealtimeListener(); 
                 } catch(error) { console.error("Erro ao restaurar", error); setSaveStatus('error'); alert("Erro ao restaurar dados."); }
@@ -478,7 +508,30 @@
 
         const getDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-        const updateDateUI = () => document.getElementById('display-date').innerText = `${selectedDate.getDate().toString().padStart(2, '0')}/${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}/${selectedDate.getFullYear()}`;
+        const updateDateUI = () => {
+            const d = selectedDate.getDate().toString().padStart(2, '0');
+            const m = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+            const y = selectedDate.getFullYear();
+            document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
+            
+            const lockContainer = document.getElementById('lock-container');
+            const lockIcon = document.getElementById('lock-icon');
+            if (lockIcon && lockContainer) {
+                const diffDays = getDiffDays();
+                if (diffDays > 3) {
+                    lockContainer.style.display = 'flex';
+                    if (!isAdminUnlocked) {
+                        lockIcon.innerHTML = '🔒';
+                        lockContainer.title = "Histórico bloqueado (+3 dias). Clique para desbloquear.";
+                    } else {
+                        lockIcon.innerHTML = '🔓';
+                        lockContainer.title = "Histórico desbloqueado (Admin). Clique para bloquear novamente.";
+                    }
+                } else {
+                    lockContainer.style.display = 'none';
+                }
+            }
+        };
 
         const setSaveStatus = (status) => {
             const dot = document.getElementById('save-dot'), text = document.getElementById('save-text');
@@ -491,7 +544,7 @@
         };
 
         const saveToFirebase = (ovenId) => {
-            if (!db || !ovenDataStore[ovenId] || !isDataLoaded) return;
+            if (!db || !ovenDataStore[ovenId] || !isDataLoaded || isDateLocked()) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
             setSaveStatus('saving');
             if (!ovenDataStore[ovenId].targets) ovenDataStore[ovenId].targets = { ...globalConfig[ovenId.includes('RETÍFICA') ? 'grinders' : 'ovens'] };
@@ -530,7 +583,13 @@
             });
         };
 
-        window.changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); updateDateUI(); resetStore(); window.setupRealtimeListener(); };
+        window.changeDate = (offset) => { 
+            selectedDate.setDate(selectedDate.getDate() + offset); 
+            isAdminUnlocked = false; // Bloqueia automaticamente ao mudar de data
+            updateDateUI(); 
+            resetStore(); 
+            window.setupRealtimeListener(); 
+        };
 
         // Controle do Layout Flexível (Mobile Responsivo)
         window.toggleMobileMode = () => {
@@ -560,7 +619,7 @@
         };
 
         window.syncData = (oven, row, field, val) => {
-            if (!isDataLoaded) return; 
+            if (!isDataLoaded || isDateLocked()) return; 
             if (field === 'ref') {
                 const el = document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row}-ref`);
                 if (oven.includes('RETÍFICA')) {
@@ -576,11 +635,11 @@
             ovenDataStore[oven].rows[row][field] = val; saveToFirebase(oven);
         };
 
-        window.syncClosing = (oven, index, field, val) => { if (isDataLoaded) { ovenDataStore[oven].closing[index][field] = val; saveToFirebase(oven); } };
-        window.syncLinha = (oven, val) => { if (isDataLoaded) { ovenDataStore[oven].linha = val; saveToFirebase(oven); } };
+        window.syncClosing = (oven, index, field, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].closing[index][field] = val; saveToFirebase(oven); } };
+        window.syncLinha = (oven, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].linha = val; saveToFirebase(oven); } };
 
         window.updateSubStruct = (oven, row, type, index, field, val) => {
-            if (!isDataLoaded) return;
+            if (!isDataLoaded || isDateLocked()) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
             if (field === 'cod') {
@@ -606,7 +665,13 @@
                 const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`), aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`), volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
                 if (!hInput || !aInput || !volInput) continue;
                 const hVal = parseFloat(hInput.value.replace(',', '.')), volVal = parseFloat(volInput.value.replace('.', '').replace(',', '.'));
-                hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" : "input-quali-hora nav-input text-target-low") : "input-quali-hora nav-input";
+                
+                // Keep the color logic but preserve lock styles if needed
+                const isLocked = isDateLocked();
+                const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
+                
+                hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
+                
                 if (!isNaN(volVal) && !isNaN(hVal)) {
                     let deltaVol = volVal - previousVolume; weightedScoreSum += deltaVol * hVal;
                     if (volVal > 0) {
@@ -627,6 +692,7 @@
         };
 
         window.sugerirReferencia = (input, oven) => {
+            if (isDateLocked()) return;
             const row = parseInt(input.closest('tr').dataset.row), datalist = document.getElementById('ref-suggestions');
             if(!datalist) return; datalist.innerHTML = '';
             if (row > 0) {
@@ -657,9 +723,40 @@
                 .map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join('');
         };
 
-        window.openPasswordModal = () => { document.getElementById('pwd-error').classList.add('hidden'); document.getElementById('admin-password').value = ''; document.getElementById('password-modal').style.display = 'flex'; setTimeout(() => document.getElementById('admin-password').focus(), 100); };
+        window.openPasswordModal = (context = 'config') => { 
+            passwordContext = context;
+            document.getElementById('pwd-error').classList.add('hidden'); 
+            document.getElementById('admin-password').value = ''; 
+            
+            if (context === 'unlock') {
+                document.getElementById('pwd-title').innerText = 'Desbloqueio de Histórico';
+                document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para editar dados antigos.';
+            } else {
+                document.getElementById('pwd-title').innerText = 'Acesso Restrito';
+                document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para acessar as configurações.';
+            }
+
+            document.getElementById('password-modal').style.display = 'flex'; 
+            setTimeout(() => document.getElementById('admin-password').focus(), 100); 
+        };
+
         window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
-        window.submitPassword = () => { if (document.getElementById('admin-password').value === "admin321") { window.closePasswordModal(); window.setViewMode('config'); } else document.getElementById('pwd-error').classList.remove('hidden'); };
+        
+        window.submitPassword = () => { 
+            if (document.getElementById('admin-password').value === "admin321") { 
+                window.closePasswordModal(); 
+                if (passwordContext === 'config') {
+                    window.setViewMode('config'); 
+                } else if (passwordContext === 'unlock') {
+                    isAdminUnlocked = true;
+                    updateDateUI();
+                    renderContent();
+                }
+            } else {
+                document.getElementById('pwd-error').classList.remove('hidden'); 
+            }
+        };
+
         window.saveConfig = () => {
             const oQ = parseFloat(document.getElementById('config-quality-oven').value), oB = parseFloat(document.getElementById('config-breakage-oven').value), gQ = parseFloat(document.getElementById('config-quality-grinder').value), gB = parseFloat(document.getElementById('config-breakage-grinder').value);
             if (!isNaN(oQ) && !isNaN(oB) && !isNaN(gQ) && !isNaN(gB)) {
@@ -695,16 +792,16 @@
                 </div>
             </div>`;
 
-        const generateSubColumnHTML = (oven, row, type, dataArray) => dataArray.map((item, i) => `
+        const generateSubColumnHTML = (oven, row, type, dataArray, locked, lockedClass) => dataArray.map((item, i) => `
             <div class="sub-row">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod" placeholder="Cd" value="${item.cod || ''}" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="${item.cod === '99' ? 'input-desc input-desc-editable' : 'input-desc'}" ${item.cod === '99' ? '' : 'readonly'} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val" placeholder="%" inputmode="decimal" value="${item.val || ''}" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
+                <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
+                <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
+                <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
             </div>`).join('');
 
-        const generateClosingRow = (ovenName, closingIndex, data) => {
+        const generateClosingRow = (ovenName, closingIndex, data, locked, lockedClass) => {
             const cd = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
-            return `<tr class="bg-gray-dark-custom h-8 border-t border-b border-black"><td colspan="6" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td><td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent" value="${cd.prod || ''}" oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td><td class="p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent" value="${cd.quebra || ''}" oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td></tr>`;
+            return `<tr class="bg-gray-dark-custom h-8 border-t border-b border-black"><td colspan="6" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td><td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td><td class="p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td></tr>`;
         };
 
         const generateOvenHTML = (ovenName) => {
@@ -713,25 +810,31 @@
             let rowsHTML = '';
             const currentSchedule = (ovenName.includes('RETÍFICA')) ? scheduleGrinders : scheduleOvens;
 
+            const locked = isDateLocked();
+            const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
+            const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : '';
+            const attrReadonly = locked ? 'readonly' : '';
+            const attrDisabled = locked ? 'disabled' : '';
+
             currentSchedule.forEach((item, index) => {
                 const rowData = data.rows[index];
                 const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
-                let refClasses = "nav-input ref-input";
+                let refClasses = `nav-input ref-input ${lockedClass}`;
                 if (ovenName.includes('RETÍFICA') && rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert";
                 else if (rowData.ref === "❌FORNO PARADO⚠️") refClasses += " text-red-600 font-black";
 
                 rowsHTML += `
                     <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
                         <td class="font-bold border-black text-sm p-0">${item.time}<span class="shift-stamp">${item.shift}</span></td>
-                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
-                        <td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input" onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>
-                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input" value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')"></td>
-                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input" value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" ${attrReadonly} list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
+                        <td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input ${selectClass}" ${attrDisabled} onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input ${lockedClass}" ${attrReadonly} value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input ${lockedClass}" ${attrReadonly} value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
                         <td class="border-black"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" readonly placeholder="0.00"></td>
-                        <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects)}</div></td>
-                        <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold text-xs" id="total-${ovenName}-${index}">0,00</div></div></div></td>
+                        <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
+                        <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold text-xs" id="total-${ovenName}-${index}">0,00</div></div></div></td>
                     </tr>`;
-                if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data);
+                if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data, locked, lockedClass);
             });
 
             return `
@@ -760,7 +863,7 @@
                         <div class="w-1/2 border-r border-black p-1 flex justify-center items-center">${ovenName}</div>
                         <div class="w-1/2 p-1 flex justify-center items-center gap-1">
                             <span>Linha:</span>
-                            <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12"><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>
+                            <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>
                         </div>
                     </div>
                     
@@ -865,7 +968,7 @@
                         }
                         return;
                     }
-                    const inputs = Array.from(document.querySelectorAll('input, select'));
+                    const inputs = Array.from(document.querySelectorAll('input:not([readonly]):not([disabled]), select:not([disabled])'));
                     const currentIdx = inputs.indexOf(el); if (currentIdx >= 0 && currentIdx < inputs.length - 1) inputs[currentIdx + 1].focus();
                 }
             });
