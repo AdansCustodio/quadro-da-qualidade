@@ -139,7 +139,6 @@
         </div>
 
         <!-- Botões de Navegação entre Equipamentos -->
-        <!-- FORNO 1 MANTIDO OCULTO -->
         <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1" style="display:none;">Forno 1</button>
         <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
         <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
@@ -234,7 +233,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.2; // Identidade Visual + Mobile + Proteção de Histórico
+        const APP_VERSION = 4.4; // Identidade Visual + Mobile c/ Zoom + Proteção Histórico + Otimização de Backup Diário
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -308,7 +307,6 @@
         
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
-        let lastBackupHour = new Date().getHours(); 
         let isDataLoaded = false; 
         
         // CONTROLES DE SEGURANÇA HISTÓRICA
@@ -374,13 +372,14 @@
                 for (const oven of ovenList) {
                     const data = dataSnapshot[oven];
                     if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
-                        const backupDocId = `${oven}_${dateKey}_[${timestamp}]`;
+                        const prefix = isAuto ? 'AUTO' : 'MANUAL';
+                        const backupDocId = `${oven}_${dateKey}_[${prefix}_${timestamp}]`;
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
                         await setDoc(docRef, data);
                     }
                 }
                 
-                if (!isAuto) alert("Backup de segurança salvo com sucesso na Nuvem!");
+                if (!isAuto) alert("Backup de segurança criado com sucesso na Nuvem! ✅\nEle já está salvo no cofre.");
                 setSaveStatus('saved');
             } catch(e) { 
                 console.error("Erro ao realizar backup", e); 
@@ -407,7 +406,7 @@
                     availableBackups.sort((a, b) => b.id.localeCompare(a.id));
                     select.innerHTML = availableBackups.map((b, index) => {
                         const timeMatch = b.id.match(/\[(.*?)\]/);
-                        const timeStr = timeMatch ? timeMatch[1] : 'Hora Desconhecida';
+                        const timeStr = timeMatch ? timeMatch[1].replace('_', ' ') : 'Hora Desconhecida';
                         return `<option value="${index}">Cópia salva às ${timeStr}</option>`;
                     }).join('');
                     container.style.display = 'block';
@@ -476,12 +475,16 @@
             unsubscribeDefects = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if(data.ovens) ovenDefectMap = data.ovens;
-                    if(data.grinders) grinderDefectMap = data.grinders;
+                    // Proteção extra para garantir que o objeto nunca fique vazio ao sincronizar
+                    if(data.ovens) ovenDefectMap = data.ovens; else ovenDefectMap = {...seedOvenDefects};
+                    if(data.grinders) grinderDefectMap = data.grinders; else grinderDefectMap = {...seedGrinderDefects};
+                    
                     if (viewMode === 'config') renderContent();
                     const panel = document.getElementById('defect-lookup-panel');
                     if (panel && panel.style.display === 'flex') window.renderDefectLookup();
-                } else setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
+                } else {
+                    setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
+                }
             }, (error) => console.error("Erro ouvir defeitos:", error));
         };
 
@@ -596,15 +599,26 @@
             isMobileLayoutActive = !isMobileLayoutActive;
             const btn = document.getElementById('btn-MOBILE');
             const text = document.getElementById('mobile-btn-text');
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
             
             if (isMobileLayoutActive) {
                 document.body.classList.add('mobile-mode');
                 btn.classList.add('active');
                 text.innerText = '💻 MODO DESKTOP';
+                
+                // Liberta o zoom de pinça no modo smartphone (até 5x de zoom)
+                if (viewportMeta) {
+                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+                }
             } else {
                 document.body.classList.remove('mobile-mode');
                 btn.classList.remove('active');
                 text.innerText = '📱 ABRIR NO SMARTPHONE';
+                
+                // Bloqueia o zoom no modo desktop para manter a proporção rígida da tabela
+                if (viewportMeta) {
+                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                }
             }
         };
 
@@ -638,12 +652,15 @@
         window.syncClosing = (oven, index, field, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].closing[index][field] = val; saveToFirebase(oven); } };
         window.syncLinha = (oven, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].linha = val; saveToFirebase(oven); } };
 
+        const getActiveDefectMap = (oven) => oven && oven.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
+
         window.updateSubStruct = (oven, row, type, index, field, val) => {
             if (!isDataLoaded || isDateLocked()) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
             if (field === 'cod') {
-                const desc = getDefectMapForOven(oven)[val] || (val ? "Desconhecido" : "");
+                const map = getActiveDefectMap(oven);
+                const desc = map[val] || (val ? "Desconhecido" : "");
                 ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
                 const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`);
                 if(descInput) {
@@ -710,16 +727,28 @@
         window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { delete (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code]; await saveDefectsToFirebase(); } };
         window.updateDefectDesc = async (code, desc) => { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); };
         
-        window.toggleDefectList = (ovenName = currentOven) => {
-            lookupOven = ovenName; const panel = document.getElementById('defect-lookup-panel');
-            if (panel.style.display === 'flex') panel.style.display = 'none';
-            else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); }
+        window.toggleDefectList = (ovenName) => {
+            // Se ovenName for passado do clique, usa ele. Se não, usa currentOven da tela.
+            lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven;
+            
+            const panel = document.getElementById('defect-lookup-panel');
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'flex'; 
+                document.getElementById('defect-search').value = ''; 
+                document.getElementById('defect-search').focus(); 
+                document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; 
+                window.renderDefectLookup(); 
+            }
         };
 
         window.renderDefectLookup = () => {
             const filter = document.getElementById('defect-search').value.toLowerCase();
-            document.getElementById('defect-lookup-list').innerHTML = Object.entries(getDefectMapForOven(lookupOven)).sort((a,b) => parseInt(a[0]) - parseInt(b[0]))
-                .filter(([c, d]) => c.includes(filter) || d.toLowerCase().includes(filter))
+            const activeMap = getActiveDefectMap(lookupOven) || {};
+            
+            document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]))
+                .filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter)))
                 .map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join('');
         };
 
@@ -782,7 +811,15 @@
                     <div class="p-3 bg-blue-50 rounded mb-4 border"><h4 class="font-bold mb-2">FORNOS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-oven" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.ovens.quality}"></div><div><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-oven" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.ovens.breakage}"></div></div>
                     <div class="p-3 bg-gray-100 rounded mb-4 border"><h4 class="font-bold mb-2">RETÍFICAS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-grinder" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.grinders.quality}"></div><div><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-grinder" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.grinders.breakage}"></div></div>
                     <div class="flex flex-col gap-3 mt-8"><button onclick="window.saveConfig()" class="bg-blue-600 text-white font-bold py-3 rounded uppercase text-sm">Salvar Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
-                    <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Restaurar Cópia</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
+                    
+                    <!-- NOVO: BOTÃO DE BACKUP MANUAL EM DESTAQUE -->
+                    <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200">
+                        <h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4>
+                        <p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p>
+                        <button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button>
+                    </div>
+
+                    <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
@@ -909,33 +946,26 @@
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); renderContent();
             
-            // Relógio Interno Robusto: Verifica a cada minuto para Backup e Mudança de Dia
+            // Relógio Interno Robusto: Verifica a cada minuto para Backup de Virada de Dia
             setInterval(() => {
                 const now = new Date();
                 
-                // 1. Virada de Meia-Noite (Mudança de Dia)
+                // Virada de Meia-Noite (Mudança de Dia) -> Único backup automático para economizar processamento
                 if (now.getDate() !== lastKnownDay) { 
                     const oldDate = new Date(selectedDate);
                     lastKnownDay = now.getDate(); 
                     selectedDate = now; 
+                    
+                    isAdminUnlocked = false; // Bloqueia edições na virada
                     updateDateUI(); // Atualiza a data visual na tela de imediato
                     
-                    // Força um último backup fotográfico do dia que acabou (modo silencioso)
+                    // Força um último backup fotográfico do dia que acabou (modo silencioso = true)
                     if (isDataLoaded && db) {
                         window.runManualBackup(oldDate, true); 
                     }
                     
                     window.setupRealtimeListener(); 
-                    lastBackupHour = now.getHours(); // Reseta para evitar disparo duplo de hora
                     return;
-                }
-
-                // 2. Backup de Hora em Hora (Sincronizado na virada do relógio, ex: 01:00, 02:00)
-                if (now.getHours() !== lastBackupHour) {
-                    lastBackupHour = now.getHours();
-                    if (isDataLoaded && db) {
-                        window.runManualBackup(null, true); // (null = data atual, true = sem alert)
-                    }
                 }
             }, 60000);
 
