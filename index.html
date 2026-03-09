@@ -30,7 +30,7 @@
         .sub-row:last-child { border-bottom: none; }
         
         .input-cod { width: 30px; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
-        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .input-val { width: 40px; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
         .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
         
@@ -234,7 +234,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.6; // Correção Definitiva do Zoom-Out Mobile (Fixed Viewport)
+        const APP_VERSION = 4.6;
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -681,25 +681,57 @@
             const safeOven = oven.replace(/\s+/g, '-');
             let targetQ = ovenDataStore[oven]?.targets?.quality || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].quality;
             let weightedScoreSum = 0, previousVolume = 0;   
+            
             for (let i = 0; i < 12; i++) {
-                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`), aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`), volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
+                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
+                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+                const reqSpan = document.getElementById(`next-req-${safeOven}-${i}`); // Span da meta preditiva
+                
                 if (!hInput || !aInput || !volInput) continue;
                 const hVal = parseFloat(hInput.value.replace(',', '.')), volVal = parseFloat(volInput.value.replace('.', '').replace(',', '.'));
                 
-                // Keep the color logic but preserve lock styles if needed
+                // Manutenção visual dos bloqueios
                 const isLocked = isDateLocked();
                 const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
                 
                 hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
                 
+                if (reqSpan) reqSpan.innerText = ""; // Limpa a previsão por padrão
+                
                 if (!isNaN(volVal) && !isNaN(hVal)) {
-                    let deltaVol = volVal - previousVolume; weightedScoreSum += deltaVol * hVal;
+                    let deltaVol = volVal - previousVolume; 
+                    weightedScoreSum += deltaVol * hVal;
+                    
                     if (volVal > 0) {
-                        const avg = weightedScoreSum / volVal; aInput.value = avg.toFixed(1).replace('.', ',');
+                        const avg = weightedScoreSum / volVal; 
+                        aInput.value = avg.toFixed(1).replace('.', ',');
                         aInput.className = avg >= targetQ ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                        
+                        // --- CÁLCULO DE META PREDITIVA (Valores Brutos / Média Simples) ---
+                        if (reqSpan && i < 11) { // Só faz sentido projetar se não for a última hora do dia
+                            // Ignorando volume real da próxima hora, usando cálculo bruto de média simples
+                            // A média atual (avg) tem o peso das horas acumuladas até aqui (i + 1)
+                            // Queremos que na próxima hora (i + 2) a média atinja targetQ
+                            let nextQ = (targetQ * (i + 2)) - (avg * (i + 1));
+                            
+                            reqSpan.innerText = nextQ.toFixed(1).replace('.', ',') + "%";
+                            
+                            const baseClass = "absolute bottom-[1px] right-[2px] text-[0.55rem] font-black pointer-events-none opacity-90 leading-none tracking-tighter cursor-help";
+                            
+                            if (avg >= targetQ) {
+                                reqSpan.title = `Para manter a meta (${targetQ}%), a próxima hora pode ser no mínimo ${nextQ.toFixed(1)}%`;
+                                reqSpan.className = `${baseClass} text-green-600`;
+                            } else {
+                                reqSpan.title = `Para a acumulada alcançar ${targetQ}%, a próxima hora precisa ser de aprox. ${nextQ.toFixed(1)}%`;
+                                reqSpan.className = `${baseClass} text-blue-600`;
+                            }
+                        }
                     }
                     previousVolume = volVal;
-                } else if (!isNaN(volVal)) previousVolume = volVal;
+                } else if (!isNaN(volVal)) {
+                    previousVolume = volVal;
+                }
             }
         };
 
@@ -869,7 +901,7 @@
                         <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" ${attrReadonly} list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
                         <td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input ${selectClass}" ${attrDisabled} onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>
                         <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="nav-input ${lockedClass}" ${attrReadonly} value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')"></td>
-                        <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input ${lockedClass}" ${attrReadonly} value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
+                        <td class="border-black relative p-0"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input w-full h-full text-center ${lockedClass}" ${attrReadonly} value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"><span id="next-req-${safeOven}-${index}" class="absolute bottom-[1px] right-[2px] text-[0.55rem] font-black text-blue-600 pointer-events-none opacity-90 leading-none tracking-tighter cursor-help"></span></td>
                         <td class="border-black"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" readonly placeholder="0.00"></td>
                         <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
                         <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold text-xs" id="total-${ovenName}-${index}">0,00</div></div></div></td>
