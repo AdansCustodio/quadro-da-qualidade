@@ -30,7 +30,7 @@
         .sub-row:last-child { border-bottom: none; }
         
         .input-cod { width: 30px; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
-        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .input-val { width: 40px; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
         .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
         
@@ -234,7 +234,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.6; // Correção Definitiva do Zoom-Out Mobile (Fixed Viewport)
+        const APP_VERSION = 4.6;
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -681,25 +681,34 @@
             const safeOven = oven.replace(/\s+/g, '-');
             let targetQ = ovenDataStore[oven]?.targets?.quality || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].quality;
             let weightedScoreSum = 0, previousVolume = 0;   
+            
             for (let i = 0; i < 12; i++) {
-                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`), aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`), volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
+                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
+                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
+                
                 if (!hInput || !aInput || !volInput) continue;
                 const hVal = parseFloat(hInput.value.replace(',', '.')), volVal = parseFloat(volInput.value.replace('.', '').replace(',', '.'));
                 
-                // Keep the color logic but preserve lock styles if needed
+                // Manutenção visual dos bloqueios
                 const isLocked = isDateLocked();
                 const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
                 
                 hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
                 
                 if (!isNaN(volVal) && !isNaN(hVal)) {
-                    let deltaVol = volVal - previousVolume; weightedScoreSum += deltaVol * hVal;
+                    let deltaVol = volVal - previousVolume; 
+                    weightedScoreSum += deltaVol * hVal;
+                    
                     if (volVal > 0) {
-                        const avg = weightedScoreSum / volVal; aInput.value = avg.toFixed(1).replace('.', ',');
+                        const avg = weightedScoreSum / volVal; 
+                        aInput.value = avg.toFixed(1).replace('.', ',');
                         aInput.className = avg >= targetQ ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
                     }
                     previousVolume = volVal;
-                } else if (!isNaN(volVal)) previousVolume = volVal;
+                } else if (!isNaN(volVal)) {
+                    previousVolume = volVal;
+                }
             }
         };
 
