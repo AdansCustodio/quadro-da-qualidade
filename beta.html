@@ -234,7 +234,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.6;
+        const APP_VERSION = 4.9; // Versão atualizada para refletir a estabilidade da estipulação visual
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -714,7 +714,7 @@
             let targetQ = ovenDataStore[oven]?.targets?.quality || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].quality;
             let weightedScoreSum = 0, previousVolume = 0;   
             
-            // NOVO: Cálculo da expectativa nominal por hora
+            // Cálculo da expectativa nominal por hora
             const nominalStr = ovenDataStore[oven]?.nominal || '';
             const nominalVal = parseFloat(nominalStr.replace('.', '').replace(',', '.'));
             const expectedPerHour = (!isNaN(nominalVal) && nominalVal > 0) ? (nominalVal / 12) : null;
@@ -723,7 +723,8 @@
                 const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
                 const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
                 const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
-                const projSpan = document.getElementById(`proj-${safeOven}-${i}-vol`); // Onde mostra o + / -
+                const projSpan = document.getElementById(`proj-${safeOven}-${i}-vol`); 
+                const projAcumSpan = document.getElementById(`proj-${safeOven}-${i}-qAcum`); // NOVO: Projeção de Acumulada
                 
                 if (!hInput || !aInput || !volInput) continue;
                 
@@ -738,6 +739,15 @@
                 
                 hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
                 
+                // Base class para Qualidade Acumulada (novo layout com flex)
+                const baseAcumClasses = "input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow";
+                
+                // Limpeza padrão do span de projeção acumulada
+                if (projAcumSpan) {
+                    projAcumSpan.innerText = '';
+                    projAcumSpan.className = 'empty:hidden';
+                }
+
                 if (!isNaN(volVal)) {
                     deltaVol = volVal - previousVolume; 
                     
@@ -746,17 +756,35 @@
                         if (volVal > 0) {
                             const avg = weightedScoreSum / volVal; 
                             aInput.value = avg.toFixed(1).replace('.', ',');
-                            aInput.className = avg >= targetQ ? "input-quali-acum text-target-ok" : "input-quali-acum text-target-low";
+                            aInput.className = avg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
+
+                            // NOVO: Cálculo e exibição da diferença da meta (Qualidade Acumulada)
+                            if (projAcumSpan) {
+                                const diffAcum = avg - targetQ;
+                                const signAcum = diffAcum > 0 ? '+' : ''; // Sem + se for 0 exato
+                                const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
+                                projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`;
+                                projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                            }
+
+                        } else {
+                            aInput.value = '';
+                            aInput.className = baseAcumClasses;
                         }
                     }
                     previousVolume = volVal;
+                } else {
+                    if (volValStr === '') {
+                        aInput.value = '';
+                        aInput.className = baseAcumClasses;
+                    }
                 }
                 
-                // NOVO: Atualiza o texto da projeção comparando o que produziu na hora (deltaVol) vs o esperado
+                // Atualiza o texto da projeção comparando o que produziu na hora (deltaVol) vs o esperado (VOLUME)
                 if (projSpan) {
                     if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) {
                         const diff = deltaVol - expectedPerHour;
-                        const sign = diff >= 0 ? '+' : '';
+                        const sign = diff > 0 ? '+' : '';
                         const formattedDiff = Math.round(diff);
                         projSpan.innerText = `(${sign}${formattedDiff})`;
                         projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`;
@@ -771,9 +799,39 @@
         window.runQuebra = (oven, row) => {
             let targetB = ovenDataStore[oven]?.targets?.breakage || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].breakage;
             let total = 0;
-            ovenDataStore[oven].rows[row].quebras.forEach(item => { if (item && item.val) { const v = parseFloat(item.val.replace(',', '.')); if (!isNaN(v)) total += v; } });
+            let hasValue = false;
+            
+            ovenDataStore[oven].rows[row].quebras.forEach(item => { 
+                if (item && item.val && item.val.trim() !== '') { 
+                    const v = parseFloat(item.val.replace(',', '.')); 
+                    if (!isNaN(v)) { 
+                        total += v; 
+                        hasValue = true; 
+                    } 
+                } 
+            });
+            
             const display = document.getElementById(`total-${oven}-${row}`);
-            if (display) { display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); display.className = `flex-grow flex items-center justify-center font-bold ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; }
+            const projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
+            
+            if (display) { 
+                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
+                display.className = `font-bold text-xs ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
+            }
+            
+            // NOVO: Exibição da diferença estipulada para a Quebra (Invertida: <= 0 é bom)
+            if (projSpan) {
+                if (hasValue) {
+                    const diff = total - targetB;
+                    const sign = diff > 0 ? '+' : '';
+                    const formattedDiff = diff.toFixed(1).replace('.', ',');
+                    projSpan.innerText = `(${sign}${formattedDiff})`;
+                    projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`;
+                } else {
+                    projSpan.innerText = '';
+                    projSpan.className = 'empty:hidden';
+                }
+            }
         };
 
         window.sugerirReferencia = (input, oven) => {
@@ -916,6 +974,8 @@
         const generateClosingRow = (ovenName, closingIndex, data, locked, lockedClass) => {
             const cd = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
             const safeOven = ovenName.replace(/\s+/g, '-');
+            const isRetifica = ovenName.includes('RETÍFICA');
+            const colSpan = isRetifica ? 5 : 6;
             
             // Calcula o valor inicial para evitar atrasos na interface
             let totalMinutes = 0;
@@ -935,7 +995,7 @@
             const labelText = closingIndex === 2 ? 'Total Dia' : 'Total Turno';
 
             return `<tr class="bg-gray-dark-custom h-8 border-t border-b border-black">
-                        <td colspan="6" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
+                        <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-black bg-gray-400 p-0 w-20 shadow-inner">
@@ -951,8 +1011,9 @@
             const data = ovenDataStore[ovenName];
             const safeOven = ovenName.replace(/\s+/g, '-');
             let rowsHTML = '';
-            const currentSchedule = (ovenName.includes('RETÍFICA')) ? scheduleGrinders : scheduleOvens;
-            const tempoVazioTitle = ovenName.includes('RETÍFICA') ? 'Tempo de Equip. Vazio' : 'Tempo de Forno Vazio';
+            const isRetifica = ovenName.includes('RETÍFICA');
+            const currentSchedule = isRetifica ? scheduleGrinders : scheduleOvens;
+            const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Vazio' : 'Tempo de Forno Vazio';
 
             const locked = isDateLocked();
             const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
@@ -964,14 +1025,14 @@
                 const rowData = data.rows[index];
                 const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
                 let refClasses = `nav-input ref-input ${lockedClass}`;
-                if (ovenName.includes('RETÍFICA') && rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert";
+                if (isRetifica && rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert";
                 else if (rowData.ref === "❌FORNO PARADO⚠️") refClasses += " text-red-600 font-black";
 
                 rowsHTML += `
                     <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
                         <td class="font-bold border-black text-sm p-0">${item.time}<span class="shift-stamp">${item.shift}</span></td>
                         <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" ${attrReadonly} list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
-                        <td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input ${selectClass}" ${attrDisabled} onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>
+                        ${isRetifica ? '' : `<td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input ${selectClass}" ${attrDisabled} onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>`}
                         
                         <td class="border-black p-0 align-middle">
                             <div class="flex flex-col h-full w-full justify-center items-center">
@@ -981,9 +1042,29 @@
                         </td>
 
                         <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input ${lockedClass}" ${attrReadonly} value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
-                        <td class="border-black"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum" readonly placeholder="0.00"></td>
+                        
+                        <td class="border-black p-0 align-middle">
+                            <div class="flex flex-col h-full w-full justify-center items-center">
+                                <input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow" readonly placeholder="0.00" style="min-height: 20px; font-size: 1rem;">
+                                <span id="proj-${safeOven}-${index}-qAcum" class="empty:hidden text-[0.65rem] font-black tracking-tighter pb-[2px]"></span>
+                            </div>
+                        </td>
+
                         <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
-                        <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold text-xs" id="total-${ovenName}-${index}">0,00</div></div></div></td>
+                        <td class="border-black p-0 w-[200px]">
+                            <div class="flex h-full">
+                                <div class="flex flex-col flex-grow">
+                                    ${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}
+                                </div>
+                                <div class="quebra-total-box">
+                                    <div class="quebra-total-header uppercase">Total</div>
+                                    <div class="flex-grow flex flex-col items-center justify-center">
+                                        <span class="font-bold text-xs" id="total-${ovenName}-${index}">0,00</span>
+                                        <span id="proj-${safeOven}-${index}-quebra" class="empty:hidden text-[0.6rem] font-black tracking-tighter leading-none pb-[2px]"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                         <td class="border-black p-0 w-20">
                             <div class="flex flex-col h-full">
                                 <input type="text" inputmode="numeric" id="input-${safeOven}-${index}-tempoVazio" class="nav-input font-bold text-center text-gray-700 h-1/2 ${lockedClass}" ${attrReadonly} value="${rowData.tempoVazio || ''}" placeholder="min" oninput="window.syncData('${ovenName}', ${index}, 'tempoVazio', this.value); document.getElementById('display-tempoVazio-${safeOven}-${index}').innerText = window.getTempoVazioFormat(this.value); window.updateTempoVazioSums('${ovenName}');">
@@ -1024,8 +1105,13 @@
                             <input type="text" inputmode="decimal" class="border border-gray-300 rounded px-1 font-bold text-blue-700 h-5 w-20 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.nominal || ''}" oninput="window.syncNominal('${ovenName}', this.value); window.runCalcs('${ovenName}')">
                         </div>
                         <div class="w-1/2 p-1 flex justify-center items-center gap-1">
-                            <span>Linha:</span>
-                            <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>
+                            ${isRetifica ? 
+                                `<span>Bitola:</span>
+                                 <input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
+                                :
+                                `<span>Linha:</span>
+                                 <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
+                            }
                         </div>
                     </div>
                     
@@ -1034,7 +1120,7 @@
                         <table class="w-full min-w-[1000px]">
                             <thead>
                                 <tr class="header-blue font-bold text-xs leading-tight bg-gray-50">
-                                    <th class="w-14">Hora</th><th class="w-48">Referência</th><th class="w-12">Turno</th><th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
+                                    <th class="w-14">Hora</th><th class="${isRetifica ? 'w-60' : 'w-48'}">Referência</th>${isRetifica ? '' : '<th class="w-12">Turno</th>'}<th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
                                     <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
                                     <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
                                     <th class="w-20 text-gray-700 p-0 text-[0.65rem] leading-tight bg-gray-100 border-l border-black"><div class="flex items-center justify-center h-full px-1 py-1 text-center">${tempoVazioTitle}</div></th>
