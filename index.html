@@ -799,9 +799,39 @@
         window.runQuebra = (oven, row) => {
             let targetB = ovenDataStore[oven]?.targets?.breakage || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].breakage;
             let total = 0;
-            ovenDataStore[oven].rows[row].quebras.forEach(item => { if (item && item.val) { const v = parseFloat(item.val.replace(',', '.')); if (!isNaN(v)) total += v; } });
+            let hasValue = false;
+            
+            ovenDataStore[oven].rows[row].quebras.forEach(item => { 
+                if (item && item.val && item.val.trim() !== '') { 
+                    const v = parseFloat(item.val.replace(',', '.')); 
+                    if (!isNaN(v)) { 
+                        total += v; 
+                        hasValue = true; 
+                    } 
+                } 
+            });
+            
             const display = document.getElementById(`total-${oven}-${row}`);
-            if (display) { display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); display.className = `flex-grow flex items-center justify-center font-bold ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; }
+            const projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
+            
+            if (display) { 
+                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
+                display.className = `font-bold text-xs ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
+            }
+            
+            // NOVO: Exibição da diferença estipulada para a Quebra (Invertida: <= 0 é bom)
+            if (projSpan) {
+                if (hasValue) {
+                    const diff = total - targetB;
+                    const sign = diff > 0 ? '+' : '';
+                    const formattedDiff = diff.toFixed(1).replace('.', ',');
+                    projSpan.innerText = `(${sign}${formattedDiff})`;
+                    projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`;
+                } else {
+                    projSpan.innerText = '';
+                    projSpan.className = 'empty:hidden';
+                }
+            }
         };
 
         window.sugerirReferencia = (input, oven) => {
@@ -1018,7 +1048,20 @@
                         </td>
 
                         <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
-                        <td class="border-black p-0 w-[200px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex items-center justify-center font-bold text-xs" id="total-${ovenName}-${index}">0,00</div></div></div></td>
+                        <td class="border-black p-0 w-[200px]">
+                            <div class="flex h-full">
+                                <div class="flex flex-col flex-grow">
+                                    ${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}
+                                </div>
+                                <div class="quebra-total-box">
+                                    <div class="quebra-total-header uppercase">Total</div>
+                                    <div class="flex-grow flex flex-col items-center justify-center">
+                                        <span class="font-bold text-xs" id="total-${ovenName}-${index}">0,00</span>
+                                        <span id="proj-${safeOven}-${index}-quebra" class="empty:hidden text-[0.6rem] font-black tracking-tighter leading-none pb-[2px]"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                         <td class="border-black p-0 w-20">
                             <div class="flex flex-col h-full">
                                 <input type="text" inputmode="numeric" id="input-${safeOven}-${index}-tempoVazio" class="nav-input font-bold text-center text-gray-700 h-1/2 ${lockedClass}" ${attrReadonly} value="${rowData.tempoVazio || ''}" placeholder="min" oninput="window.syncData('${ovenName}', ${index}, 'tempoVazio', this.value); document.getElementById('display-tempoVazio-${safeOven}-${index}').innerText = window.getTempoVazioFormat(this.value); window.updateTempoVazioSums('${ovenName}');">
