@@ -692,15 +692,18 @@
 
             const sumT1 = calculateSum(0, 3);
             const sumT2 = calculateSum(4, 7);
-            const sumTotal = calculateSum(0, 11);
+            const sumT3 = calculateSum(8, 11);
+            const sumTotal = sumT1 + sumT2 + sumT3;
 
             const el1 = document.getElementById(`sum-tempoVazio-${safeOven}-0`);
             const el2 = document.getElementById(`sum-tempoVazio-${safeOven}-1`);
-            const el3 = document.getElementById(`sum-tempoVazio-${safeOven}-2`);
+            const el3Turno = document.getElementById(`sum-tempoVazio-${safeOven}-2-turno`);
+            const el3Dia = document.getElementById(`sum-tempoVazio-${safeOven}-2-dia`);
 
             if (el1) el1.innerText = sumT1 > 0 ? window.getTempoVazioFormat(sumT1) : '-';
             if (el2) el2.innerText = sumT2 > 0 ? window.getTempoVazioFormat(sumT2) : '-';
-            if (el3) el3.innerText = sumTotal > 0 ? window.getTempoVazioFormat(sumTotal) : '-';
+            if (el3Turno) el3Turno.innerText = sumT3 > 0 ? window.getTempoVazioFormat(sumT3) : '-';
+            if (el3Dia) el3Dia.innerText = sumTotal > 0 ? window.getTempoVazioFormat(sumTotal) : '-';
         };
 
         window.attachCalculations = (oven) => { 
@@ -978,31 +981,59 @@
             const colSpan = isRetifica ? 5 : 6;
             
             // Calcula o valor inicial para evitar atrasos na interface
-            let totalMinutes = 0;
-            let startRow = 0;
-            let endRow = 11;
+            let shiftMinutes = 0;
+            let dayMinutes = 0;
             
-            if (closingIndex === 0) { startRow = 0; endRow = 3; } 
-            else if (closingIndex === 1) { startRow = 4; endRow = 7; } 
-            else if (closingIndex === 2) { startRow = 0; endRow = 11; }
+            let startRow = 0, endRow = 3;
+            if (closingIndex === 1) { startRow = 4; endRow = 7; } 
+            else if (closingIndex === 2) { startRow = 8; endRow = 11; }
 
+            // Soma do Turno
             for (let i = startRow; i <= endRow; i++) {
                 const val = parseInt(data.rows[i].tempoVazio, 10);
-                if (!isNaN(val) && val > 0) totalMinutes += val;
+                if (!isNaN(val) && val > 0) shiftMinutes += val;
             }
 
-            const formattedTempo = totalMinutes > 0 ? window.getTempoVazioFormat(totalMinutes) : '-';
-            const labelText = closingIndex === 2 ? 'Total Dia' : 'Total Turno';
+            // Soma do Dia (apenas para a última linha de fechamento)
+            if (closingIndex === 2) {
+                for (let i = 0; i <= 11; i++) {
+                    const val = parseInt(data.rows[i].tempoVazio, 10);
+                    if (!isNaN(val) && val > 0) dayMinutes += val;
+                }
+            }
+
+            const formattedShiftTempo = shiftMinutes > 0 ? window.getTempoVazioFormat(shiftMinutes) : '-';
+            const formattedDayTempo = dayMinutes > 0 ? window.getTempoVazioFormat(dayMinutes) : '-';
+
+            // Montagem dinâmica da célula "Tempo Vazio"
+            let tempoCellContent = '';
+            if (closingIndex === 2) {
+                 tempoCellContent = `
+                    <div class="flex flex-col h-full w-full justify-center">
+                        <div class="flex flex-col items-center justify-center bg-white/40 flex-1 pt-[2px]">
+                            <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Turno</span>
+                            <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.6rem] text-black leading-none">${formattedShiftTempo}</span>
+                        </div>
+                        <div class="w-full border-t border-gray-500/30"></div>
+                        <div class="flex flex-col items-center justify-center bg-blue-100 flex-1 pb-[2px]">
+                            <span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Dia</span>
+                            <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.6rem] text-blue-900 leading-none">${formattedDayTempo}</span>
+                        </div>
+                    </div>`;
+            } else {
+                 tempoCellContent = `
+                    <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-white/30 rounded-sm m-[1px]">
+                        <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.5rem] leading-none mb-1">Total Turno</span>
+                        <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.7rem] text-black leading-none">${formattedShiftTempo}</span>
+                    </div>`;
+            }
 
             return `<tr class="bg-gray-dark-custom h-8 border-t border-b border-black">
                         <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-black bg-gray-400 p-0 w-20 shadow-inner">
-                            <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-white/30 rounded-sm m-[1px]">
-                                <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.5rem] leading-none mb-1">${labelText}</span>
-                                <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.7rem] text-black leading-none">${formattedTempo}</span>
-                            </div>
+                            ${tempoCellContent}
                         </td>
                     </tr>`;
         };
