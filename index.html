@@ -107,7 +107,7 @@
         /* Container principal sem restrição de largura para o canvas expandir */
         body.mobile-mode #main-content { max-width: none; margin: 0; border: none; box-shadow: none; }
         
-        body.mobile-mode table { min-width: 1100px; }
+        body.mobile-mode table { min-width: 1250px; }
         body.mobile-mode th, body.mobile-mode td { font-size: 0.85rem; padding: 4px; }
         
         /* Inputs maiores para toque fácil no celular */
@@ -498,10 +498,12 @@
 
         // --- ESTRUTURA DE DADOS ---
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
+        const createEmptyParadaRow = () => ({ desc: '', val: '' }); // Nova sub-estrutura de parada
         const createEmptyOvenData = () => ({
             linha: '', nominal: '', targets: null, 
             rows: Array(12).fill(null).map(() => ({ 
                 ref: '', turno: '', vol: '', qHora: '', tempoVazio: '',
+                paradas: [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()],
                 defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
                 quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
             })),
@@ -574,11 +576,20 @@
                         data.rows.forEach(r => {
                             if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
                             if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
-                            r.tempoVazio = r.tempoVazio || ''; // Garantir que a propriedade nova exista em dias antigos
+                            
+                            // Migração Dinâmica: Se existir dado no campo antigo (tempoVazio), empurra para o array novo (paradas)
+                            if (!r.paradas || r.paradas.length === 0) {
+                                r.paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()];
+                                if (r.tempoVazio && typeof r.tempoVazio !== 'object') {
+                                    r.paradas[0].val = r.tempoVazio;
+                                    r.paradas[0].desc = "Registro Migrado";
+                                    r.tempoVazio = ''; 
+                                }
+                            }
                         });
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
                         if (!data.targets) data.targets = null;
-                        data.nominal = data.nominal || ''; // Garante que dias antigos recebam a propriedade nominal
+                        data.nominal = data.nominal || ''; 
                         ovenDataStore[ovenName] = data;
                     } else ovenDataStore[ovenName] = createEmptyOvenData();
                     loadedCount++;
@@ -675,6 +686,15 @@
             saveToFirebase(oven); if (type === 'quebras') window.runQuebra(oven, row);
         };
 
+        window.updateParada = (oven, row, index, field, val) => {
+            if (!isDataLoaded || isDateLocked()) return;
+            if (!ovenDataStore[oven].rows[row].paradas) ovenDataStore[oven].rows[row].paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()];
+            ovenDataStore[oven].rows[row].paradas[index][field] = val;
+            saveToFirebase(oven);
+            window.runParadaRow(oven, row);
+            window.updateTempoVazioSums(oven);
+        };
+
         window.updateTempoVazioSums = (oven) => {
             const data = ovenDataStore[oven];
             if (!data) return;
@@ -683,9 +703,11 @@
             const calculateSum = (start, end) => {
                 let sum = 0;
                 for (let i = start; i <= end; i++) {
-                    const input = document.getElementById(`input-${safeOven}-${i}-tempoVazio`);
-                    const val = input ? parseInt(input.value, 10) : parseInt(data.rows[i].tempoVazio, 10);
-                    if (!isNaN(val) && val > 0) sum += val;
+                    const paradas = data.rows[i].paradas || [];
+                    paradas.forEach(p => {
+                        const val = parseInt(p.val, 10);
+                        if (!isNaN(val) && val > 0) sum += val;
+                    });
                 }
                 return sum;
             };
@@ -708,7 +730,10 @@
 
         window.attachCalculations = (oven) => { 
             window.runCalcs(oven); 
-            for(let i=0; i<12; i++) window.runQuebra(oven, i); 
+            for(let i=0; i<12; i++) {
+                window.runQuebra(oven, i); 
+                window.runParadaRow(oven, i);
+            }
             window.updateTempoVazioSums(oven);
         };
 
@@ -727,7 +752,7 @@
                 const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
                 const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
                 const projSpan = document.getElementById(`proj-${safeOven}-${i}-vol`); 
-                const projAcumSpan = document.getElementById(`proj-${safeOven}-${i}-qAcum`); // NOVO: Projeção de Acumulada
+                const projAcumSpan = document.getElementById(`proj-${safeOven}-${i}-qAcum`); 
                 
                 if (!hInput || !aInput || !volInput) continue;
                 
@@ -736,16 +761,13 @@
                 const volVal = parseFloat(volValStr);
                 let deltaVol = 0;
                 
-                // Manutenção visual dos bloqueios
                 const isLocked = isDateLocked();
                 const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
                 
                 hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
                 
-                // Base class para Qualidade Acumulada (novo layout com flex)
                 const baseAcumClasses = "input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow";
                 
-                // Limpeza padrão do span de projeção acumulada
                 if (projAcumSpan) {
                     projAcumSpan.innerText = '';
                     projAcumSpan.className = 'empty:hidden';
@@ -761,10 +783,9 @@
                             aInput.value = avg.toFixed(1).replace('.', ',');
                             aInput.className = avg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
 
-                            // NOVO: Cálculo e exibição da diferença da meta (Qualidade Acumulada)
                             if (projAcumSpan) {
                                 const diffAcum = avg - targetQ;
-                                const signAcum = diffAcum > 0 ? '+' : ''; // Sem + se for 0 exato
+                                const signAcum = diffAcum > 0 ? '+' : ''; 
                                 const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
                                 projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`;
                                 projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`;
@@ -783,7 +804,6 @@
                     }
                 }
                 
-                // Atualiza o texto da projeção comparando o que produziu na hora (deltaVol) vs o esperado (VOLUME)
                 if (projSpan) {
                     if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) {
                         const diff = deltaVol - expectedPerHour;
@@ -822,7 +842,6 @@
                 display.className = `font-bold text-xs ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
             }
             
-            // NOVO: Exibição da diferença estipulada para a Quebra (Invertida: <= 0 é bom)
             if (projSpan) {
                 if (hasValue) {
                     const diff = total - targetB;
@@ -833,6 +852,28 @@
                 } else {
                     projSpan.innerText = '';
                     projSpan.className = 'empty:hidden';
+                }
+            }
+        };
+
+        window.runParadaRow = (oven, row) => {
+            const data = ovenDataStore[oven].rows[row].paradas;
+            let total = 0;
+            if (data) {
+                data.forEach(p => {
+                    const v = parseInt(p.val, 10);
+                    if (!isNaN(v) && v > 0) total += v;
+                });
+            }
+            const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`);
+            if (display) {
+                if (total > 0) {
+                    const hrStr = window.getTempoVazioFormat(total);
+                    display.innerText = `${total} min (${hrStr})`;
+                    display.className = "text-[0.65rem] font-bold text-blue-800";
+                } else {
+                    display.innerText = '0 min';
+                    display.className = "text-[0.65rem] font-bold text-gray-500";
                 }
             }
         };
@@ -990,15 +1031,21 @@
 
             // Soma do Turno
             for (let i = startRow; i <= endRow; i++) {
-                const val = parseInt(data.rows[i].tempoVazio, 10);
-                if (!isNaN(val) && val > 0) shiftMinutes += val;
+                const paradas = data.rows[i].paradas || [];
+                paradas.forEach(p => {
+                    const val = parseInt(p.val, 10);
+                    if (!isNaN(val) && val > 0) shiftMinutes += val;
+                });
             }
 
             // Soma do Dia (apenas para a última linha de fechamento)
             if (closingIndex === 2) {
                 for (let i = 0; i <= 11; i++) {
-                    const val = parseInt(data.rows[i].tempoVazio, 10);
-                    if (!isNaN(val) && val > 0) dayMinutes += val;
+                    const paradas = data.rows[i].paradas || [];
+                    paradas.forEach(p => {
+                        const val = parseInt(p.val, 10);
+                        if (!isNaN(val) && val > 0) dayMinutes += val;
+                    });
                 }
             }
 
@@ -1032,7 +1079,7 @@
                         <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-black bg-gray-400 p-0 w-20 shadow-inner">
+                        <td class="border-black bg-gray-400 p-0 w-[200px] shadow-inner">
                             ${tempoCellContent}
                         </td>
                     </tr>`;
@@ -1044,7 +1091,7 @@
             let rowsHTML = '';
             const isRetifica = ovenName.includes('RETÍFICA');
             const currentSchedule = isRetifica ? scheduleGrinders : scheduleOvens;
-            const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Vazio' : 'Tempo de Forno Vazio';
+            const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Parado' : 'Tempo de Forno Vazio';
 
             const locked = isDateLocked();
             const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
@@ -1096,11 +1143,15 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="border-black p-0 w-20">
-                            <div class="flex flex-col h-full">
-                                <input type="text" inputmode="numeric" id="input-${safeOven}-${index}-tempoVazio" class="nav-input font-bold text-center text-gray-700 h-1/2 ${lockedClass}" ${attrReadonly} value="${rowData.tempoVazio || ''}" placeholder="min" oninput="window.syncData('${ovenName}', ${index}, 'tempoVazio', this.value); document.getElementById('display-tempoVazio-${safeOven}-${index}').innerText = window.getTempoVazioFormat(this.value); window.updateTempoVazioSums('${ovenName}');">
-                                <div id="display-tempoVazio-${safeOven}-${index}" class="text-[0.6rem] text-gray-500 font-bold bg-gray-100 flex-grow flex items-center justify-center border-t border-gray-300">
-                                    ${window.getTempoVazioFormat(rowData.tempoVazio)}
+                        <td class="border-black p-0 w-[200px]">
+                            <div class="flex flex-col h-full bg-white">
+                                ${rowData.paradas.map((item, i) => `
+                                <div class="sub-row">
+                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-desc" class="input-desc flex-grow ${lockedClass}" placeholder="Motivo" value="${item.desc || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'desc', this.value)">
+                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val w-[40px] border-l border-eee ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)">
+                                </div>`).join('')}
+                                <div class="sub-row bg-gray-100 flex items-center justify-center border-none flex-grow">
+                                    <span id="total-parada-${safeOven}-${index}" class="text-[0.65rem] font-bold text-gray-500">0 min</span>
                                 </div>
                             </div>
                         </td>
@@ -1148,13 +1199,19 @@
                     
                     <!-- Wrapper para scroll horizontal ajustado para a nova coluna -->
                     <div class="table-responsive-wrapper">
-                        <table class="w-full min-w-[1000px]">
+                        <table class="w-full min-w-[1150px]">
                             <thead>
                                 <tr class="header-blue font-bold text-xs leading-tight bg-gray-50">
                                     <th class="w-14">Hora</th><th class="${isRetifica ? 'w-60' : 'w-48'}">Referência</th>${isRetifica ? '' : '<th class="w-12">Turno</th>'}<th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
                                     <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
                                     <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
-                                    <th class="w-20 text-gray-700 p-0 text-[0.65rem] leading-tight bg-gray-100 border-l border-black"><div class="flex items-center justify-center h-full px-1 py-1 text-center">${tempoVazioTitle}</div></th>
+                                    <th class="w-[200px] text-gray-700 p-0 text-[0.65rem] leading-tight bg-gray-100 border-l border-black">
+                                        <div class="text-center border-b border-black py-[2px]">${tempoVazioTitle}</div>
+                                        <div class="sub-header-row" style="border-bottom:none;">
+                                            <span class="sh-desc text-center">Motivo</span>
+                                            <span class="sh-val text-center" style="width:40px;">min</span>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHTML}</tbody>
@@ -1225,18 +1282,24 @@
                     if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return;
                     e.preventDefault();
                     const el = document.activeElement; if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'SELECT')) return;
-                    const subMatch = el.id.match(/input-(.+)-(\d+)-(defects|quebras)-(\d+)-(cod|val|desc)/);
+                    const subMatch = el.id.match(/input-(.+)-(\d+)-(defects|quebras|paradas)-(\d+)-(cod|val|desc)/);
                     if (subMatch) {
                         const [_, oven, rowStr, type, idxStr, field] = subMatch; const row = parseInt(rowStr), idx = parseInt(idxStr);
                         if (field === 'cod') {
                             const descInput = document.getElementById(`input-${oven}-${row}-${type}-${idx}-desc`);
                             if (descInput && !descInput.hasAttribute('readonly')) descInput.focus(); else document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
-                        } else if (field === 'desc') document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
-                        else if (field === 'val') {
-                            if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus();
-                            else {
-                                if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus();
+                        } else if (field === 'desc') {
+                            document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
+                        } else if (field === 'val') {
+                            if (type === 'paradas') {
+                                if (idx < 2) document.getElementById(`input-${oven}-${row}-paradas-${idx+1}-desc`)?.focus();
                                 else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus();
+                            } else {
+                                if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus();
+                                else {
+                                    if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus();
+                                    else if (type === 'quebras') document.getElementById(`input-${oven}-${row}-paradas-0-desc`)?.focus();
+                                }
                             }
                         }
                         return;
