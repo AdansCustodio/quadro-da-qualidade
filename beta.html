@@ -202,6 +202,7 @@
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
         const APP_VERSION = 4.9; 
+        const appLoadTime = Date.now(); // Memoriza o momento exato em que a página foi carregada
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -281,7 +282,8 @@
         let passwordContext = 'config'; // 'config' ou 'unlock'
         
         let unsubscribeRealtimeList = []; 
-        let unsubscribeDefects = null; 
+        let unsubscribeDefects = null;
+        let unsubscribeRefresh = null;
         let availableBackups = [];
 
         let globalConfig = {
@@ -318,6 +320,39 @@
                 }
             }
         };
+
+        // --- FORÇAR ATUALIZAÇÃO GERAL (REFRESH) ---
+        window.forceGlobalRefresh = async () => {
+            if (!db) return;
+            if (confirm("⚠️ ATENÇÃO: Esta ação vai forçar todos os ecrãs da fábrica e telemóveis a recarregarem a página imediatamente.\n\nTem a certeza absoluta?")) {
+                setSaveStatus('saving');
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh');
+                    await setDoc(docRef, { timestamp: Date.now() });
+                    setSaveStatus('saved');
+                } catch (e) {
+                    console.error("Erro ao forçar atualização:", e);
+                    setSaveStatus('error');
+                    alert("Erro ao enviar comando de atualização.");
+                }
+            }
+        };
+
+        const setupRefreshListener = () => {
+            if (!db) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh');
+            unsubscribeRefresh = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Se o comando de atualização na nuvem for mais recente que o momento em que a app carregou + 2 segundos (margem de race condition)
+                    if (data.timestamp && data.timestamp > appLoadTime + 2000) {
+                        console.log("Comando de atualização global recebido. Recarregando...");
+                        window.location.reload(true);
+                    }
+                }
+            }, (error) => console.error("Erro no listener de refresh:", error));
+        };
+
 
         // --- SISTEMA DE BACKUP E RESTAURAÇÃO ---
         window.runManualBackup = async (overrideDate = null, isAuto = false) => {
@@ -938,6 +973,13 @@
                     </div>
 
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
+                    
+                    <!-- NOVO: CONTROLO DE SISTEMA (FORCE REFRESH) -->
+                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200">
+                        <h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4>
+                        <p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p>
+                        <button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button>
+                    </div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
@@ -1250,7 +1292,7 @@
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
                     else await signInAnonymously(auth);
                 } catch (e) {}
-                onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); window.setupRealtimeListener(); } });
+                onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } });
             }
 
             document.addEventListener('keydown', (e) => {
