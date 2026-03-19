@@ -29,9 +29,9 @@
         .sub-row { display: flex; border-bottom: 1px solid #ccc; height: 1.4rem; align-items: center; }
         .sub-row:last-child { border-bottom: none; }
         
-        .input-cod { width: 30px; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
+        .input-cod { width: 30px; flex-shrink: 0; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
         .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .input-val { width: 40px; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
+        .input-val { width: 40px; flex-shrink: 0; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
         .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
         
         /* --- CORES DE STATUS (METAS) --- */
@@ -50,13 +50,8 @@
         .btn-force-reload { background-color: #16a34a; color: white; font-weight: bold; font-size: 0.7rem; border-radius: 4px; padding: 4px 8px; margin-left: 8px; text-transform: uppercase; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: background-color 0.2s; }
         .btn-force-reload:hover { background-color: #15803d; }
         
-        /* Botão MODO MOBILE */
-        .btn-mobile-toggle { background-color: #4f46e5; color: white; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 0.75rem; transition: all 0.3s; }
-        .btn-mobile-toggle:hover { background-color: #4338ca; }
-        .btn-mobile-toggle.active { background-color: #1f2937; } /* Fica escuro quando ativo */
-
         /* --- COMPONENTES ESPECÍFICOS --- */
-        .quebra-total-box { width: 50px; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
+        .quebra-total-box { width: 50px; flex-shrink: 0; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
         
         /* Container de Rolagem Horizontal Suave (Essencial para não quebrar tabelas grandes no modo normal) */
@@ -91,28 +86,6 @@
 
         /* TELA DE BLOQUEIO DE VERSÃO/LOCAL */
         #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
-
-        /* =========================================
-           MODO SMARTPHONE RESPONSIVO (MOBILE-FIRST)
-           ========================================= */
-        body.mobile-mode { padding: 0 !important; background-color: #f3f4f6; }
-        
-        /* Navbar no modo mobile */
-        body.mobile-mode .navbar-container { padding: 0.5rem; overflow-x: auto; flex-wrap: nowrap; border-radius: 0; margin-bottom: 0; }
-        body.mobile-mode .tab-btn { padding: 0.75rem 1rem; font-size: 0.8rem; } /* Área de toque maior */
-        
-        /* NOVO AJUSTE: Remove a rolagem horizontal interna no modo Mobile para permitir o Zoom Out do navegador */
-        body.mobile-mode .table-responsive-wrapper { overflow-x: visible !important; }
-        
-        /* Container principal sem restrição de largura para o canvas expandir */
-        body.mobile-mode #main-content { max-width: none; margin: 0; border: none; box-shadow: none; }
-        
-        body.mobile-mode table { min-width: 1250px; }
-        body.mobile-mode th, body.mobile-mode td { font-size: 0.85rem; padding: 4px; }
-        
-        /* Inputs maiores para toque fácil no celular */
-        body.mobile-mode input, body.mobile-mode select { min-height: 38px; }
-        body.mobile-mode .sub-row { height: 2rem; }
     </style>
 </head>
 <body class="bg-gray-200 p-4 transition-all duration-300">
@@ -131,7 +104,7 @@
     </div>
 
     <!-- Navegação Superior -->
-    <div class="navbar-container max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-sm rounded-t-lg border-b overflow-x-auto items-center">
+    <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
         
         <!-- BRAND LOGO MOHAWK BRASIL (Puro CSS/HTML) -->
         <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil" title="Mohawk Brasil">
@@ -182,12 +155,6 @@
         
         <div class="flex-grow"></div>
         
-        <!-- Botão Novo: Alternar Layout Responsivo (Mobile) -->
-        <button onclick="window.toggleMobileMode()" class="btn-mobile-toggle px-4 py-2 shadow-sm flex items-center gap-2 whitespace-nowrap mr-2 shrink-0" id="btn-MOBILE" aria-label="Alternar Layout Smartphone">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-            <span id="mobile-btn-text">ABRIR NO SMARTPHONE</span>
-        </button>
-        
         <!-- Botão de Configurações -->
         <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG" aria-label="Configurações do Sistema" title="Configurações">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -234,7 +201,7 @@
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.9; // Versão atualizada para refletir a estabilidade da estipulação visual
+        const APP_VERSION = 4.9; 
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -304,7 +271,6 @@
 
         let currentOven = 'FORNO 2';
         let viewMode = 'single'; 
-        let isMobileLayoutActive = false; 
         
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
@@ -606,33 +572,6 @@
             updateDateUI(); 
             resetStore(); 
             window.setupRealtimeListener(); 
-        };
-
-        // Controle do Layout Flexível (Mobile Responsivo)
-        window.toggleMobileMode = () => {
-            isMobileLayoutActive = !isMobileLayoutActive;
-            const btn = document.getElementById('btn-MOBILE');
-            const text = document.getElementById('mobile-btn-text');
-            const viewportMeta = document.querySelector('meta[name="viewport"]');
-            
-            if (isMobileLayoutActive) {
-                document.body.classList.add('mobile-mode');
-                btn.classList.add('active');
-                text.innerText = '💻 MODO DESKTOP';
-                
-                // MÁGICA DO ZOOM-OUT
-                if (viewportMeta) {
-                    viewportMeta.setAttribute('content', 'width=1200, user-scalable=yes');
-                }
-            } else {
-                document.body.classList.remove('mobile-mode');
-                btn.classList.remove('active');
-                text.innerText = '📱 ABRIR NO SMARTPHONE';
-                
-                if (viewportMeta) {
-                    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-                }
-            }
         };
 
         window.setViewMode = (mode, oven = null) => {
@@ -1079,7 +1018,7 @@
                         <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-black bg-gray-400 p-0 w-[200px] shadow-inner">
+                        <td class="border-black bg-gray-400 p-0 w-[200px] min-w-[200px] shadow-inner">
                             ${tempoCellContent}
                         </td>
                     </tr>`;
@@ -1128,8 +1067,8 @@
                             </div>
                         </td>
 
-                        <td class="border-black p-0 w-[150px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
-                        <td class="border-black p-0 w-[200px]">
+                        <td class="border-black p-0 w-[180px] min-w-[180px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
+                        <td class="border-black p-0 w-[230px] min-w-[230px]">
                             <div class="flex h-full">
                                 <div class="flex flex-col flex-grow">
                                     ${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}
@@ -1143,12 +1082,12 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="border-black p-0 w-[200px]">
+                        <td class="border-black p-0 w-[200px] min-w-[200px]">
                             <div class="flex flex-col h-full bg-white">
                                 ${rowData.paradas.map((item, i) => `
                                 <div class="sub-row">
                                     <input type="text" id="input-${safeOven}-${index}-paradas-${i}-desc" class="input-desc flex-grow ${lockedClass}" placeholder="Motivo" value="${item.desc || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'desc', this.value)">
-                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val w-[40px] border-l border-eee ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)">
+                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val shrink-0 ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)">
                                 </div>`).join('')}
                                 <div class="sub-row bg-gray-100 flex items-center justify-center border-none flex-grow">
                                     <span id="total-parada-${safeOven}-${index}" class="text-[0.65rem] font-bold text-gray-500">0 min</span>
@@ -1181,35 +1120,72 @@
                         </div>
                     </div>
                     
-                    <div class="flex border-b border-black font-bold uppercase text-[0.6rem] bg-white">
-                        <div class="w-1/2 border-r border-black p-1 flex justify-center items-center gap-1">
-                            <span>Nominal do Equip. (m²/dia):</span>
-                            <input type="text" inputmode="decimal" class="border border-gray-300 rounded px-1 font-bold text-blue-700 h-5 w-20 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.nominal || ''}" oninput="window.syncNominal('${ovenName}', this.value); window.runCalcs('${ovenName}')">
-                        </div>
-                        <div class="w-1/2 p-1 flex justify-center items-center gap-1">
-                            ${isRetifica ? 
-                                `<span>Bitola:</span>
-                                 <input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
-                                :
-                                `<span>Linha:</span>
-                                 <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
-                            }
-                        </div>
-                    </div>
-                    
                     <!-- Wrapper para scroll horizontal ajustado para a nova coluna -->
                     <div class="table-responsive-wrapper">
-                        <table class="w-full min-w-[1150px]">
+                        <table class="w-full min-w-[1250px]">
                             <thead>
+                                <!-- Linha Nominal/Bitola integrada nativamente na tabela para alinhamento perfeito -->
+                                <tr class="bg-white font-bold uppercase text-[0.6rem]">
+                                    <th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white">
+                                        <div class="flex justify-center items-center gap-1">
+                                            <span>Nominal do Equip. (m²/dia):</span>
+                                            <input type="text" inputmode="decimal" class="border border-gray-300 rounded px-1 font-bold text-blue-700 h-5 w-20 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.nominal || ''}" oninput="window.syncNominal('${ovenName}', this.value); window.runCalcs('${ovenName}')">
+                                        </div>
+                                    </th>
+                                    <th colspan="3" class="border-b border-black p-1 bg-white">
+                                        <div class="flex justify-center items-center gap-1">
+                                            ${isRetifica ? 
+                                                `<span>Bitola:</span>
+                                                 <input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
+                                                :
+                                                `<span>Linha:</span>
+                                                 <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
+                                            }
+                                        </div>
+                                    </th>
+                                </tr>
+                                
                                 <tr class="header-blue font-bold text-xs leading-tight bg-gray-50">
-                                    <th class="w-14">Hora</th><th class="${isRetifica ? 'w-60' : 'w-48'}">Referência</th>${isRetifica ? '' : '<th class="w-12">Turno</th>'}<th class="w-20">Volume</th><th class="w-24">Qualidade Hora (%)</th><th class="w-24">Qualidade Acumulada (%)</th>
-                                    <th class="w-[150px] p-0"><div class="text-center border-b border-black">Defeitos</div><div class="sub-header-row"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></th>
-                                    <th class="w-[200px] text-red-600 p-0"><div class="text-center border-b border-black">Quebra</div><div class="flex"><div class="flex-grow"><div class="sub-header-row" style="border-bottom:none;"><span class="sh-cod text-center">Cód</span><span class="sh-desc text-center">Descrição</span><span class="sh-val text-center">%</span></div></div><div class="w-[50px] border-l border-black flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
-                                    <th class="w-[200px] text-gray-700 p-0 text-[0.65rem] leading-tight bg-gray-100 border-l border-black">
-                                        <div class="text-center border-b border-black py-[2px]">${tempoVazioTitle}</div>
-                                        <div class="sub-header-row" style="border-bottom:none;">
-                                            <span class="sh-desc text-center">Motivo</span>
-                                            <span class="sh-val text-center" style="width:40px;">min</span>
+                                    <th rowspan="2" class="w-14 align-middle border-black">Hora</th>
+                                    <th rowspan="2" class="${isRetifica ? 'w-60' : 'w-48'} align-middle border-black">Referência</th>
+                                    ${isRetifica ? '' : '<th rowspan="2" class="w-12 align-middle border-black">Turno</th>'}
+                                    <th rowspan="2" class="w-20 align-middle border-black">Volume</th>
+                                    <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Hora (%)</th>
+                                    <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Acumulada (%)</th>
+                                    
+                                    <th class="w-[180px] min-w-[180px] p-0 border-b border-black">
+                                        <div class="text-center py-[4px]">Defeitos</div>
+                                    </th>
+                                    <th class="w-[230px] min-w-[230px] text-red-600 p-0 border-b border-black">
+                                        <div class="text-center py-[4px]">Quebra</div>
+                                    </th>
+                                    <th class="w-[200px] min-w-[200px] text-gray-700 bg-gray-100 p-0 border-b border-black">
+                                        <div class="text-center py-[4px]">${tempoVazioTitle}</div>
+                                    </th>
+                                </tr>
+                                <tr class="header-blue">
+                                    <th class="p-0 border-black border-t-0 align-middle">
+                                        <div class="flex w-full h-full bg-[#e5e7eb] font-bold text-[0.6rem]">
+                                            <span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span>
+                                            <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span>
+                                            <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span>
+                                        </div>
+                                    </th>
+                                    <th class="p-0 border-black border-t-0 align-middle">
+                                        <div class="flex w-full h-full bg-[#e5e7eb]">
+                                            <div class="flex-grow flex font-bold text-[0.6rem] text-red-600">
+                                                <span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span>
+                                                <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span>
+                                                <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span>
+                                            </div>
+                                            <!-- Largura travada em 50px e cor da borda sincronizada com quebra-total-box -->
+                                            <div class="w-[50px] shrink-0 border-l border-[#999] flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div>
+                                        </div>
+                                    </th>
+                                    <th class="p-0 border-black border-t-0 align-middle bg-gray-100">
+                                         <div class="flex w-full h-full font-bold text-[0.6rem] text-gray-700">
+                                            <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Motivo</span>
+                                            <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">min</span>
                                         </div>
                                     </th>
                                 </tr>
