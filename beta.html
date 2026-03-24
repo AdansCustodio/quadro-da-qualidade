@@ -754,11 +754,18 @@
                         weightedScoreSum += deltaVol * hVal;
                         if (volVal > 0) {
                             const avg = weightedScoreSum / volVal; 
-                            aInput.value = avg.toFixed(1).replace('.', ',');
-                            aInput.className = avg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
+                            
+                            // Correção matemática: Forçar precisão de 1 casa decimal antes de comparar
+                            let roundedAvg = parseFloat(avg.toFixed(1));
+
+                            aInput.value = roundedAvg.toFixed(1).replace('.', ',');
+                            aInput.className = roundedAvg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
 
                             if (projAcumSpan) {
-                                const diffAcum = avg - targetQ;
+                                let diffAcum = roundedAvg - targetQ;
+                                diffAcum = parseFloat(diffAcum.toFixed(1)); // Limpar sujeira de precisão matemática
+                                if (diffAcum === 0) diffAcum = 0; // Prevenir que apareça o "-0.0"
+                                
                                 const signAcum = diffAcum > 0 ? '+' : ''; 
                                 const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
                                 projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`;
@@ -781,10 +788,12 @@
                 if (projSpan) {
                     if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) {
                         const diff = deltaVol - expectedPerHour;
-                        const sign = diff > 0 ? '+' : '';
-                        const formattedDiff = Math.round(diff);
-                        projSpan.innerText = `(${sign}${formattedDiff})`;
-                        projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                        let roundedDiff = Math.round(diff);
+                        if (roundedDiff === 0) roundedDiff = 0; // Prevenir o fantasma "-0"
+
+                        const sign = roundedDiff > 0 ? '+' : '';
+                        projSpan.innerText = `(${sign}${roundedDiff})`;
+                        projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
                     } else {
                         projSpan.innerText = '';
                         projSpan.className = 'empty:hidden';
@@ -808,17 +817,23 @@
                 } 
             });
             
+            // Arredondamento para garantir precisão matemática exata no Javascript
+            let roundedTotal = parseFloat(total.toFixed(2));
+            
             const display = document.getElementById(`total-${oven}-${row}`);
             const projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
             
             if (display) { 
-                display.innerText = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
-                display.className = `font-bold text-xs ${total <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
+                display.innerText = roundedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
+                display.className = `font-bold text-xs ${roundedTotal <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
             }
             
             if (projSpan) {
                 if (hasValue) {
-                    const diff = total - targetB;
+                    let diff = roundedTotal - targetB;
+                    diff = parseFloat(diff.toFixed(2));
+                    if (diff === 0) diff = 0; // Prevenir fantasma "-0.0"
+
                     const sign = diff > 0 ? '+' : '';
                     const formattedDiff = diff.toFixed(1).replace('.', ',');
                     projSpan.innerText = `(${sign}${formattedDiff})`;
