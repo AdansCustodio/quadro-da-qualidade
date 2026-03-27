@@ -463,16 +463,22 @@
 
         window.getTargets = (ovenName) => {
             const isRet = ovenName.includes('RETÍFICA');
-            const defaultUtil = isRet ? 89.0 : 90.0;
+            let targets = { quality: 97.0, breakage: 1.2, utilization: isRet ? 89.0 : 90.0 };
+            
             if (globalConfig.equipments && globalConfig.equipments[ovenName]) {
-                let eq = globalConfig.equipments[ovenName];
-                return {
-                    quality: eq.quality !== undefined ? eq.quality : 97.0,
-                    breakage: eq.breakage !== undefined ? eq.breakage : 1.2,
-                    utilization: eq.utilization !== undefined ? eq.utilization : defaultUtil
-                };
+                const eq = globalConfig.equipments[ovenName];
+                if (eq.quality !== undefined) targets.quality = eq.quality;
+                if (eq.breakage !== undefined) targets.breakage = eq.breakage;
+                if (eq.utilization !== undefined) targets.utilization = eq.utilization;
+            } else {
+                const legacy = globalConfig[isRet ? 'grinders' : 'ovens'];
+                if (legacy) {
+                    if (legacy.quality !== undefined) targets.quality = legacy.quality;
+                    if (legacy.breakage !== undefined) targets.breakage = legacy.breakage;
+                    if (legacy.utilization !== undefined) targets.utilization = legacy.utilization;
+                }
             }
-            return globalConfig[isRet ? 'grinders' : 'ovens'] || { quality: 97.0, breakage: 1.2, utilization: defaultUtil };
+            return targets;
         };
 
         const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
@@ -617,7 +623,16 @@
         const saveToFirebase = (ovenId) => {
             if (!db || !ovenDataStore[ovenId] || !isDataLoaded || isDateLocked()) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]); setSaveStatus('saving');
-            if (!ovenDataStore[ovenId].targets) ovenDataStore[ovenId].targets = { ...window.getTargets(ovenId) };
+            
+            if (!ovenDataStore[ovenId].targets) {
+                ovenDataStore[ovenId].targets = { ...window.getTargets(ovenId) };
+            } else {
+                const t = window.getTargets(ovenId);
+                if (ovenDataStore[ovenId].targets.utilization === undefined) ovenDataStore[ovenId].targets.utilization = t.utilization;
+                if (ovenDataStore[ovenId].targets.quality === undefined) ovenDataStore[ovenId].targets.quality = t.quality;
+                if (ovenDataStore[ovenId].targets.breakage === undefined) ovenDataStore[ovenId].targets.breakage = t.breakage;
+            }
+            
             const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
             saveTimeouts[ovenId] = setTimeout(async () => { try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`), dataToSave); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } }, 1000);
         };
@@ -650,7 +665,16 @@
                             if (!r.paradas || r.paradas.length === 0) { r.paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; if (r.tempoVazio && typeof r.tempoVazio !== 'object') { r.paradas[0].val = r.tempoVazio; r.paradas[0].desc = "Registro Migrado"; r.tempoVazio = ''; } }
                         });
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
-                        if (!data.targets) data.targets = null; data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
+                        
+                        if (!data.targets) data.targets = null; 
+                        else {
+                            const t = window.getTargets(ovenName);
+                            if (data.targets.utilization === undefined) data.targets.utilization = t.utilization;
+                            if (data.targets.quality === undefined) data.targets.quality = t.quality;
+                            if (data.targets.breakage === undefined) data.targets.breakage = t.breakage;
+                        }
+                        
+                        data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
                         
                         if (!data.nominal) {
                             fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
@@ -1088,7 +1112,14 @@
             const locked = isDateLocked(); const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
             const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : '';
             const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
-            const activeTargets = data.targets || window.getTargets(ovenName);
+            
+            const baseTargets = window.getTargets(ovenName);
+            const activeTargets = {
+                quality: data.targets?.quality !== undefined ? data.targets.quality : baseTargets.quality,
+                breakage: data.targets?.breakage !== undefined ? data.targets.breakage : baseTargets.breakage,
+                utilization: data.targets?.utilization !== undefined ? data.targets.utilization : baseTargets.utilization
+            };
+            
             const isPres = viewMode === 'presentation';
 
             currentSchedule.forEach((item, index) => {
