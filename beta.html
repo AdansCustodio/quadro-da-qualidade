@@ -32,18 +32,17 @@
         .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.3s; }
         .input-val { width: 40px; flex-shrink: 0; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; transition: all 0.3s; }
         
-        /* Corrigido o !important que bloqueava a animação Neon nos defeitos editáveis */
         .input-desc.input-desc-editable { background-color: #ffffff; color: #000; font-style: italic; border: 1px dashed #cbd5e1; }
         
-        /* --- ANIMAÇÃO DE DESTAQUE NEON (MAIOR OFENSOR) --- */
+        /* --- ANIMAÇÃO DE DESTAQUE NEON (TEXTO APENAS) --- */
         .highlight-max {
-            animation: neonPulse 1s infinite alternate !important;
+            animation: neonPulseText 1.2s infinite alternate !important;
             font-weight: 900 !important;
             z-index: 10;
         }
-        @keyframes neonPulse {
-            from { background-color: #fee2e2; color: #dc2626; text-shadow: 0 0 1px #fca5a5; }
-            to { background-color: #fecaca; color: #991b1b; text-shadow: 0 0 4px #ef4444; }
+        @keyframes neonPulseText {
+            from { color: #dc2626; text-shadow: 0 0 2px #fca5a5; }
+            to { color: #7f1d1d; text-shadow: 0 0 8px #ef4444; }
         }
         
         /* --- CORES DE STATUS (METAS) --- */
@@ -412,7 +411,6 @@
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
                         if (!data.targets) data.targets = null; data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
                         
-                        // Busca o nominal do dia anterior se hoje estiver vazio
                         if (!data.nominal) {
                             fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
                                 if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
@@ -425,7 +423,6 @@
                     } else { 
                         ovenDataStore[ovenName] = createEmptyOvenData(); 
                         
-                        // Busca o nominal do dia anterior se o dia atual não existir
                         fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
                             if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
                                 ovenDataStore[ovenName].nominal = prevData.nominal;
@@ -462,17 +459,42 @@
 
         const getActiveDefectMap = (oven) => oven && oven.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
 
+        // Modificada para dar highlight apenas se a meta do indicador for violada
         window.highlightMax = (oven, row, type) => {
             const safeOven = oven.replace(/\s+/g, '-');
             const dataArr = ovenDataStore[oven].rows[row][type];
             if (!dataArr) return;
             
+            let shouldHighlight = false;
+            let targets = ovenDataStore[oven]?.targets || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'];
+            
+            // Verifica a violação de meta dependendo da coluna
+            if (type === 'quebras') {
+                let targetB = targets.breakage;
+                let total = 0;
+                dataArr.forEach(item => { const v = parseFloat(item.val?.replace(',', '.')); if (!isNaN(v)) total += v; });
+                if (total > targetB) shouldHighlight = true; // Só destaca se a soma das quebras superar o alvo
+            } else if (type === 'defects') {
+                let targetQ = targets.quality;
+                let qHoraStr = ovenDataStore[oven].rows[row].qHora;
+                let qHora = parseFloat(qHoraStr?.replace(',', '.'));
+                if (!isNaN(qHora) && qHora < targetQ) shouldHighlight = true; // Só destaca se a Qualidade Hora for inferior à meta
+            } else if (type === 'paradas') {
+                let targetU = targets.utilization || 90.0;
+                let total = 0;
+                dataArr.forEach(item => { const v = parseInt(item.val, 10); if (!isNaN(v)) total += v; });
+                let utilPercent = ((120 - total) / 120) * 100;
+                if (utilPercent < targetU && total > 0) shouldHighlight = true; // Só destaca se a utilização ficar inferior à meta
+            }
+
             let maxVal = -1;
             
-            dataArr.forEach((item) => {
-                let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
-                if (!isNaN(v) && v > maxVal && v > 0) maxVal = v;
-            });
+            if (shouldHighlight) {
+                dataArr.forEach((item) => {
+                    let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
+                    if (!isNaN(v) && v > maxVal && v > 0) maxVal = v;
+                });
+            }
 
             dataArr.forEach((item, idx) => {
                 const elCod = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-cod`);
@@ -481,7 +503,8 @@
                 
                 let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
                 
-                if (!isNaN(v) && v === maxVal && maxVal > 0) {
+                // Aplica o neon APENAS se: meta violada (shouldHighlight) E valor é o máximo E valor > 0
+                if (shouldHighlight && !isNaN(v) && v === maxVal && maxVal > 0) {
                     if(elCod) elCod.classList.add('highlight-max');
                     if(elDesc) elDesc.classList.add('highlight-max');
                     if(elVal) elVal.classList.add('highlight-max');
@@ -556,7 +579,6 @@
             for(let i=0; i<12; i++) {
                 window.runQuebra(oven, i); 
                 window.runParadaRow(oven, i);
-                window.highlightMax(oven, i, 'defects');
             }
             window.updateTempoVazioSums(oven);
         };
@@ -604,6 +626,9 @@
                         const sign = roundedDiff > 0 ? '+' : ''; projSpan.innerText = `(${sign}${roundedDiff})`; projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
                     } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; }
                 }
+
+                // Re-avalia o highlight de defeitos caso a meta de Qualidade tenha mudado para a linha
+                window.highlightMax(oven, i, 'defects');
             }
         };
 
