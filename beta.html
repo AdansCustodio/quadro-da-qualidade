@@ -384,6 +384,18 @@
 
         const toggleLoading = (show) => { const el = document.getElementById('loading-indicator'); if(el) el.style.display = show ? 'flex' : 'none'; };
 
+        const fetchPreviousDayData = async (ovenName, currentDate) => {
+            if (!db) return null;
+            const prevDate = new Date(currentDate);
+            prevDate.setDate(prevDate.getDate() - 1);
+            const prevDateKey = getDateKey(prevDate);
+            try {
+                const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenName}_${prevDateKey}`));
+                if (docSnap.exists()) return docSnap.data();
+            } catch(e) {}
+            return null;
+        };
+
         window.setupRealtimeListener = () => {
             if (!db) return;
             unsubscribeRealtimeList.forEach(unsub => unsub()); unsubscribeRealtimeList = []; isDataLoaded = false; renderContent(); toggleLoading(true);
@@ -399,7 +411,28 @@
                         });
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
                         if (!data.targets) data.targets = null; data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
-                    } else ovenDataStore[ovenName] = createEmptyOvenData();
+                        
+                        // Busca o nominal do dia anterior se hoje estiver vazio
+                        if (!data.nominal) {
+                            fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
+                                if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
+                                    ovenDataStore[ovenName].nominal = prevData.nominal;
+                                    if (ovenName === currentOven) renderContent();
+                                }
+                            });
+                        }
+
+                    } else { 
+                        ovenDataStore[ovenName] = createEmptyOvenData(); 
+                        
+                        // Busca o nominal do dia anterior se o dia atual não existir
+                        fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
+                            if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
+                                ovenDataStore[ovenName].nominal = prevData.nominal;
+                                if (ovenName === currentOven) renderContent();
+                            }
+                        });
+                    }
                     loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } else if (isDataLoaded) renderContent();
                 }, (error) => { loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } });
                 unsubscribeRealtimeList.push(unsub);
@@ -674,12 +707,15 @@
                 </div>
             </div>`;
 
-        const generateSubColumnHTML = (oven, row, type, dataArray, locked, lockedClass) => dataArray.map((item, i) => `
+        const generateSubColumnHTML = (oven, row, type, dataArray, locked, lockedClass) => {
+            const safeOven = oven.replace(/\s+/g, '-');
+            return dataArray.map((item, i) => `
             <div class="sub-row relative">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
-                <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
+                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
+                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
+                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
             </div>`).join('');
+        };
 
         const generateClosingRow = (ovenName, closingIndex, data, locked, lockedClass) => {
             const cd = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
