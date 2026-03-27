@@ -31,12 +31,15 @@
         .input-cod { width: 30px; flex-shrink: 0; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
         .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.3s; }
         .input-val { width: 40px; flex-shrink: 0; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; transition: all 0.3s; }
-        .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
+        
+        /* Corrigido o !important que bloqueava a animação Neon nos defeitos editáveis */
+        .input-desc.input-desc-editable { background-color: #ffffff; color: #000; font-style: italic; border: 1px dashed #cbd5e1; }
         
         /* --- ANIMAÇÃO DE DESTAQUE NEON (MAIOR OFENSOR) --- */
         .highlight-max {
             animation: neonPulse 1s infinite alternate !important;
             font-weight: 900 !important;
+            z-index: 10;
         }
         @keyframes neonPulse {
             from { background-color: #fee2e2; color: #dc2626; text-shadow: 0 0 1px #fca5a5; }
@@ -503,16 +506,16 @@
             const u3Dia = document.getElementById(`util-tempoVazio-${safeOven}-2-dia`);
 
             if (el1) el1.innerText = sumT1 > 0 ? window.getTempoVazioFormat(sumT1) : '-';
-            if (u1) { u1.innerText = `${utilT1.toFixed(1).replace('.', ',')}%`; u1.className = `font-black text-[0.6rem] leading-none ${utilT1 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            if (u1) { u1.innerText = `${utilT1.toFixed(1).replace('.', ',')}%`; u1.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT1 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
             
             if (el2) el2.innerText = sumT2 > 0 ? window.getTempoVazioFormat(sumT2) : '-';
-            if (u2) { u2.innerText = `${utilT2.toFixed(1).replace('.', ',')}%`; u2.className = `font-black text-[0.6rem] leading-none ${utilT2 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            if (u2) { u2.innerText = `${utilT2.toFixed(1).replace('.', ',')}%`; u2.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT2 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
             
             if (el3Turno) el3Turno.innerText = sumT3 > 0 ? window.getTempoVazioFormat(sumT3) : '-';
-            if (u3Turno) { u3Turno.innerText = `${utilT3.toFixed(1).replace('.', ',')}%`; u3Turno.className = `font-black text-[0.6rem] leading-none ${utilT3 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            if (u3Turno) { u3Turno.innerText = `${utilT3.toFixed(1).replace('.', ',')}%`; u3Turno.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT3 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
             
             if (el3Dia) el3Dia.innerText = sumTotal > 0 ? window.getTempoVazioFormat(sumTotal) : '-';
-            if (u3Dia) { u3Dia.innerText = `${utilDia.toFixed(1).replace('.', ',')}%`; u3Dia.className = `font-black text-[0.6rem] leading-none ${utilDia >= targetU ? 'text-green-600' : 'text-red-600'}`; }
+            if (u3Dia) { u3Dia.innerText = `${utilDia.toFixed(1).replace('.', ',')}%`; u3Dia.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilDia >= targetU ? 'text-green-800' : 'text-red-800'}`; }
         };
 
         window.attachCalculations = (oven) => { 
@@ -685,32 +688,32 @@
             let tempoCellContent = '';
             if (closingIndex === 2) {
                  tempoCellContent = `
-                    <div class="flex flex-col h-full w-full justify-center">
-                        <div class="flex flex-col items-center justify-center bg-white/40 flex-1">
-                            <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Turno</span>
+                    <div class="flex flex-col h-full w-full justify-center rounded-sm overflow-hidden border border-gray-400">
+                        <div class="flex flex-col items-center justify-center bg-gray-50 flex-1 py-[2px]">
+                            <span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span>
                             <div class="flex items-center gap-1">
-                                <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.6rem] text-black leading-none">-</span>
-                                <span class="text-gray-400 text-[0.5rem] font-black">|</span>
+                                <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span>
+                                <span class="text-gray-300 text-[0.55rem] font-black">|</span>
                                 <span id="util-tempoVazio-${safeOven}-2-turno"></span>
                             </div>
                         </div>
-                        <div class="w-full border-t border-gray-500/30"></div>
-                        <div class="flex flex-col items-center justify-center bg-blue-100 flex-1">
-                            <span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Dia</span>
+                        <div class="w-full border-t border-gray-300"></div>
+                        <div class="flex flex-col items-center justify-center bg-blue-50 flex-1 py-[2px]">
+                            <span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Dia</span>
                             <div class="flex items-center gap-1">
-                                <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.6rem] text-blue-900 leading-none">-</span>
-                                <span class="text-blue-300 text-[0.5rem] font-black">|</span>
+                                <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.65rem] text-blue-900 leading-none">-</span>
+                                <span class="text-blue-200 text-[0.55rem] font-black">|</span>
                                 <span id="util-tempoVazio-${safeOven}-2-dia"></span>
                             </div>
                         </div>
                     </div>`;
             } else {
                  tempoCellContent = `
-                    <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-white/30 rounded-sm m-[1px]">
-                        <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Turno</span>
+                    <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-gray-50 rounded-sm m-[2px] border border-gray-300 shadow-sm">
+                        <span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span>
                         <div class="flex items-center gap-1">
-                            <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.6rem] text-black leading-none">-</span>
-                            <span class="text-gray-400 text-[0.5rem] font-black">|</span>
+                            <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span>
+                            <span class="text-gray-300 text-[0.55rem] font-black">|</span>
                             <span id="util-tempoVazio-${safeOven}-${closingIndex}"></span>
                         </div>
                     </div>`;
@@ -720,7 +723,7 @@
                         <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-black bg-gray-400 p-0 w-[200px] min-w-[200px] shadow-inner">
+                        <td class="border-black bg-gray-300 p-[2px] w-[200px] min-w-[200px] shadow-inner">
                             ${tempoCellContent}
                         </td>
                     </tr>`;
