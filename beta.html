@@ -462,9 +462,17 @@
         // ------------------------------------
 
         window.getTargets = (ovenName) => {
-            if (globalConfig.equipments && globalConfig.equipments[ovenName]) return globalConfig.equipments[ovenName];
             const isRet = ovenName.includes('RETÍFICA');
-            return globalConfig[isRet ? 'grinders' : 'ovens'];
+            const defaultUtil = isRet ? 89.0 : 90.0;
+            if (globalConfig.equipments && globalConfig.equipments[ovenName]) {
+                let eq = globalConfig.equipments[ovenName];
+                return {
+                    quality: eq.quality !== undefined ? eq.quality : 97.0,
+                    breakage: eq.breakage !== undefined ? eq.breakage : 1.2,
+                    utilization: eq.utilization !== undefined ? eq.utilization : defaultUtil
+                };
+            }
+            return globalConfig[isRet ? 'grinders' : 'ovens'] || { quality: 97.0, breakage: 1.2, utilization: defaultUtil };
         };
 
         const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
@@ -535,13 +543,17 @@
                     }
 
                     ovenList.forEach(ov => {
+                        const isRet = ov.includes('RETÍFICA');
                         if (!globalConfig.equipments[ov]) {
-                            const isRet = ov.includes('RETÍFICA');
                             globalConfig.equipments[ov] = { 
                                 quality: globalConfig[isRet ? 'grinders' : 'ovens']?.quality || 97.0,
                                 breakage: globalConfig[isRet ? 'grinders' : 'ovens']?.breakage || 1.2,
                                 utilization: globalConfig[isRet ? 'grinders' : 'ovens']?.utilization || (isRet ? 89.0 : 90.0)
                             };
+                            needsMigration = true;
+                        } else if (globalConfig.equipments[ov].utilization === undefined) {
+                            // MIGRATION FIX: Injeta a meta de utilização nas configurações antigas
+                            globalConfig.equipments[ov].utilization = isRet ? 89.0 : 90.0;
                             needsMigration = true;
                         }
                     });
@@ -931,7 +943,9 @@
             
             ovenList.forEach(ov => {
                 if (ov === 'FORNO 1') {
-                    if(!globalConfig.equipments[ov]) globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: 90.0 };
+                    if(!globalConfig.equipments[ov] || globalConfig.equipments[ov].utilization === undefined) {
+                        globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: 90.0 };
+                    }
                     return; 
                 }
                 const safeOv = ov.replace(/\s+/g, '-');
@@ -939,7 +953,10 @@
                 const b = parseFloat(document.getElementById(`config-breakage-${safeOv}`).value);
                 const u = parseFloat(document.getElementById(`config-util-${safeOv}`).value);
                 
-                if (isNaN(q) || isNaN(b) || isNaN(u)) hasError = true;
+                if (isNaN(q) || isNaN(b) || isNaN(u)) {
+                    hasError = true;
+                    console.error(`Erro ao salvar ${ov}: Valores inválidos (Qualidade: ${q}, Quebra: ${b}, Util: ${u})`);
+                }
                 else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
             });
 
