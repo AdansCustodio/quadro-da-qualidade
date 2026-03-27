@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard de Qualidade - CCO Fornos e Retíficas</title>
     
-    <!-- Framework CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -30,9 +29,19 @@
         .sub-row:last-child { border-bottom: none; }
         
         .input-cod { width: 30px; flex-shrink: 0; border-right: 1px solid #eee; font-size: 0.75rem; text-align: center; font-weight: bold; }
-        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .input-val { width: 40px; flex-shrink: 0; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; }
+        .input-desc { flex-grow: 1; border-right: 1px solid #eee; font-size: 0.65rem; text-align: left; padding-left: 2px; background-color: #f9fafb; color: #222; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.3s; }
+        .input-val { width: 40px; flex-shrink: 0; font-size: 0.75rem; text-align: center; font-weight: bold; color: #000; transition: all 0.3s; }
         .input-desc-editable { background-color: #ffffff !important; color: #000 !important; font-style: italic; border: 1px dashed #cbd5e1; }
+        
+        /* --- ANIMAÇÃO DE DESTAQUE NEON (MAIOR OFENSOR) --- */
+        .highlight-max {
+            animation: neonPulse 1s infinite alternate !important;
+            font-weight: 900 !important;
+        }
+        @keyframes neonPulse {
+            from { background-color: #fee2e2; color: #dc2626; text-shadow: 0 0 1px #fca5a5; }
+            to { background-color: #fecaca; color: #991b1b; text-shadow: 0 0 4px #ef4444; }
+        }
         
         /* --- CORES DE STATUS (METAS) --- */
         .text-target-ok { color: #16a34a; font-weight: bold; }
@@ -54,7 +63,7 @@
         .quebra-total-box { width: 50px; flex-shrink: 0; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
         
-        /* Container de Rolagem Horizontal Suave (Essencial para não quebrar tabelas grandes no modo normal) */
+        /* Container de Rolagem Horizontal Suave */
         .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         
         .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -84,13 +93,11 @@
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* TELA DE BLOQUEIO DE VERSÃO/LOCAL */
         #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
     </style>
 </head>
 <body class="bg-gray-200 p-4 transition-all duration-300">
 
-    <!-- OVERLAY DE BLOQUEIO DE SEGURANÇA -->
     <div id="version-blocker">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-red-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -103,16 +110,12 @@
         </button>
     </div>
 
-    <!-- Navegação Superior -->
     <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
-        
-        <!-- BRAND LOGO MOHAWK BRASIL (Puro CSS/HTML) -->
         <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil" title="Mohawk Brasil">
             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
         </div>
 
-        <!-- Botões de Navegação entre Equipamentos -->
         <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1" style="display:none;">Forno 1</button>
         <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
         <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
@@ -121,47 +124,28 @@
         <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
         <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
         
-        <!-- Controles de Data -->
         <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2 shrink-0">
-            <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" aria-label="Dia Anterior" title="Dia Anterior">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            </button>
+            <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" aria-label="Dia Anterior"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
             <div class="flex flex-col items-center min-w-[100px] relative">
                 <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
                 <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
-                
-                <!-- Ícone de Cadeado de Histórico -->
-                <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;">
-                    <span id="lock-icon" class="text-[10px]">🔒</span>
-                </div>
+                <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;"><span id="lock-icon" class="text-[10px]">🔒</span></div>
             </div>
-            <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia" title="Próximo Dia">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
-            <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização dos dados">
-                Carregar Dados
-            </button>
+            <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+            <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização">Carregar Dados</button>
         </div>
 
-        <!-- Indicador de Status de Salvamento na Nuvem -->
         <div id="save-status" class="text-[0.65rem] font-bold text-gray-400 ml-4 flex items-center gap-1 min-w-[120px] shrink-0">
-            <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span>
-            <span id="save-text">Nuvem Sincronizada</span>
+            <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span><span id="save-text">Nuvem Sincronizada</span>
         </div>
         
-        <div id="loading-indicator" class="shrink-0">
-            <div class="spinner"></div> Carregando...
-        </div>
+        <div id="loading-indicator" class="shrink-0"><div class="spinner"></div> Carregando...</div>
         
         <div class="flex-grow"></div>
         
-        <!-- Botão de Configurações -->
-        <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG" aria-label="Configurações do Sistema" title="Configurações">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-        </button>
+        <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
     </div>
 
-    <!-- Modais e Menus Flutuantes -->
     <div id="password-modal">
         <div class="pwd-content">
             <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
@@ -175,23 +159,20 @@
         </div>
     </div>
 
-    <!-- Painel Lupa Defeitos -->
     <div id="defect-lookup-panel">
         <div class="lookup-header">
             <h3 class="font-bold text-gray-800 text-sm" id="lookup-title">Lista de Defeitos</h3>
-            <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2" aria-label="Fechar Lista">✕</button>
+            <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
         </div>
         <div class="lookup-content">
             <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar código ou nome..." oninput="window.renderDefectLookup()">
             <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
-                <span class="w-12 text-center border-r">Cód</span>
-                <span class="pl-2">Descrição</span>
+                <span class="w-12 text-center border-r">Cód</span><span class="pl-2">Descrição</span>
             </div>
             <div id="defect-lookup-list" class="lookup-list"></div>
         </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL (Tabelas ou Config) -->
     <div id="main-content" class="max-w-7xl mx-auto transition-opacity duration-300"></div>
     <datalist id="ref-suggestions"></datalist>
 
@@ -200,9 +181,8 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- SISTEMA DE CONTROLE DE VERSÃO ---
-        const APP_VERSION = 4.9; 
-        const appLoadTime = Date.now(); // Memoriza o momento exato em que a página foi carregada
+        const APP_VERSION = 5.0; 
+        const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
             apiKey: "AIzaSyDiTXEU3jZOjsMMiYnM3myOLY7njgx9uQ0",
@@ -218,39 +198,27 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         let app, auth, db;
-        try {
-            if (firebaseConfig.apiKey) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-            }
-        } catch (e) { console.error("Erro Firebase:", e); }
+        try { if (firebaseConfig.apiKey) { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } } catch (e) { console.error("Erro Firebase:", e); }
 
-        // Sementes Padrão
         const seedOvenDefects = {
             "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
-            "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte",
-            "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral",
-            "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta",
-            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada",
-            "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu",
-            "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu",
-            "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta",
-            "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa",
-            "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem",
+            "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte", "18": "Pingo de Engobe", 
+            "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral", "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", 
+            "34": "Ra Canto", "35": "RA Centro", "36": "Aresta", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", 
+            "47": "Massa contaminada", "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu", "74": "Peça de Prova", 
+            "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu", "88": "Grumo de esmalte", "93": "Pingo de Cobertura", 
+            "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta", "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", 
+            "109": "Marca de Lixa", "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem",
             "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
         };
         const seedGrinderDefects = {
-            "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu",
-            "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha",
-            "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
-            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte",
-            "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", "64": "Pingo d'água",
-            "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu",
-            "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", "99": "Outros", "111": "Reprensado",
-            "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador",
-            "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno",
-            "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica"
+            "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu", "14": "Sujeira de Esmalte", 
+            "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha", "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
+            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte", "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", 
+            "64": "Pingo d'água", "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu", "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", 
+            "99": "Outros", "111": "Reprensado", "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador",
+            "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno", "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", 
+            "122": "Chanfrado", "124": "Quebra de Retifica"
         };
 
         let ovenDefectMap = { ...seedOvenDefects };
@@ -272,14 +240,12 @@
 
         let currentOven = 'FORNO 2';
         let viewMode = 'single'; 
-        
         let selectedDate = new Date();
         let lastKnownDay = new Date().getDate();
         let isDataLoaded = false; 
         
-        // CONTROLES DE SEGURANÇA HISTÓRICA
         let isAdminUnlocked = false;
-        let passwordContext = 'config'; // 'config' ou 'unlock'
+        let passwordContext = 'config'; 
         
         let unsubscribeRealtimeList = []; 
         let unsubscribeDefects = null;
@@ -287,289 +253,138 @@
         let availableBackups = [];
 
         let globalConfig = {
-            ovens: { quality: 97.0, breakage: 1.2 },
-            grinders: { quality: 97.0, breakage: 1.2 },
+            ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 },
+            grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 },
             minVersion: APP_VERSION 
         };
 
         const saveTimeouts = {};
         const ovenDataStore = {};
 
-        // --- LÓGICA DE BLOQUEIO DE TEMPO ---
-        const getDiffDays = () => {
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-            return Math.floor((today - selected) / (1000 * 60 * 60 * 24));
-        };
+        const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
+        const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
+        window.handleLockClick = () => { const diffDays = getDiffDays(); if (diffDays > 3) { if (!isAdminUnlocked) window.openPasswordModal('unlock'); else { isAdminUnlocked = false; updateDateUI(); renderContent(); } } };
 
-        const isDateLocked = () => {
-            if (isAdminUnlocked) return false;
-            return getDiffDays() > 3; // + de 3 dias no passado = travado
-        };
-
-        window.handleLockClick = () => {
-            const diffDays = getDiffDays();
-            if (diffDays > 3) {
-                if (!isAdminUnlocked) {
-                    window.openPasswordModal('unlock');
-                } else {
-                    isAdminUnlocked = false; // Permite ao admin bloquear manualmente de novo
-                    updateDateUI();
-                    renderContent();
-                }
-            }
-        };
-
-        // --- FORÇAR ATUALIZAÇÃO GERAL (REFRESH) ---
         window.forceGlobalRefresh = async () => {
             if (!db) return;
             if (confirm("⚠️ ATENÇÃO: Esta ação vai forçar todos os ecrãs da fábrica e telemóveis a recarregarem a página imediatamente.\n\nTem a certeza absoluta?")) {
-                setSaveStatus('saving');
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh');
-                    await setDoc(docRef, { timestamp: Date.now() });
-                    setSaveStatus('saved');
-                } catch (e) {
-                    console.error("Erro ao forçar atualização:", e);
-                    setSaveStatus('error');
-                    alert("Erro ao enviar comando de atualização.");
-                }
+                setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); }
             }
         };
 
         const setupRefreshListener = () => {
             if (!db) return;
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh');
-            unsubscribeRefresh = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    // Se o comando de atualização na nuvem for mais recente que o momento em que a app carregou + 2 segundos (margem de race condition)
-                    if (data.timestamp && data.timestamp > appLoadTime + 2000) {
-                        console.log("Comando de atualização global recebido. Recarregando...");
-                        window.location.reload(true);
-                    }
-                }
-            }, (error) => console.error("Erro no listener de refresh:", error));
+            unsubscribeRefresh = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), (docSnap) => {
+                if (docSnap.exists() && docSnap.data().timestamp > appLoadTime + 2000) window.location.reload(true);
+            });
         };
 
-
-        // --- SISTEMA DE BACKUP E RESTAURAÇÃO ---
         window.runManualBackup = async (overrideDate = null, isAuto = false) => {
             if (!db || !isDataLoaded) return;
-            setSaveStatus('saving');
-            
-            const targetDate = overrideDate instanceof Date ? overrideDate : selectedDate;
-            const dateKey = getDateKey(targetDate);
-            const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
-            
+            setSaveStatus('saving'); const targetDate = overrideDate instanceof Date ? overrideDate : selectedDate; const dateKey = getDateKey(targetDate); const timestamp = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
             try {
-                const dataSnapshot = {};
-                for (const oven of ovenList) {
-                    if (ovenDataStore[oven]) {
-                        dataSnapshot[oven] = JSON.parse(JSON.stringify(ovenDataStore[oven]));
-                    }
-                }
-
+                const dataSnapshot = {}; for (const oven of ovenList) { if (ovenDataStore[oven]) dataSnapshot[oven] = JSON.parse(JSON.stringify(ovenDataStore[oven])); }
                 for (const oven of ovenList) {
                     const data = dataSnapshot[oven];
-                    if (data && data.rows && data.rows.some(r => r.vol || r.ref)) {
-                        const prefix = isAuto ? 'AUTO' : 'MANUAL';
-                        const backupDocId = `${oven}_${dateKey}_[${prefix}_${timestamp}]`;
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'backups', backupDocId);
-                        await setDoc(docRef, data);
-                    }
+                    if (data && data.rows && data.rows.some(r => r.vol || r.ref)) { const prefix = isAuto ? 'AUTO' : 'MANUAL'; await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'backups', `${oven}_${dateKey}_[${prefix}_${timestamp}]`), data); }
                 }
-                
-                if (!isAuto) alert("Backup de segurança criado com sucesso na Nuvem! ✅\nEle já está salvo no cofre.");
-                setSaveStatus('saved');
-            } catch(e) { 
-                console.error("Erro ao realizar backup", e); 
-                setSaveStatus('error'); 
-            }
+                if (!isAuto) alert("Backup de segurança criado com sucesso na Nuvem! ✅"); setSaveStatus('saved');
+            } catch(e) { setSaveStatus('error'); }
         };
 
         window.searchBackups = async () => {
-            const oven = document.getElementById('backup-oven-select').value;
-            const date = document.getElementById('backup-date-select').value;
-            if (!db || !oven || !date) return;
-            setSaveStatus('saving');
-            document.getElementById('save-text').innerText = "Buscando...";
+            const oven = document.getElementById('backup-oven-select').value, date = document.getElementById('backup-date-select').value; if (!db || !oven || !date) return;
+            setSaveStatus('saving'); document.getElementById('save-text').innerText = "Buscando...";
             try {
-                const backupsRef = collection(db, 'artifacts', appId, 'public', 'data', 'backups');
-                const snapshot = await getDocs(backupsRef);
-                availableBackups = [];
-                const searchPrefix = `${oven}_${date}`;
+                const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'backups')); availableBackups = []; const searchPrefix = `${oven}_${date}`;
                 snapshot.forEach(doc => { if (doc.id.startsWith(searchPrefix)) availableBackups.push({ id: doc.id, data: doc.data() }); });
-                
-                const container = document.getElementById('backup-results-container');
-                const select = document.getElementById('backup-file-select');
+                const container = document.getElementById('backup-results-container'), select = document.getElementById('backup-file-select');
                 if (availableBackups.length > 0) {
-                    availableBackups.sort((a, b) => b.id.localeCompare(a.id));
-                    select.innerHTML = availableBackups.map((b, index) => {
-                        const timeMatch = b.id.match(/\[(.*?)\]/);
-                        const timeStr = timeMatch ? timeMatch[1].replace('_', ' ') : 'Hora Desconhecida';
-                        return `<option value="${index}">Cópia salva às ${timeStr}</option>`;
-                    }).join('');
-                    container.style.display = 'block';
-                    setSaveStatus('saved');
-                    document.getElementById('save-text').innerText = `${availableBackups.length} cópias achadas`;
-                } else {
-                    container.style.display = 'none';
-                    alert(`Nenhum backup encontrado para ${oven} no dia ${date}.`);
-                    setSaveStatus('saved');
-                }
-            } catch (error) { console.error("Erro ao buscar backups:", error); setSaveStatus('error'); }
+                    availableBackups.sort((a, b) => b.id.localeCompare(a.id)); select.innerHTML = availableBackups.map((b, index) => { const timeMatch = b.id.match(/\[(.*?)\]/); return `<option value="${index}">Cópia salva às ${timeMatch ? timeMatch[1].replace('_', ' ') : 'Hora Desconhecida'}</option>`; }).join('');
+                    container.style.display = 'block'; setSaveStatus('saved'); document.getElementById('save-text').innerText = `${availableBackups.length} cópias achadas`;
+                } else { container.style.display = 'none'; alert(`Nenhum backup encontrado para ${oven} no dia ${date}.`); setSaveStatus('saved'); }
+            } catch (error) { setSaveStatus('error'); }
         };
 
         window.restoreBackup = async () => {
-            const select = document.getElementById('backup-file-select');
-            const selectedIndex = select.value;
-            if (selectedIndex === "" || !availableBackups[selectedIndex]) return;
-            const backupToRestore = availableBackups[selectedIndex];
-            const oven = document.getElementById('backup-oven-select').value;
-            const date = document.getElementById('backup-date-select').value;
+            const select = document.getElementById('backup-file-select'), selectedIndex = select.value; if (selectedIndex === "" || !availableBackups[selectedIndex]) return;
+            const backupToRestore = availableBackups[selectedIndex], oven = document.getElementById('backup-oven-select').value, date = document.getElementById('backup-date-select').value;
             if (confirm(`⚠️ ALERTA VERMELHO! ⚠️\n\nVocê está prestes a APAGAR e SUBSTITUIR todos os dados que estão hoje no ${oven} (Data: ${date}) pelos dados dessa cópia de segurança.\n\nTem certeza absoluta disso?`)) {
-                try {
-                    setSaveStatus('saving');
-                    const docId = `${oven}_${date}`; 
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', docId);
-                    await setDoc(docRef, backupToRestore.data);
-                    alert("✅ Cópia de segurança restaurada com sucesso!");
-                    setSaveStatus('saved');
-                    window.setViewMode('single', oven);
-                    const [y, m, d] = date.split('-');
-                    selectedDate = new Date(y, m - 1, d);
-                    isAdminUnlocked = false;
-                    updateDateUI();
-                    window.setupRealtimeListener(); 
-                } catch(error) { console.error("Erro ao restaurar", error); setSaveStatus('error'); alert("Erro ao restaurar dados."); }
+                try { setSaveStatus('saving'); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${oven}_${date}`), backupToRestore.data); alert("✅ Restaurada com sucesso!"); setSaveStatus('saved'); window.setViewMode('single', oven); const [y, m, d] = date.split('-'); selectedDate = new Date(y, m - 1, d); isAdminUnlocked = false; updateDateUI(); window.setupRealtimeListener(); } 
+                catch(error) { setSaveStatus('error'); }
             }
         };
 
-        // --- FIREBASE SETTINGS E LISTENERS ---
         const loadGlobalConfig = async () => {
             if(!db) return;
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
-                const docSnap = await getDoc(docRef);
+                const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'));
                 if (docSnap.exists()) {
                     globalConfig = docSnap.data();
+                    if(globalConfig.ovens && !globalConfig.ovens.utilization) globalConfig.ovens.utilization = 90.0;
+                    if(globalConfig.grinders && !globalConfig.grinders.utilization) globalConfig.grinders.utilization = 89.0;
+                    
                     if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
-                        document.getElementById('version-blocker-title').innerText = "Atualização Necessária";
-                        document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas exige a versão ${globalConfig.minVersion}.`;
-                        document.getElementById('version-blocker').style.display = 'flex';
-                        return; 
+                        document.getElementById('version-blocker-title').innerText = "Atualização Necessária"; document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas exige a versão ${globalConfig.minVersion}.`; document.getElementById('version-blocker').style.display = 'flex'; return; 
                     }
-                } else await setDoc(docRef, globalConfig);
+                } else await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), globalConfig);
             } catch(e) { console.error("Erro config:", e); }
         };
 
-        const saveGlobalConfigFirebase = async () => {
-            if(!db) return;
-            try { globalConfig.minVersion = APP_VERSION; await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), globalConfig); }
-            catch(e) { console.error(e); alert("Erro ao salvar."); }
-        };
+        const saveGlobalConfigFirebase = async () => { if(!db) return; try { globalConfig.minVersion = APP_VERSION; await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), globalConfig); } catch(e) { alert("Erro ao salvar."); } };
 
         const setupDefectsListener = () => {
             if (!db) return;
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects');
-            unsubscribeDefects = onSnapshot(docRef, (docSnap) => {
+            unsubscribeDefects = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Proteção extra para garantir que o objeto nunca fique vazio ao sincronizar
-                    if(data.ovens) ovenDefectMap = data.ovens; else ovenDefectMap = {...seedOvenDefects};
-                    if(data.grinders) grinderDefectMap = data.grinders; else grinderDefectMap = {...seedGrinderDefects};
-                    
-                    if (viewMode === 'config') renderContent();
-                    const panel = document.getElementById('defect-lookup-panel');
-                    if (panel && panel.style.display === 'flex') window.renderDefectLookup();
-                } else {
-                    setDoc(docRef, { ovens: seedOvenDefects, grinders: seedGrinderDefects });
-                }
-            }, (error) => console.error("Erro ouvir defeitos:", error));
+                    ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    Object.keys(ovenDefectMap).forEach(k => { if (!ovenDefectMap[k] || ovenDefectMap[k] === "[REMOVIDO]") delete ovenDefectMap[k]; });
+                    Object.keys(grinderDefectMap).forEach(k => { if (!grinderDefectMap[k] || grinderDefectMap[k] === "[REMOVIDO]") delete grinderDefectMap[k]; });
+                    if (viewMode === 'config') renderContent(); const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup();
+                } else setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects });
+            });
         };
 
-        const saveDefectsToFirebase = async () => {
-            if(!db) return;
-            setSaveStatus('saving');
-            try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: ovenDefectMap, grinders: grinderDefectMap }); setSaveStatus('saved'); }
-            catch(e) { setSaveStatus('error'); }
-        };
+        const saveDefectsToFirebase = async () => { if(!db) return; setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: ovenDefectMap, grinders: grinderDefectMap }); setSaveStatus('saved'); } catch(e) { setSaveStatus('error'); } };
 
-        // --- ESTRUTURA DE DADOS ---
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
-        const createEmptyParadaRow = () => ({ desc: '', val: '' }); // Nova sub-estrutura de parada
-        const createEmptyOvenData = () => ({
-            linha: '', nominal: '', targets: null, 
-            rows: Array(12).fill(null).map(() => ({ 
-                ref: '', turno: '', vol: '', qHora: '', tempoVazio: '',
-                paradas: [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()],
-                defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()],
-                quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] 
-            })),
-            closing: [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ]
-        });
+        const createEmptyParadaRow = () => ({ desc: '', val: '' }); 
+        const createEmptyOvenData = () => ({ linha: '', nominal: '', targets: null, rows: Array(12).fill(null).map(() => ({ ref: '', turno: '', vol: '', qHora: '', tempoVazio: '', paradas: [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()], defects: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()], quebras: [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()] })), closing: [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ] });
 
         const resetStore = () => ovenList.forEach(ov => { ovenDataStore[ov] = createEmptyOvenData(); });
-
         const getDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
         const updateDateUI = () => {
-            const d = selectedDate.getDate().toString().padStart(2, '0');
-            const m = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-            const y = selectedDate.getFullYear();
+            const d = selectedDate.getDate().toString().padStart(2, '0'), m = (selectedDate.getMonth() + 1).toString().padStart(2, '0'), y = selectedDate.getFullYear();
             document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
-            
-            const lockContainer = document.getElementById('lock-container');
-            const lockIcon = document.getElementById('lock-icon');
+            const lockContainer = document.getElementById('lock-container'), lockIcon = document.getElementById('lock-icon');
             if (lockIcon && lockContainer) {
-                const diffDays = getDiffDays();
-                if (diffDays > 3) {
-                    lockContainer.style.display = 'flex';
-                    if (!isAdminUnlocked) {
-                        lockIcon.innerHTML = '🔒';
-                        lockContainer.title = "Histórico bloqueado (+3 dias). Clique para desbloquear.";
-                    } else {
-                        lockIcon.innerHTML = '🔓';
-                        lockContainer.title = "Histórico desbloqueado (Admin). Clique para bloquear novamente.";
-                    }
-                } else {
-                    lockContainer.style.display = 'none';
-                }
+                if (getDiffDays() > 3) { lockContainer.style.display = 'flex'; if (!isAdminUnlocked) { lockIcon.innerHTML = '🔒'; lockContainer.title = "Histórico bloqueado (+3 dias). Clique para desbloquear."; } else { lockIcon.innerHTML = '🔓'; lockContainer.title = "Histórico desbloqueado (Admin). Clique para bloquear novamente."; } } else lockContainer.style.display = 'none';
             }
         };
 
         const setSaveStatus = (status) => {
-            const dot = document.getElementById('save-dot'), text = document.getElementById('save-text');
-            if(!dot || !text) return;
+            const dot = document.getElementById('save-dot'), text = document.getElementById('save-text'); if(!dot || !text) return;
             if(status === 'saving') { dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse"; text.innerText = "Salvando..."; text.className = "text-yellow-600"; }
-            else if(status === 'saved') { 
-                dot.className = "w-2 h-2 rounded-full bg-green-500"; text.innerText = "Salvo na Nuvem"; text.className = "text-green-600";
-                setTimeout(() => { dot.className = "w-2 h-2 rounded-full bg-gray-400"; text.innerText = "Nuvem Sincronizada"; text.className = "text-gray-400"; }, 3000);
-            } else if(status === 'error') { dot.className = "w-2 h-2 rounded-full bg-red-600"; text.innerText = "Erro ao Salvar"; text.className = "text-red-600"; }
+            else if(status === 'saved') { dot.className = "w-2 h-2 rounded-full bg-green-500"; text.innerText = "Salvo na Nuvem"; text.className = "text-green-600"; setTimeout(() => { dot.className = "w-2 h-2 rounded-full bg-gray-400"; text.innerText = "Nuvem Sincronizada"; text.className = "text-gray-400"; }, 3000); } 
+            else if(status === 'error') { dot.className = "w-2 h-2 rounded-full bg-red-600"; text.innerText = "Erro ao Salvar"; text.className = "text-red-600"; }
         };
 
         const saveToFirebase = (ovenId) => {
             if (!db || !ovenDataStore[ovenId] || !isDataLoaded || isDateLocked()) return;
-            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
-            setSaveStatus('saving');
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]); setSaveStatus('saving');
             if (!ovenDataStore[ovenId].targets) ovenDataStore[ovenId].targets = { ...globalConfig[ovenId.includes('RETÍFICA') ? 'grinders' : 'ovens'] };
             const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
-            saveTimeouts[ovenId] = setTimeout(async () => {
-                try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`), dataToSave); setSaveStatus('saved'); }
-                catch (e) { setSaveStatus('error'); }
-            }, 1000);
+            saveTimeouts[ovenId] = setTimeout(async () => { try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`), dataToSave); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } }, 1000);
         };
 
         const toggleLoading = (show) => { const el = document.getElementById('loading-indicator'); if(el) el.style.display = show ? 'flex' : 'none'; };
 
         window.setupRealtimeListener = () => {
             if (!db) return;
-            unsubscribeRealtimeList.forEach(unsub => unsub()); unsubscribeRealtimeList = [];
-            isDataLoaded = false; renderContent(); toggleLoading(true);
-            const dateKey = getDateKey(selectedDate);
-            let loadedCount = 0; 
+            unsubscribeRealtimeList.forEach(unsub => unsub()); unsubscribeRealtimeList = []; isDataLoaded = false; renderContent(); toggleLoading(true);
+            const dateKey = getDateKey(selectedDate); let loadedCount = 0; 
             ovenList.forEach(ovenName => {
                 const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenName}_${dateKey}`), (docSnap) => {
                     if (docSnap.exists()) {
@@ -577,61 +392,30 @@
                         data.rows.forEach(r => {
                             if (!r.defects || r.defects.length === 0) r.defects = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
                             if (!r.quebras || r.quebras.length === 0) r.quebras = [createEmptySubRow(), createEmptySubRow(), createEmptySubRow(), createEmptySubRow()];
-                            
-                            // Migração Dinâmica: Se existir dado no campo antigo (tempoVazio), empurra para o array novo (paradas)
-                            if (!r.paradas || r.paradas.length === 0) {
-                                r.paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()];
-                                if (r.tempoVazio && typeof r.tempoVazio !== 'object') {
-                                    r.paradas[0].val = r.tempoVazio;
-                                    r.paradas[0].desc = "Registro Migrado";
-                                    r.tempoVazio = ''; 
-                                }
-                            }
+                            if (!r.paradas || r.paradas.length === 0) { r.paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; if (r.tempoVazio && typeof r.tempoVazio !== 'object') { r.paradas[0].val = r.tempoVazio; r.paradas[0].desc = "Registro Migrado"; r.tempoVazio = ''; } }
                         });
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
-                        if (!data.targets) data.targets = null;
-                        data.nominal = data.nominal || ''; 
-                        ovenDataStore[ovenName] = data;
+                        if (!data.targets) data.targets = null; data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
                     } else ovenDataStore[ovenName] = createEmptyOvenData();
-                    loadedCount++;
-                    if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); }
-                    else if (isDataLoaded) renderContent();
+                    loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } else if (isDataLoaded) renderContent();
                 }, (error) => { loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } });
                 unsubscribeRealtimeList.push(unsub);
             });
         };
 
-        window.changeDate = (offset) => { 
-            selectedDate.setDate(selectedDate.getDate() + offset); 
-            isAdminUnlocked = false; // Bloqueia automaticamente ao mudar de data
-            updateDateUI(); 
-            resetStore(); 
-            window.setupRealtimeListener(); 
-        };
+        window.changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); isAdminUnlocked = false; updateDateUI(); resetStore(); window.setupRealtimeListener(); };
 
         window.setViewMode = (mode, oven = null) => {
-            viewMode = mode;
-            if (oven) currentOven = oven;
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('btn-CONFIG')?.classList.remove('active');
-            if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active');
-            else document.getElementById(`btn-${currentOven}`)?.classList.add('active');
-            renderContent();
+            viewMode = mode; if (oven) currentOven = oven; document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('btn-CONFIG')?.classList.remove('active');
+            if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active'); else document.getElementById(`btn-${currentOven}`)?.classList.add('active'); renderContent();
         };
 
         window.syncData = (oven, row, field, val) => {
             if (!isDataLoaded || isDateLocked()) return; 
             if (field === 'ref') {
                 const el = document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row}-ref`);
-                if (oven.includes('RETÍFICA')) {
-                    if (val.trim().toUpperCase() === 'X') { val = "EQUIPAMENTO PARADO"; if(el) { el.value = val; el.classList.add('text-stop-alert'); } }
-                    else if (val === "EQUIPAMENTO PARADO") { if(el) el.classList.add('text-stop-alert'); }
-                    else { if(el) el.classList.remove('text-stop-alert'); }
-                } else {
-                    if (val.trim().toLowerCase() === 'x') { val = "❌FORNO PARADO⚠️"; if(el) el.value = val; }
-                    if (val === "❌FORNO PARADO⚠️") { if(el) el.classList.add('text-red-600', 'font-black'); }
-                    else { if(el) el.classList.remove('text-red-600', 'font-black'); }
-                }
+                if (oven.includes('RETÍFICA')) { if (val.trim().toUpperCase() === 'X') { val = "EQUIPAMENTO PARADO"; if(el) { el.value = val; el.classList.add('text-stop-alert'); } } else if (val === "EQUIPAMENTO PARADO") { if(el) el.classList.add('text-stop-alert'); } else { if(el) el.classList.remove('text-stop-alert'); } } 
+                else { if (val.trim().toLowerCase() === 'x') { val = "❌FORNO PARADO⚠️"; if(el) el.value = val; } if (val === "❌FORNO PARADO⚠️") { if(el) el.classList.add('text-red-600', 'font-black'); } else { if(el) el.classList.remove('text-red-600', 'font-black'); } }
             }
             ovenDataStore[oven].rows[row][field] = val; saveToFirebase(oven);
         };
@@ -642,22 +426,49 @@
 
         const getActiveDefectMap = (oven) => oven && oven.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
 
+        window.highlightMax = (oven, row, type) => {
+            const safeOven = oven.replace(/\s+/g, '-');
+            const dataArr = ovenDataStore[oven].rows[row][type];
+            if (!dataArr) return;
+            
+            let maxVal = -1;
+            
+            dataArr.forEach((item) => {
+                let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
+                if (!isNaN(v) && v > maxVal && v > 0) maxVal = v;
+            });
+
+            dataArr.forEach((item, idx) => {
+                const elCod = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-cod`);
+                const elDesc = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-desc`);
+                const elVal = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-val`);
+                
+                let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
+                
+                if (!isNaN(v) && v === maxVal && maxVal > 0) {
+                    if(elCod) elCod.classList.add('highlight-max');
+                    if(elDesc) elDesc.classList.add('highlight-max');
+                    if(elVal) elVal.classList.add('highlight-max');
+                } else {
+                    if(elCod) elCod.classList.remove('highlight-max');
+                    if(elDesc) elDesc.classList.remove('highlight-max');
+                    if(elVal) elVal.classList.remove('highlight-max');
+                }
+            });
+        };
+
         window.updateSubStruct = (oven, row, type, index, field, val) => {
             if (!isDataLoaded || isDateLocked()) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
             if (field === 'cod') {
-                const map = getActiveDefectMap(oven);
-                const desc = map[val] || (val ? "Desconhecido" : "");
-                ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
+                const map = getActiveDefectMap(oven); const desc = map[val] || (val ? "Desconhecido" : ""); ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
                 const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`);
-                if(descInput) {
-                    descInput.value = desc;
-                    if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); }
-                    else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); }
-                }
+                if(descInput) { descInput.value = desc; if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); } else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); } }
             }
-            saveToFirebase(oven); if (type === 'quebras') window.runQuebra(oven, row);
+            saveToFirebase(oven); 
+            if (type === 'quebras') window.runQuebra(oven, row);
+            window.highlightMax(oven, row, type);
         };
 
         window.updateParada = (oven, row, index, field, val) => {
@@ -670,36 +481,38 @@
         };
 
         window.updateTempoVazioSums = (oven) => {
-            const data = ovenDataStore[oven];
-            if (!data) return;
-            const safeOven = oven.replace(/\s+/g, '-');
+            const data = ovenDataStore[oven]; if (!data) return; const safeOven = oven.replace(/\s+/g, '-');
+            let targetU = data.targets?.utilization || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].utilization || 90.0;
             
-            const calculateSum = (start, end) => {
-                let sum = 0;
-                for (let i = start; i <= end; i++) {
-                    const paradas = data.rows[i].paradas || [];
-                    paradas.forEach(p => {
-                        const val = parseInt(p.val, 10);
-                        if (!isNaN(val) && val > 0) sum += val;
-                    });
-                }
-                return sum;
-            };
+            const calculateSum = (start, end) => { let sum = 0; for (let i = start; i <= end; i++) { const paradas = data.rows[i].paradas || []; paradas.forEach(p => { const val = parseInt(p.val, 10); if (!isNaN(val) && val > 0) sum += val; }); } return sum; };
 
-            const sumT1 = calculateSum(0, 3);
-            const sumT2 = calculateSum(4, 7);
-            const sumT3 = calculateSum(8, 11);
-            const sumTotal = sumT1 + sumT2 + sumT3;
+            const sumT1 = calculateSum(0, 3), sumT2 = calculateSum(4, 7), sumT3 = calculateSum(8, 11), sumTotal = sumT1 + sumT2 + sumT3;
+            
+            const utilT1 = parseFloat((((480 - sumT1) / 480) * 100).toFixed(1));
+            const utilT2 = parseFloat((((480 - sumT2) / 480) * 100).toFixed(1));
+            const utilT3 = parseFloat((((480 - sumT3) / 480) * 100).toFixed(1));
+            const utilDia = parseFloat((((1440 - sumTotal) / 1440) * 100).toFixed(1));
 
             const el1 = document.getElementById(`sum-tempoVazio-${safeOven}-0`);
+            const u1 = document.getElementById(`util-tempoVazio-${safeOven}-0`);
             const el2 = document.getElementById(`sum-tempoVazio-${safeOven}-1`);
+            const u2 = document.getElementById(`util-tempoVazio-${safeOven}-1`);
             const el3Turno = document.getElementById(`sum-tempoVazio-${safeOven}-2-turno`);
+            const u3Turno = document.getElementById(`util-tempoVazio-${safeOven}-2-turno`);
             const el3Dia = document.getElementById(`sum-tempoVazio-${safeOven}-2-dia`);
+            const u3Dia = document.getElementById(`util-tempoVazio-${safeOven}-2-dia`);
 
             if (el1) el1.innerText = sumT1 > 0 ? window.getTempoVazioFormat(sumT1) : '-';
+            if (u1) { u1.innerText = `${utilT1.toFixed(1).replace('.', ',')}%`; u1.className = `font-black text-[0.6rem] leading-none ${utilT1 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            
             if (el2) el2.innerText = sumT2 > 0 ? window.getTempoVazioFormat(sumT2) : '-';
+            if (u2) { u2.innerText = `${utilT2.toFixed(1).replace('.', ',')}%`; u2.className = `font-black text-[0.6rem] leading-none ${utilT2 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            
             if (el3Turno) el3Turno.innerText = sumT3 > 0 ? window.getTempoVazioFormat(sumT3) : '-';
+            if (u3Turno) { u3Turno.innerText = `${utilT3.toFixed(1).replace('.', ',')}%`; u3Turno.className = `font-black text-[0.6rem] leading-none ${utilT3 >= targetU ? 'text-green-500' : 'text-red-500'}`; }
+            
             if (el3Dia) el3Dia.innerText = sumTotal > 0 ? window.getTempoVazioFormat(sumTotal) : '-';
+            if (u3Dia) { u3Dia.innerText = `${utilDia.toFixed(1).replace('.', ',')}%`; u3Dia.className = `font-black text-[0.6rem] leading-none ${utilDia >= targetU ? 'text-green-600' : 'text-red-600'}`; }
         };
 
         window.attachCalculations = (oven) => { 
@@ -707,6 +520,7 @@
             for(let i=0; i<12; i++) {
                 window.runQuebra(oven, i); 
                 window.runParadaRow(oven, i);
+                window.highlightMax(oven, i, 'defects');
             }
             window.updateTempoVazioSums(oven);
         };
@@ -716,285 +530,138 @@
             let targetQ = ovenDataStore[oven]?.targets?.quality || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].quality;
             let weightedScoreSum = 0, previousVolume = 0;   
             
-            // Cálculo da expectativa nominal por hora
-            const nominalStr = ovenDataStore[oven]?.nominal || '';
-            const nominalVal = parseFloat(nominalStr.replace('.', '').replace(',', '.'));
-            const expectedPerHour = (!isNaN(nominalVal) && nominalVal > 0) ? (nominalVal / 12) : null;
+            const nominalStr = ovenDataStore[oven]?.nominal || ''; const nominalVal = parseFloat(nominalStr.replace('.', '').replace(',', '.')); const expectedPerHour = (!isNaN(nominalVal) && nominalVal > 0) ? (nominalVal / 12) : null;
             
             for (let i = 0; i < 12; i++) {
-                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`);
-                const aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`);
-                const volInput = document.getElementById(`input-${safeOven}-${i}-vol`);
-                const projSpan = document.getElementById(`proj-${safeOven}-${i}-vol`); 
-                const projAcumSpan = document.getElementById(`proj-${safeOven}-${i}-qAcum`); 
-                
+                const hInput = document.getElementById(`input-${safeOven}-${i}-qHora`), aInput = document.getElementById(`input-${safeOven}-${i}-qAcum`), volInput = document.getElementById(`input-${safeOven}-${i}-vol`), projSpan = document.getElementById(`proj-${safeOven}-${i}-vol`), projAcumSpan = document.getElementById(`proj-${safeOven}-${i}-qAcum`); 
                 if (!hInput || !aInput || !volInput) continue;
                 
-                const hVal = parseFloat(hInput.value.replace(',', '.'));
-                const volValStr = volInput.value.replace('.', '').replace(',', '.');
-                const volVal = parseFloat(volValStr);
-                let deltaVol = 0;
-                
-                const isLocked = isDateLocked();
-                const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
+                const hVal = parseFloat(hInput.value.replace(',', '.')), volValStr = volInput.value.replace('.', '').replace(',', '.'), volVal = parseFloat(volValStr); let deltaVol = 0;
+                const isLocked = isDateLocked(); const lockedClasses = isLocked ? " cursor-not-allowed opacity-70 text-gray-600 bg-gray-50" : "";
                 
                 hInput.className = !isNaN(hVal) ? (hVal >= targetQ ? "input-quali-hora nav-input text-target-ok" + lockedClasses : "input-quali-hora nav-input text-target-low" + lockedClasses) : "input-quali-hora nav-input" + lockedClasses;
-                
                 const baseAcumClasses = "input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow";
-                
-                if (projAcumSpan) {
-                    projAcumSpan.innerText = '';
-                    projAcumSpan.className = 'empty:hidden';
-                }
+                if (projAcumSpan) { projAcumSpan.innerText = ''; projAcumSpan.className = 'empty:hidden'; }
 
                 if (!isNaN(volVal)) {
                     deltaVol = volVal - previousVolume; 
-                    
                     if (!isNaN(hVal)) {
                         weightedScoreSum += deltaVol * hVal;
                         if (volVal > 0) {
                             const avg = weightedScoreSum / volVal; 
-                            
-                            // Correção matemática: Forçar precisão de 1 casa decimal antes de comparar
                             let roundedAvg = parseFloat(avg.toFixed(1));
-
-                            aInput.value = roundedAvg.toFixed(1).replace('.', ',');
-                            aInput.className = roundedAvg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
+                            aInput.value = roundedAvg.toFixed(1).replace('.', ','); aInput.className = roundedAvg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
 
                             if (projAcumSpan) {
-                                let diffAcum = roundedAvg - targetQ;
-                                diffAcum = parseFloat(diffAcum.toFixed(1)); // Limpar sujeira de precisão matemática
-                                if (diffAcum === 0) diffAcum = 0; // Prevenir que apareça o "-0.0"
-                                
-                                const signAcum = diffAcum > 0 ? '+' : ''; 
-                                const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
-                                projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`;
-                                projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                                let diffAcum = roundedAvg - targetQ; diffAcum = parseFloat(diffAcum.toFixed(1)); if (diffAcum === 0) diffAcum = 0; 
+                                const signAcum = diffAcum > 0 ? '+' : ''; const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
+                                projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`; projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`;
                             }
-
-                        } else {
-                            aInput.value = '';
-                            aInput.className = baseAcumClasses;
-                        }
+                        } else { aInput.value = ''; aInput.className = baseAcumClasses; }
                     }
                     previousVolume = volVal;
-                } else {
-                    if (volValStr === '') {
-                        aInput.value = '';
-                        aInput.className = baseAcumClasses;
-                    }
-                }
+                } else { if (volValStr === '') { aInput.value = ''; aInput.className = baseAcumClasses; } }
                 
                 if (projSpan) {
                     if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) {
-                        const diff = deltaVol - expectedPerHour;
-                        let roundedDiff = Math.round(diff);
-                        if (roundedDiff === 0) roundedDiff = 0; // Prevenir o fantasma "-0"
-
-                        const sign = roundedDiff > 0 ? '+' : '';
-                        projSpan.innerText = `(${sign}${roundedDiff})`;
-                        projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
-                    } else {
-                        projSpan.innerText = '';
-                        projSpan.className = 'empty:hidden';
-                    }
+                        const diff = deltaVol - expectedPerHour; let roundedDiff = Math.round(diff); if (roundedDiff === 0) roundedDiff = 0;
+                        const sign = roundedDiff > 0 ? '+' : ''; projSpan.innerText = `(${sign}${roundedDiff})`; projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                    } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; }
                 }
             }
         };
 
         window.runQuebra = (oven, row) => {
             let targetB = ovenDataStore[oven]?.targets?.breakage || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].breakage;
-            let total = 0;
-            let hasValue = false;
+            let total = 0, hasValue = false;
+            ovenDataStore[oven].rows[row].quebras.forEach(item => { if (item && item.val && item.val.trim() !== '') { const v = parseFloat(item.val.replace(',', '.')); if (!isNaN(v)) { total += v; hasValue = true; } } });
             
-            ovenDataStore[oven].rows[row].quebras.forEach(item => { 
-                if (item && item.val && item.val.trim() !== '') { 
-                    const v = parseFloat(item.val.replace(',', '.')); 
-                    if (!isNaN(v)) { 
-                        total += v; 
-                        hasValue = true; 
-                    } 
-                } 
-            });
-            
-            // Arredondamento para garantir precisão matemática exata no Javascript
             let roundedTotal = parseFloat(total.toFixed(2));
+            const display = document.getElementById(`total-${oven}-${row}`), projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
             
-            const display = document.getElementById(`total-${oven}-${row}`);
-            const projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
-            
-            if (display) { 
-                display.innerText = roundedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); 
-                display.className = `font-bold text-xs ${roundedTotal <= targetB ? 'text-target-ok' : 'text-target-low'}`; 
-            }
-            
+            if (display) { display.innerText = roundedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); display.className = `font-bold text-xs ${roundedTotal <= targetB ? 'text-target-ok' : 'text-target-low'}`; }
             if (projSpan) {
                 if (hasValue) {
-                    let diff = roundedTotal - targetB;
-                    diff = parseFloat(diff.toFixed(2));
-                    if (diff === 0) diff = 0; // Prevenir fantasma "-0.0"
-
-                    const sign = diff > 0 ? '+' : '';
-                    const formattedDiff = diff.toFixed(1).replace('.', ',');
-                    projSpan.innerText = `(${sign}${formattedDiff})`;
-                    projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`;
-                } else {
-                    projSpan.innerText = '';
-                    projSpan.className = 'empty:hidden';
-                }
+                    let diff = roundedTotal - targetB; diff = parseFloat(diff.toFixed(2)); if (diff === 0) diff = 0; 
+                    const sign = diff > 0 ? '+' : ''; const formattedDiff = diff.toFixed(1).replace('.', ',');
+                    projSpan.innerText = `(${sign}${formattedDiff})`; projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`;
+                } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; }
             }
+            
+            window.highlightMax(oven, row, 'quebras');
         };
 
         window.runParadaRow = (oven, row) => {
-            const data = ovenDataStore[oven].rows[row].paradas;
-            let total = 0;
-            if (data) {
-                data.forEach(p => {
-                    const v = parseInt(p.val, 10);
-                    if (!isNaN(v) && v > 0) total += v;
-                });
-            }
+            const data = ovenDataStore[oven].rows[row].paradas; let total = 0;
+            if (data) { data.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) total += v; }); }
+            
             const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`);
+            const utilDisplay = document.getElementById(`util-parada-${oven.replace(/\s+/g, '-')}-${row}`);
+            let targetU = ovenDataStore[oven]?.targets?.utilization || globalConfig[oven.includes('RETÍFICA') ? 'grinders' : 'ovens'].utilization || 90.0;
+
             if (display) {
-                if (total > 0) {
-                    const hrStr = window.getTempoVazioFormat(total);
-                    display.innerText = `${total} min (${hrStr})`;
-                    display.className = "text-[0.65rem] font-bold text-blue-800";
-                } else {
-                    display.innerText = '0 min';
-                    display.className = "text-[0.65rem] font-bold text-gray-500";
-                }
+                if (total > 0) { 
+                    const hrStr = window.getTempoVazioFormat(total).replace('min', 'm').replace(' ', ''); 
+                    display.innerText = `${total}m (${hrStr})`; 
+                    display.className = "text-[0.6rem] font-bold text-blue-800"; 
+                } 
+                else { display.innerText = '0m'; display.className = "text-[0.6rem] font-bold text-gray-500"; }
             }
-        };
 
-        window.sugerirReferencia = (input, oven) => {
-            if (isDateLocked()) return;
-            const row = parseInt(input.closest('tr').dataset.row), datalist = document.getElementById('ref-suggestions');
-            if(!datalist) return; datalist.innerHTML = '';
-            if (row > 0) {
-                const prev = ovenDataStore[oven].rows[row - 1].ref;
-                if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) { const opt = document.createElement('option'); opt.value = prev; datalist.appendChild(opt); }
+            if (utilDisplay) {
+                let utilPercent = ((120 - total) / 120) * 100;
+                let roundedUtil = parseFloat(utilPercent.toFixed(1));
+                utilDisplay.innerText = `${roundedUtil.toFixed(1).replace('.', ',')}%`;
+                utilDisplay.className = `text-[0.6rem] font-black tracking-tighter leading-none ${roundedUtil >= targetU ? 'text-green-600' : 'text-red-600'}`;
             }
+            
+            window.highlightMax(oven, row, 'paradas');
         };
 
-        // --- FUNÇÃO AUXILIAR DA NOVA COLUNA: TEMPO VAZIO ---
-        window.getTempoVazioFormat = (val) => {
-            const num = parseInt(val, 10);
-            if (isNaN(num) || num <= 0) return '-';
-            const hours = Math.floor(num / 60);
-            const mins = num % 60;
-            return hours > 0 ? `${hours}h${mins > 0 ? ' ' + mins + 'min' : ''}` : `${mins}min`;
-        };
-
+        window.sugerirReferencia = (input, oven) => { if (isDateLocked()) return; const row = parseInt(input.closest('tr').dataset.row), datalist = document.getElementById('ref-suggestions'); if(!datalist) return; datalist.innerHTML = ''; if (row > 0) { const prev = ovenDataStore[oven].rows[row - 1].ref; if (input.value && prev && prev.toLowerCase().startsWith(input.value.toLowerCase())) { const opt = document.createElement('option'); opt.value = prev; datalist.appendChild(opt); } } };
+        window.getTempoVazioFormat = (val) => { const num = parseInt(val, 10); if (isNaN(num) || num <= 0) return '-'; const hours = Math.floor(num / 60); const mins = num % 60; return hours > 0 ? `${hours}h${mins > 0 ? ' ' + mins + 'min' : ''}` : `${mins}min`; };
         window.setConfigDefectMode = (mode) => { configDefectMode = mode; renderContent(); };
+        
         window.addDefect = async () => {
             const code = document.getElementById('new-defect-code').value.trim(), desc = document.getElementById('new-defect-desc').value.trim();
-            if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; }
+            if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup(); } 
             else alert("Preencha código e descrição.");
         };
-        window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { delete (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code]; await saveDefectsToFirebase(); } };
+
+        window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { const isOven = configDefectMode === 'ovens'; const map = isOven ? ovenDefectMap : grinderDefectMap; const seedMap = isOven ? seedOvenDefects : seedGrinderDefects; if (seedMap[code]) map[code] = "[REMOVIDO]"; else delete map[code]; await saveDefectsToFirebase(); } };
         window.updateDefectDesc = async (code, desc) => { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); };
-        
-        window.toggleDefectList = (ovenName) => {
-            // Se ovenName for passado do clique, usa ele. Se não, usa currentOven da tela.
-            lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven;
-            
-            const panel = document.getElementById('defect-lookup-panel');
-            if (panel.style.display === 'flex') {
-                panel.style.display = 'none';
-            } else {
-                panel.style.display = 'flex'; 
-                document.getElementById('defect-search').value = ''; 
-                document.getElementById('defect-search').focus(); 
-                document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; 
-                window.renderDefectLookup(); 
-            }
-        };
+        window.toggleDefectList = (ovenName) => { lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven; const panel = document.getElementById('defect-lookup-panel'); if (panel.style.display === 'flex') panel.style.display = 'none'; else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); } };
+        window.renderDefectLookup = () => { const filter = document.getElementById('defect-search').value.toLowerCase(); const activeMap = getActiveDefectMap(lookupOven) || {}; document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter))).map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join(''); };
 
-        window.renderDefectLookup = () => {
-            const filter = document.getElementById('defect-search').value.toLowerCase();
-            const activeMap = getActiveDefectMap(lookupOven) || {};
-            
-            document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0]))
-                .filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter)))
-                .map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join('');
-        };
-
-        window.openPasswordModal = (context = 'config') => { 
-            passwordContext = context;
-            document.getElementById('pwd-error').classList.add('hidden'); 
-            document.getElementById('admin-password').value = ''; 
-            
-            if (context === 'unlock') {
-                document.getElementById('pwd-title').innerText = 'Desbloqueio de Histórico';
-                document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para editar dados antigos.';
-            } else {
-                document.getElementById('pwd-title').innerText = 'Acesso Restrito';
-                document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para acessar as configurações.';
-            }
-
-            document.getElementById('password-modal').style.display = 'flex'; 
-            setTimeout(() => document.getElementById('admin-password').focus(), 100); 
-        };
-
+        window.openPasswordModal = (context = 'config') => { passwordContext = context; document.getElementById('pwd-error').classList.add('hidden'); document.getElementById('admin-password').value = ''; if (context === 'unlock') { document.getElementById('pwd-title').innerText = 'Desbloqueio de Histórico'; document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para editar dados antigos.'; } else { document.getElementById('pwd-title').innerText = 'Acesso Restrito'; document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para acessar as configurações.'; } document.getElementById('password-modal').style.display = 'flex'; setTimeout(() => document.getElementById('admin-password').focus(), 100); };
         window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
-        
-        window.submitPassword = () => { 
-            if (document.getElementById('admin-password').value === "admin321") { 
-                window.closePasswordModal(); 
-                if (passwordContext === 'config') {
-                    window.setViewMode('config'); 
-                } else if (passwordContext === 'unlock') {
-                    isAdminUnlocked = true;
-                    updateDateUI();
-                    renderContent();
-                }
-            } else {
-                document.getElementById('pwd-error').classList.remove('hidden'); 
-            }
-        };
+        window.submitPassword = () => { if (document.getElementById('admin-password').value === "admin321") { window.closePasswordModal(); if (passwordContext === 'config') { window.setViewMode('config'); } else if (passwordContext === 'unlock') { isAdminUnlocked = true; updateDateUI(); renderContent(); } } else document.getElementById('pwd-error').classList.remove('hidden'); };
 
         window.saveConfig = () => {
-            const oQ = parseFloat(document.getElementById('config-quality-oven').value), oB = parseFloat(document.getElementById('config-breakage-oven').value), gQ = parseFloat(document.getElementById('config-quality-grinder').value), gB = parseFloat(document.getElementById('config-breakage-grinder').value);
-            if (!isNaN(oQ) && !isNaN(oB) && !isNaN(gQ) && !isNaN(gB)) {
-                globalConfig = { ovens: { quality: oQ, breakage: oB }, grinders: { quality: gQ, breakage: gB }, minVersion: APP_VERSION }; saveGlobalConfigFirebase();
+            const oQ = parseFloat(document.getElementById('config-quality-oven').value), oB = parseFloat(document.getElementById('config-breakage-oven').value), oU = parseFloat(document.getElementById('config-util-oven').value);
+            const gQ = parseFloat(document.getElementById('config-quality-grinder').value), gB = parseFloat(document.getElementById('config-breakage-grinder').value), gU = parseFloat(document.getElementById('config-util-grinder').value);
+            if (!isNaN(oQ) && !isNaN(oB) && !isNaN(oU) && !isNaN(gQ) && !isNaN(gB) && !isNaN(gU)) {
+                globalConfig = { ovens: { quality: oQ, breakage: oB, utilization: oU }, grinders: { quality: gQ, breakage: gB, utilization: gU }, minVersion: APP_VERSION }; saveGlobalConfigFirebase();
                 ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig[ov.includes('RETÍFICA') ? 'grinders' : 'ovens'] }; });
                 alert("Metas cadastradas!"); window.setViewMode('single', currentOven || 'FORNO 2');
             } else alert("Valores inválidos.");
         };
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
 
-        const generateDefectListHTML = () => Object.entries(configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => `
-            <div class="defect-item">
-                <div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div>
-                <div class="flex-grow px-2"><input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)"></div>
-                <button onclick="window.deleteDefect('${code}')" class="text-red-500 font-bold px-2">✕</button>
-            </div>`).join('');
+        const generateDefectListHTML = () => Object.entries(configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => `<div class="defect-item"><div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div><div class="flex-grow px-2"><input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)"></div><button onclick="window.deleteDefect('${code}')" class="text-red-500 font-bold px-2">✕</button></div>`).join('');
 
         const generateConfigHTML = () => `
             <div class="config-container">
                 <div class="config-header"><h2 class="text-2xl font-bold text-gray-800">Configurações do Sistema</h2></div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Metas Globais</h3>
-                    <div class="p-3 bg-blue-50 rounded mb-4 border"><h4 class="font-bold mb-2">FORNOS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-oven" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.ovens.quality}"></div><div><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-oven" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.ovens.breakage}"></div></div>
-                    <div class="p-3 bg-gray-100 rounded mb-4 border"><h4 class="font-bold mb-2">RETÍFICAS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-grinder" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.grinders.quality}"></div><div><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-grinder" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.grinders.breakage}"></div></div>
+                    <div class="p-3 bg-blue-50 rounded mb-4 border"><h4 class="font-bold mb-2">FORNOS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-oven" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.ovens.quality}"></div><div class="mb-2"><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-oven" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.ovens.breakage}"></div><div><label class="text-xs font-bold">Utilização (%):</label><input type="number" step="0.1" id="config-util-oven" class="w-full border p-1 text-center font-bold text-green-600" value="${globalConfig.ovens.utilization || 90.0}"></div></div>
+                    <div class="p-3 bg-gray-100 rounded mb-4 border"><h4 class="font-bold mb-2">RETÍFICAS (Std)</h4><div class="mb-2"><label class="text-xs font-bold">Qualidade (%):</label><input type="number" step="0.1" id="config-quality-grinder" class="w-full border p-1 text-center font-bold text-blue-600" value="${globalConfig.grinders.quality}"></div><div class="mb-2"><label class="text-xs font-bold">Quebra (%):</label><input type="number" step="0.1" id="config-breakage-grinder" class="w-full border p-1 text-center font-bold text-red-600" value="${globalConfig.grinders.breakage}"></div><div><label class="text-xs font-bold">Utilização (%):</label><input type="number" step="0.1" id="config-util-grinder" class="w-full border p-1 text-center font-bold text-green-600" value="${globalConfig.grinders.utilization || 89.0}"></div></div>
                     <div class="flex flex-col gap-3 mt-8"><button onclick="window.saveConfig()" class="bg-blue-600 text-white font-bold py-3 rounded uppercase text-sm">Salvar Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
                     
-                    <!-- NOVO: BOTÃO DE BACKUP MANUAL EM DESTAQUE -->
-                    <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200">
-                        <h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4>
-                        <p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p>
-                        <button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button>
-                    </div>
-
+                    <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
-                    
-                    <!-- NOVO: CONTROLO DE SISTEMA (FORCE REFRESH) -->
-                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200">
-                        <h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4>
-                        <p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p>
-                        <button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button>
-                    </div>
+                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button></div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
@@ -1005,7 +672,7 @@
             </div>`;
 
         const generateSubColumnHTML = (oven, row, type, dataArray, locked, lockedClass) => dataArray.map((item, i) => `
-            <div class="sub-row">
+            <div class="sub-row relative">
                 <input type="text" id="input-${oven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
                 <input type="text" id="input-${oven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
                 <input type="text" id="input-${oven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
@@ -1013,68 +680,46 @@
 
         const generateClosingRow = (ovenName, closingIndex, data, locked, lockedClass) => {
             const cd = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
-            const safeOven = ovenName.replace(/\s+/g, '-');
-            const isRetifica = ovenName.includes('RETÍFICA');
-            const colSpan = isRetifica ? 5 : 6;
+            const safeOven = ovenName.replace(/\s+/g, '-'); const isRetifica = ovenName.includes('RETÍFICA'); const colSpan = isRetifica ? 5 : 6;
             
-            // Calcula o valor inicial para evitar atrasos na interface
-            let shiftMinutes = 0;
-            let dayMinutes = 0;
-            
-            let startRow = 0, endRow = 3;
-            if (closingIndex === 1) { startRow = 4; endRow = 7; } 
-            else if (closingIndex === 2) { startRow = 8; endRow = 11; }
-
-            // Soma do Turno
-            for (let i = startRow; i <= endRow; i++) {
-                const paradas = data.rows[i].paradas || [];
-                paradas.forEach(p => {
-                    const val = parseInt(p.val, 10);
-                    if (!isNaN(val) && val > 0) shiftMinutes += val;
-                });
-            }
-
-            // Soma do Dia (apenas para a última linha de fechamento)
-            if (closingIndex === 2) {
-                for (let i = 0; i <= 11; i++) {
-                    const paradas = data.rows[i].paradas || [];
-                    paradas.forEach(p => {
-                        const val = parseInt(p.val, 10);
-                        if (!isNaN(val) && val > 0) dayMinutes += val;
-                    });
-                }
-            }
-
-            const formattedShiftTempo = shiftMinutes > 0 ? window.getTempoVazioFormat(shiftMinutes) : '-';
-            const formattedDayTempo = dayMinutes > 0 ? window.getTempoVazioFormat(dayMinutes) : '-';
-
-            // Montagem dinâmica da célula "Tempo Vazio"
             let tempoCellContent = '';
             if (closingIndex === 2) {
                  tempoCellContent = `
                     <div class="flex flex-col h-full w-full justify-center">
-                        <div class="flex flex-col items-center justify-center bg-white/40 flex-1 pt-[2px]">
+                        <div class="flex flex-col items-center justify-center bg-white/40 flex-1">
                             <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Turno</span>
-                            <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.6rem] text-black leading-none">${formattedShiftTempo}</span>
+                            <div class="flex items-center gap-1">
+                                <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.6rem] text-black leading-none">-</span>
+                                <span class="text-gray-400 text-[0.5rem] font-black">|</span>
+                                <span id="util-tempoVazio-${safeOven}-2-turno"></span>
+                            </div>
                         </div>
                         <div class="w-full border-t border-gray-500/30"></div>
-                        <div class="flex flex-col items-center justify-center bg-blue-100 flex-1 pb-[2px]">
+                        <div class="flex flex-col items-center justify-center bg-blue-100 flex-1">
                             <span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Dia</span>
-                            <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.6rem] text-blue-900 leading-none">${formattedDayTempo}</span>
+                            <div class="flex items-center gap-1">
+                                <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.6rem] text-blue-900 leading-none">-</span>
+                                <span class="text-blue-300 text-[0.5rem] font-black">|</span>
+                                <span id="util-tempoVazio-${safeOven}-2-dia"></span>
+                            </div>
                         </div>
                     </div>`;
             } else {
                  tempoCellContent = `
                     <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-white/30 rounded-sm m-[1px]">
-                        <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.5rem] leading-none mb-1">Total Turno</span>
-                        <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.7rem] text-black leading-none">${formattedShiftTempo}</span>
+                        <span class="font-bold text-gray-700 uppercase tracking-tighter text-[0.4rem] leading-none mb-[1px]">Total Turno</span>
+                        <div class="flex items-center gap-1">
+                            <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.6rem] text-black leading-none">-</span>
+                            <span class="text-gray-400 text-[0.5rem] font-black">|</span>
+                            <span id="util-tempoVazio-${safeOven}-${closingIndex}"></span>
+                        </div>
                     </div>`;
             }
 
-            return `<tr class="bg-gray-dark-custom h-8 border-t border-b border-black">
+            return `<tr class="bg-gray-dark-custom h-auto border-t border-b border-black">
                         <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
-                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
+                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
+                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
                         <td class="border-black bg-gray-400 p-0 w-[200px] min-w-[200px] shadow-inner">
                             ${tempoCellContent}
                         </td>
@@ -1089,18 +734,14 @@
             const currentSchedule = isRetifica ? scheduleGrinders : scheduleOvens;
             const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Parado' : 'Tempo de Forno Vazio';
 
-            const locked = isDateLocked();
-            const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
+            const locked = isDateLocked(); const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
             const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : '';
-            const attrReadonly = locked ? 'readonly' : '';
-            const attrDisabled = locked ? 'disabled' : '';
+            const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
 
             currentSchedule.forEach((item, index) => {
-                const rowData = data.rows[index];
-                const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
+                const rowData = data.rows[index]; const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
                 let refClasses = `nav-input ref-input ${lockedClass}`;
-                if (isRetifica && rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert";
-                else if (rowData.ref === "❌FORNO PARADO⚠️") refClasses += " text-red-600 font-black";
+                if (isRetifica && rowData.ref === "EQUIPAMENTO PARADO") refClasses += " text-stop-alert"; else if (rowData.ref === "❌FORNO PARADO⚠️") refClasses += " text-red-600 font-black";
 
                 rowsHTML += `
                     <tr class="${rowBg}" data-oven="${ovenName}" data-row="${index}">
@@ -1142,12 +783,14 @@
                         <td class="border-black p-0 w-[200px] min-w-[200px]">
                             <div class="flex flex-col h-full bg-white">
                                 ${rowData.paradas.map((item, i) => `
-                                <div class="sub-row">
+                                <div class="sub-row relative">
                                     <input type="text" id="input-${safeOven}-${index}-paradas-${i}-desc" class="input-desc flex-grow ${lockedClass}" placeholder="Motivo" value="${item.desc || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'desc', this.value)">
                                     <input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val shrink-0 ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)">
                                 </div>`).join('')}
-                                <div class="sub-row bg-gray-100 flex items-center justify-center border-none flex-grow">
-                                    <span id="total-parada-${safeOven}-${index}" class="text-[0.65rem] font-bold text-gray-500">0 min</span>
+                                <div class="bg-gray-100 flex flex-row items-center justify-center gap-1 border-t border-gray-200 h-[1.4rem] shrink-0">
+                                    <span id="total-parada-${safeOven}-${index}" class="text-[0.6rem] font-bold text-gray-500">0m</span>
+                                    <span class="text-gray-400 text-[0.5rem] font-black">|</span>
+                                    <span id="util-parada-${safeOven}-${index}"></span>
                                 </div>
                             </div>
                         </td>
@@ -1157,31 +800,34 @@
 
             return `
                 <div class="bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden">
-                    <!-- CABEÇALHO SIMÉTRICO COM IDENTIDADE VISUAL -->
                     <div class="flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2">
-                        <!-- Logo Esquerda: Mohawk Brasil -->
                         <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil">
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
                         </div>
                         
-                        <!-- Título Central -->
-                        <div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center flex-grow">
-                            Acompanhamento - ${ovenName}
+                        <div class="flex flex-col items-center flex-grow">
+                            <div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center">
+                                Acompanhamento - ${ovenName}
+                            </div>
+                            
+                            <div class="flex gap-3 text-[0.65rem] font-black mt-1 bg-white px-3 py-[2px] rounded-full shadow-sm border border-gray-200">
+                                <span class="text-gray-500 uppercase tracking-wider text-[0.55rem] pt-[2px]">Metas da Máquina:</span>
+                                <span class="text-blue-600">Qualid: ${data.targets?.quality || globalConfig[isRetifica ? 'grinders' : 'ovens'].quality}%</span>
+                                <span class="text-red-600">Quebra: ${data.targets?.breakage || globalConfig[isRetifica ? 'grinders' : 'ovens'].breakage}%</span>
+                                <span class="text-green-600">Utiliz: ${data.targets?.utilization || globalConfig[isRetifica ? 'grinders' : 'ovens'].utilization || (isRetifica ? 89 : 90)}%</span>
+                            </div>
                         </div>
                         
-                        <!-- Logo Direita: SC 2 -->
                         <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Unidade SC 2">
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">SC</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 2px;">2</span>
                         </div>
                     </div>
                     
-                    <!-- Wrapper para scroll horizontal ajustado para a nova coluna -->
                     <div class="table-responsive-wrapper">
                         <table class="w-full min-w-[1250px]">
                             <thead>
-                                <!-- Linha Nominal/Bitola integrada nativamente na tabela para alinhamento perfeito -->
                                 <tr class="bg-white font-bold uppercase text-[0.6rem]">
                                     <th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white">
                                         <div class="flex justify-center items-center gap-1">
@@ -1192,11 +838,9 @@
                                     <th colspan="3" class="border-b border-black p-1 bg-white">
                                         <div class="flex justify-center items-center gap-1">
                                             ${isRetifica ? 
-                                                `<span>Bitola:</span>
-                                                 <input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
+                                                `<span>Bitola:</span><input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
                                                 :
-                                                `<span>Linha:</span>
-                                                 <select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
+                                                `<span>Linha:</span><select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
                                             }
                                         </div>
                                     </th>
@@ -1210,41 +854,14 @@
                                     <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Hora (%)</th>
                                     <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Acumulada (%)</th>
                                     
-                                    <th class="w-[180px] min-w-[180px] p-0 border-b border-black">
-                                        <div class="text-center py-[4px]">Defeitos</div>
-                                    </th>
-                                    <th class="w-[230px] min-w-[230px] text-red-600 p-0 border-b border-black">
-                                        <div class="text-center py-[4px]">Quebra</div>
-                                    </th>
-                                    <th class="w-[200px] min-w-[200px] text-gray-700 bg-gray-100 p-0 border-b border-black">
-                                        <div class="text-center py-[4px]">${tempoVazioTitle}</div>
-                                    </th>
+                                    <th class="w-[180px] min-w-[180px] p-0 border-b border-black"><div class="text-center py-[4px]">Defeitos</div></th>
+                                    <th class="w-[230px] min-w-[230px] text-red-600 p-0 border-b border-black"><div class="text-center py-[4px]">Quebra</div></th>
+                                    <th class="w-[200px] min-w-[200px] text-gray-700 bg-gray-100 p-0 border-b border-black"><div class="text-center py-[4px]">${tempoVazioTitle}</div></th>
                                 </tr>
                                 <tr class="header-blue">
-                                    <th class="p-0 border-black border-t-0 align-middle">
-                                        <div class="flex w-full h-full bg-[#e5e7eb] font-bold text-[0.6rem]">
-                                            <span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span>
-                                            <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span>
-                                            <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span>
-                                        </div>
-                                    </th>
-                                    <th class="p-0 border-black border-t-0 align-middle">
-                                        <div class="flex w-full h-full bg-[#e5e7eb]">
-                                            <div class="flex-grow flex font-bold text-[0.6rem] text-red-600">
-                                                <span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span>
-                                                <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span>
-                                                <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span>
-                                            </div>
-                                            <!-- Largura travada em 50px e cor da borda sincronizada com quebra-total-box -->
-                                            <div class="w-[50px] shrink-0 border-l border-[#999] flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div>
-                                        </div>
-                                    </th>
-                                    <th class="p-0 border-black border-t-0 align-middle bg-gray-100">
-                                         <div class="flex w-full h-full font-bold text-[0.6rem] text-gray-700">
-                                            <span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Motivo</span>
-                                            <span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">min</span>
-                                        </div>
-                                    </th>
+                                    <th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb] font-bold text-[0.6rem]"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div></th>
+                                    <th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb]"><div class="flex-grow flex font-bold text-[0.6rem] text-red-600"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div><div class="w-[50px] shrink-0 border-l border-[#999] flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
+                                    <th class="p-0 border-black border-t-0 align-middle bg-gray-100"><div class="flex w-full h-full font-bold text-[0.6rem] text-gray-700"><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Motivo</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">min</span></div></th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHTML}</tbody>
@@ -1254,91 +871,41 @@
         };
         
         const renderContent = () => {
-            const activeElement = document.activeElement;
-            let focusedId = null, cursorStart = null, cursorEnd = null;
+            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null;
             if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
-
             const mainContent = document.getElementById('main-content');
-            if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } 
-            else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
-
-            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML();
-            else {
-                // Modo Exibição de Tabela Única
-                mainContent.innerHTML = generateOvenHTML(currentOven);
-                window.attachCalculations(currentOven);
-            }
-
-            if (focusedId && isDataLoaded) {
-                const el = document.getElementById(focusedId);
-                if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} }
-            }
+            if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
+            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML(); else { mainContent.innerHTML = generateOvenHTML(currentOven); window.attachCalculations(currentOven); }
+            if (focusedId && isDataLoaded) { const el = document.getElementById(focusedId); if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} } }
         };
 
         const init = async () => {
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); renderContent();
             
-            // Relógio Interno Robusto: Verifica a cada minuto para Backup de Virada de Dia
-            setInterval(() => {
-                const now = new Date();
-                
-                // Virada de Meia-Noite (Mudança de Dia) -> Único backup automático para economizar processamento
-                if (now.getDate() !== lastKnownDay) { 
-                    const oldDate = new Date(selectedDate);
-                    lastKnownDay = now.getDate(); 
-                    selectedDate = now; 
-                    
-                    isAdminUnlocked = false; // Bloqueia edições na virada
-                    updateDateUI(); // Atualiza a data visual na tela de imediato
-                    
-                    // Força um último backup fotográfico do dia que acabou (modo silencioso = true)
-                    if (isDataLoaded && db) {
-                        window.runManualBackup(oldDate, true); 
-                    }
-                    
-                    window.setupRealtimeListener(); 
-                    return;
-                }
-            }, 60000);
+            setInterval(() => { const now = new Date(); if (now.getDate() !== lastKnownDay) { const oldDate = new Date(selectedDate); lastKnownDay = now.getDate(); selectedDate = now; isAdminUnlocked = false; updateDateUI(); if (isDataLoaded && db) { window.runManualBackup(oldDate, true); } window.setupRealtimeListener(); return; } }, 60000);
 
             if(auth) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                    else await signInAnonymously(auth);
-                } catch (e) {}
+                try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {}
                 onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } });
             }
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return;
-                    e.preventDefault();
+                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return; e.preventDefault();
                     const el = document.activeElement; if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'SELECT')) return;
                     const subMatch = el.id.match(/input-(.+)-(\d+)-(defects|quebras|paradas)-(\d+)-(cod|val|desc)/);
                     if (subMatch) {
                         const [_, oven, rowStr, type, idxStr, field] = subMatch; const row = parseInt(rowStr), idx = parseInt(idxStr);
-                        if (field === 'cod') {
-                            const descInput = document.getElementById(`input-${oven}-${row}-${type}-${idx}-desc`);
-                            if (descInput && !descInput.hasAttribute('readonly')) descInput.focus(); else document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
-                        } else if (field === 'desc') {
-                            document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus();
-                        } else if (field === 'val') {
-                            if (type === 'paradas') {
-                                if (idx < 2) document.getElementById(`input-${oven}-${row}-paradas-${idx+1}-desc`)?.focus();
-                                else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus();
-                            } else {
-                                if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus();
-                                else {
-                                    if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus();
-                                    else if (type === 'quebras') document.getElementById(`input-${oven}-${row}-paradas-0-desc`)?.focus();
-                                }
-                            }
+                        if (field === 'cod') { const descInput = document.getElementById(`input-${oven}-${row}-${type}-${idx}-desc`); if (descInput && !descInput.hasAttribute('readonly')) descInput.focus(); else document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus(); } 
+                        else if (field === 'desc') { document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus(); } 
+                        else if (field === 'val') {
+                            if (type === 'paradas') { if (idx < 2) document.getElementById(`input-${oven}-${row}-paradas-${idx+1}-desc`)?.focus(); else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus(); } 
+                            else { if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus(); else { if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus(); else if (type === 'quebras') document.getElementById(`input-${oven}-${row}-paradas-0-desc`)?.focus(); } }
                         }
                         return;
                     }
-                    const inputs = Array.from(document.querySelectorAll('input:not([readonly]):not([disabled]), select:not([disabled])'));
-                    const currentIdx = inputs.indexOf(el); if (currentIdx >= 0 && currentIdx < inputs.length - 1) inputs[currentIdx + 1].focus();
+                    const inputs = Array.from(document.querySelectorAll('input:not([readonly]):not([disabled]), select:not([disabled])')); const currentIdx = inputs.indexOf(el); if (currentIdx >= 0 && currentIdx < inputs.length - 1) inputs[currentIdx + 1].focus();
                 }
             });
         };
