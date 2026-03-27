@@ -107,7 +107,9 @@
         
         /* Ajuste do container para centralizar perfeitamente */
         #presentation-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: hidden; width: 100%; height: 100vh; box-sizing: border-box; }
-        #presentation-content .table-responsive-wrapper { overflow: hidden !important; } /* Oculta a barra de rolagem nas TVs */
+        
+        /* Em modo TV, o table-wrapper vai gerenciar sua própria altura para os headers ficarem fixos */
+        .presentation-card { max-height: 95vh; }
     </style>
 </head>
 <body class="bg-gray-200 p-4 transition-all duration-300">
@@ -124,6 +126,7 @@
         </button>
     </div>
 
+    <!-- MODO APRESENTAÇÃO - SETUP MODAL -->
     <div id="presentation-setup-modal" style="display:none;" class="fixed inset-0 bg-black/70 z-[4000] flex justify-center items-center">
         <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
             <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
@@ -154,15 +157,19 @@
         </div>
     </div>
 
+    <!-- MODO APRESENTAÇÃO - CONTAINER (OVERLAY FULLSCREEN) -->
     <div id="presentation-mode-container">
+        <!-- Progress Bar -->
         <div class="w-full bg-gray-300 h-2 absolute top-0 z-50 shadow">
             <div id="presentation-progress" class="h-full bg-indigo-600 w-0 transition-all ease-linear shadow-lg"></div>
         </div>
         
+        <!-- Botão Sair Invisível (Aparece no Hover) -->
         <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
             ❌ Sair do Modo TV (ESC)
         </button>
         
+        <!-- Conteúdo Renderizado (Tabelas) -->
         <div id="presentation-content"></div>
     </div>
 
@@ -199,6 +206,7 @@
         
         <div class="flex-grow"></div>
         
+        <!-- Botão Novo: Modo TV -->
         <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase" title="Modo Apresentação (TVs da Fábrica)">
             📺 Modo TV
         </button>
@@ -425,18 +433,18 @@
             
             const equips = presentationConfig.screens[currentPresentationIndex];
             
-            // Define o agrupamento lado a lado se forem 2 equipamentos
+            // Define o agrupamento
             container.style.flexDirection = equips.length === 2 ? 'row' : 'column';
             container.style.gap = equips.length === 2 ? '2vw' : '0';
             
-            // AJUSTE PRECISO PARA 1920x1080
-            // ~0.74 faz com que duas tabelas de 1250px fiquem com cerca de 925px cada (total 1850px), cabendo perfeitamente nos 1920px.
-            // ~1.05 faz com que a altura de 1 equipamento expanda o máximo possível sem criar barra de rolagem nos 1080px.
-            const scaleZoom = equips.length === 2 ? 0.74 : 1.05; 
+            // AJUSTE PRECISO (Redução de ~10% solicitada para margem de segurança - Overscan das TVs)
+            // 0.67 e 0.94 criam garantias perfeitas para telas com as bordas "espremidas" e ainda cabem no 1920x1080.
+            const scaleZoom = equips.length === 2 ? 0.67 : 0.94; 
             
             equips.forEach(eq => {
                 const wrapper = document.createElement('div');
-                wrapper.className = 'flex justify-center items-center pointer-events-none drop-shadow-2xl mx-2';
+                // Adicionamos flex-1, flex-col, h-[94vh] para forçar a limitação de altura e ativar o rolagem interna SE precisar
+                wrapper.className = 'flex-1 flex flex-col justify-start items-center pointer-events-none drop-shadow-2xl mx-2 h-[94vh] w-full';
                 wrapper.style.zoom = scaleZoom; 
                 
                 wrapper.innerHTML = generateOvenHTML(eq);
@@ -1064,6 +1072,7 @@
             const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : '';
             const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
             const activeTargets = data.targets || window.getTargets(ovenName);
+            const isPres = viewMode === 'presentation';
 
             currentSchedule.forEach((item, index) => {
                 const rowData = data.rows[index]; const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
@@ -1125,9 +1134,27 @@
                 if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data, locked, lockedClass);
             });
 
+            // Classes Inteligentes para encapsulamento perfeito no modo TV
+            const mainDivClass = isPres 
+                ? "bg-white shadow-lg border-t border-black rounded-b-lg flex flex-col w-full h-full overflow-hidden" 
+                : "bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden";
+            
+            const equipHeaderClass = isPres 
+                ? "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2 shrink-0 sticky top-0 z-[60] shadow-md" 
+                : "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2";
+
+            const wrapperClass = isPres 
+                ? "table-responsive-wrapper flex-grow overflow-y-auto" 
+                : "table-responsive-wrapper";
+
+            const theadClass = isPres 
+                ? "sticky top-0 z-50 shadow-[0_2px_0_0_black]" 
+                : "";
+
             return `
-                <div class="bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden">
-                    <div class="flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2">
+                <div class="${mainDivClass}">
+                    <!-- CABEÇALHO DO EQUIPAMENTO FLUTUANTE -->
+                    <div class="${equipHeaderClass}">
                         <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil">
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
@@ -1152,9 +1179,9 @@
                         </div>
                     </div>
                     
-                    <div class="table-responsive-wrapper">
-                        <table class="w-full min-w-[1250px]">
-                            <thead>
+                    <div class="${wrapperClass}">
+                        <table class="w-full min-w-[1250px] relative">
+                            <thead class="${theadClass}">
                                 <tr class="bg-white font-bold uppercase text-[0.6rem]">
                                     <th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white">
                                         <div class="flex justify-center items-center gap-1">
