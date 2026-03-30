@@ -437,9 +437,9 @@
             container.style.flexDirection = equips.length === 2 ? 'row' : 'column';
             container.style.gap = equips.length === 2 ? '2vw' : '0';
             
-            // AJUSTE PRECISO (Redução de ~10% solicitada para margem de segurança - Overscan das TVs)
-            // 0.67 e 0.94 criam garantias perfeitas para telas com as bordas "espremidas" e ainda cabem no 1920x1080.
-            const scaleZoom = equips.length === 2 ? 0.67 : 0.94; 
+            // Redução adicional de 20% para evitar cortes nas bordas direitas da TV
+            // Antes: Dual 0.67 | Single 0.94 ---> Agora: Dual 0.53 | Single 0.75
+            const scaleZoom = equips.length === 2 ? 0.53 : 0.75; 
             
             equips.forEach(eq => {
                 const wrapper = document.createElement('div');
