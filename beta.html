@@ -115,33 +115,33 @@
         .presentation-active table { 
             height: 100%; 
             flex-grow: 1; 
-            width: 97% !important; /* Reduz a largura de todas as colunas em 3% proporcionalmente */
+            width: 92% !important; /* Mais redução nas colunas p/ melhor encaixe (-5% = 92%) */
             margin: 0 auto; 
         }
         .presentation-active tbody tr { height: 1%; /* Força as linhas a dividirem o espaço extra vertical uniformemente */ }
         .presentation-active td > div.flex-col { justify-content: center; height: 100%; }
         .presentation-active .sub-row { flex-grow: 1; height: auto; }
         
-        /* Peso ajustável e Fontes maximizadas para preencher o máximo da célula (Tamanho Reduzido ~10%) */
+        /* Peso ajustável (-5% via font-weight 700) e Fontes dimensionadas à tela */
         .presentation-active input, 
         .presentation-active select, 
         .presentation-active td,
         .presentation-active th,
         .presentation-active span {
-            font-weight: 800 !important; /* Peso extra bold, reduzido de 900 */
+            font-weight: 700 !important; /* Peso extra bold reduzido de 800 p/ 700 */
         }
         .presentation-active .input-cod, 
-        .presentation-active .input-val { font-size: 1.05em !important; }
-        .presentation-active .input-desc { font-size: 0.9em !important; }
-        .presentation-active .ref-input { font-size: 1.15em !important; }
+        .presentation-active .input-val { font-size: 0.95em !important; }
+        .presentation-active .input-desc { font-size: 0.85em !important; }
+        .presentation-active .ref-input { font-size: 1.05em !important; }
         .presentation-active .input-quali-hora, 
-        .presentation-active .input-quali-acum { font-size: 1.45em !important; }
-        .presentation-active .quebra-total-box span.font-bold { font-size: 1.25em !important; }
-        .presentation-active .shift-stamp { font-size: 0.75em !important; }
+        .presentation-active .input-quali-acum { font-size: 1.35em !important; }
+        .presentation-active .quebra-total-box span.font-bold { font-size: 1.15em !important; }
+        .presentation-active .shift-stamp { font-size: 0.70em !important; }
         
         @media (orientation: portrait) {
             .presentation-active table { font-size: 1.1em; }
-            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.6em !important; }
+            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.5em !important; }
         }
     </style>
 </head>
@@ -176,12 +176,12 @@
                 <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
                     <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
                         <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        Incluir Dashboard Geral no final do carrossel
+                        Incluir Resumo de Ofensores e Dashboard Final
                     </label>
                     <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
-                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dashboard):</label>
+                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dashboards):</label>
                         <div class="flex items-center gap-1">
-                            <input type="number" id="presentation-dash-time" value="30" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                            <input type="number" id="presentation-dash-time" value="20" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
                             <span class="text-xs text-indigo-600 font-bold">seg</span>
                         </div>
                     </div>
@@ -426,7 +426,7 @@
             const includeDash = document.getElementById('presentation-include-dash').checked;
             
             if (isNaN(timeInput) || timeInput < 5) { alert('Tempo mínimo por tela é de 5 segundos.'); return; }
-            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para o Dashboard é de 5 segundos.'); return; }
+            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para os Dashboards é de 5 segundos.'); return; }
 
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
@@ -442,7 +442,10 @@
 
             if (screens.length === 0 && !includeDash) { alert('Adicione pelo menos uma tela ao carrossel.'); return; }
             
-            if (includeDash) screens.push(['DASHBOARD']);
+            if (includeDash) {
+                screens.push(['OFFENDERS']);
+                screens.push(['DASHBOARD']);
+            }
 
             presentationConfig.interval = timeInput;
             presentationConfig.dashInterval = dashTimeInput;
@@ -461,8 +464,8 @@
             clearTimeout(presentationIntervalObj);
             
             const equips = presentationConfig.screens[currentPresentationIndex];
-            const isDash = equips.length === 1 && equips[0] === 'DASHBOARD';
-            const currentInterval = isDash ? presentationConfig.dashInterval : presentationConfig.interval;
+            const isDashOrOffenders = equips.length === 1 && (equips[0] === 'DASHBOARD' || equips[0] === 'OFFENDERS');
+            const currentInterval = isDashOrOffenders ? presentationConfig.dashInterval : presentationConfig.interval;
 
             window.renderPresentationScreen();
             
@@ -486,6 +489,97 @@
             document.getElementById('presentation-mode-container').style.display = 'none';
             document.body.classList.remove('presentation-active');
             window.setViewMode('single', currentOven); 
+        };
+
+        // --- GERAÇÃO DO RESUMO DE OFENSORES ---
+        window.generateOffendersHTML = () => {
+            const activeOvens = ['FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            
+            const getTopOffender = (data, type) => {
+                let map = {};
+                for (let i = 0; i < 12; i++) {
+                    const row = data.rows[i];
+                    if (row && row[type]) {
+                        row[type].forEach(item => {
+                            if (item && item.desc && item.desc.trim() !== '' && item.desc.toLowerCase() !== 'nenhum') {
+                                const v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(String(item.val).replace(',', '.'));
+                                if (!isNaN(v) && v > 0) {
+                                    map[item.desc] = (map[item.desc] || 0) + v;
+                                }
+                            }
+                        });
+                    }
+                }
+                let maxDesc = '-';
+                let maxVal = 0;
+                for (const [desc, val] of Object.entries(map)) {
+                    if (val > maxVal) { maxVal = val; maxDesc = desc; }
+                }
+                return { desc: maxDesc, val: maxVal };
+            };
+
+            let rowsHTML = activeOvens.map(oven => {
+                const data = ovenDataStore[oven];
+                if (!data || !data.rows) return '';
+                
+                const topDefect = getTopOffender(data, 'defects');
+                const topQuebra = getTopOffender(data, 'quebras');
+                const topParada = getTopOffender(data, 'paradas');
+                
+                const shortName = oven.replace('FORNO', 'F').replace('RETÍFICA', 'RET');
+
+                const renderCard = (title, offender, isMin) => {
+                    const hasData = offender.val > 0;
+                    const valStr = hasData ? (isMin ? `${offender.val} min` : `${offender.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`) : '-';
+                    const descStr = hasData ? offender.desc : 'Dentro da Meta';
+                    const colorClass = hasData ? 'text-red-600' : 'text-green-600';
+                    const bgClass = hasData ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
+                    
+                    return `
+                        <div class="flex flex-col flex-1 border ${bgClass} rounded-lg p-2 justify-center items-center text-center shadow-sm relative overflow-hidden">
+                            <span class="text-[0.55rem] sm:text-[0.65rem] font-bold text-gray-500 uppercase tracking-tighter mb-1">${title}</span>
+                            <span class="text-xs sm:text-sm font-black text-gray-800 leading-tight line-clamp-2" style="min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${descStr}</span>
+                            <span class="text-sm sm:text-lg font-black ${colorClass} mt-1">${valStr}</span>
+                        </div>
+                    `;
+                };
+
+                return `
+                    <div class="flex flex-row items-stretch justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white gap-2">
+                        <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full bg-gray-50 rounded-l-lg">
+                            <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
+                            <span class="text-[0.55rem] sm:text-[0.65rem] font-bold text-gray-500 mt-1 uppercase tracking-widest text-center">Ofensores do Dia</span>
+                        </div>
+                        <div class="w-3/4 sm:w-4/5 flex flex-row justify-around items-stretch gap-2 px-2 sm:px-4 py-1">
+                            ${renderCard('Ofensor Qualidade', topDefect, false)}
+                            ${renderCard('Ofensor Quebra', topQuebra, false)}
+                            ${renderCard('Maior Parada', topParada, true)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 pointer-events-none">
+                    <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
+                        <div class="absolute left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
+                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-red-700 tracking-widest uppercase flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            PONTOS DE ATENÇÃO (OFENSORES)
+                        </h1>
+                        <div class="absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
+                    </div>
+                    <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-hidden">
+                            ${rowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
         };
 
         // --- GERAÇÃO DO DASHBOARD GERAL ---
@@ -542,11 +636,26 @@
                 let totalQuebra = 0;
                 let totalTempoVazio = 0;
 
+                let lastIdx = -1;
+                
                 if (data && data.rows) {
-                    for (let i = 0; i < 12; i++) {
+                    // Encontrar o último horário com atividade válida
+                    for (let i = 11; i >= 0; i--) {
+                        const r = data.rows[i];
+                        if ((r.vol && r.vol.trim() !== '') || (r.ref && r.ref.trim() !== '') || (r.qHora && r.qHora.trim() !== '')) {
+                            lastIdx = i;
+                            break;
+                        }
+                    }
+                    
+                    // Extrair dados até ao último horário para retratar exatamente o estado atual (congelado)
+                    const limitIdx = lastIdx >= 0 ? lastIdx : 11;
+                    
+                    for (let i = 0; i <= limitIdx; i++) {
                         const r = data.rows[i];
                         const volVal = parseFloat(String(r.vol).replace('.', '').replace(',', '.'));
                         const hVal = parseFloat(String(r.qHora).replace(',', '.'));
+                        
                         if (!isNaN(volVal)) {
                             const deltaVol = volVal - previousVolume;
                             if (!isNaN(hVal)) { weightedScoreSum += deltaVol * hVal; if (volVal > 0) { qualAcum = weightedScoreSum / volVal; hasVol = true; } }
@@ -562,20 +671,24 @@
                 }
                 
                 if (!hasVol) qualAcum = 0;
+                // O dashboard mantém 1440 para equiparar ao Total Dia
                 const utilDia = ((1440 - totalTempoVazio) / 1440) * 100;
                 const shortName = oven.replace('FORNO', 'F').replace('RETÍFICA', 'RET');
+                
+                // Nome da referência atual do último preenchimento
+                const currentRef = (data && data.rows && lastIdx >= 0 && data.rows[lastIdx].ref) ? data.rows[lastIdx].ref : 'Aguardando Produção';
 
                 return `
                     <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white">
-                        <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full">
+                        <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
                             <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
-                            <span class="text-[0.65rem] sm:text-sm font-bold text-gray-600 mt-1">${todayStr}</span>
-                            <div class="border border-blue-600 text-blue-700 bg-blue-50 font-black px-2 py-[2px] mt-1 rounded text-[0.65rem] sm:text-xs tracking-widest shadow-sm">${currentTimeStr}</div>
+                            <span class="text-[0.6rem] sm:text-xs font-bold text-gray-600 mt-1 uppercase truncate w-full text-center max-w-[150px] bg-gray-200 px-1 py-[2px] rounded border border-gray-300 shadow-sm" title="${currentRef}">${currentRef}</span>
+                            <div class="absolute top-2 left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
                         </div>
                         <div class="w-3/4 sm:w-4/5 flex flex-row justify-around items-center px-2 sm:px-4">
-                            ${generateGauge('Qualidade', qualAcum, targets.quality, false)}
-                            ${generateGauge('Quebra', totalQuebra, targets.breakage, true)}
-                            ${generateGauge('Utilização', utilDia, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                            ${generateGauge('Qualidade Acumulada', qualAcum, targets.quality, false)}
+                            ${generateGauge('Total de Quebra', totalQuebra, targets.breakage, true)}
+                            ${generateGauge('Utilização Diária', utilDia, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
                         </div>
                     </div>
                 `;
@@ -588,7 +701,8 @@
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
                         </div>
-                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-gray-800 tracking-widest uppercase">INFORMAÇÕES GERAIS</h1>
+                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-gray-800 tracking-widest uppercase">DESEMPENHO GERAL DA FÁBRICA</h1>
+                        <div class="absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
                     </div>
                     <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
                         <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-hidden">
@@ -607,14 +721,17 @@
             
             const equips = presentationConfig.screens[currentPresentationIndex];
             
-            // Renderiza o Dashboard se for a tela específica
-            if (equips.length === 1 && equips[0] === 'DASHBOARD') {
+            // Renderiza as telas Especiais
+            if (equips.length === 1 && (equips[0] === 'DASHBOARD' || equips[0] === 'OFFENDERS')) {
                 container.style.flexDirection = 'column';
                 container.style.gap = '0';
                 
                 const wrapper = document.createElement('div');
                 wrapper.className = 'w-full h-full flex justify-center items-center drop-shadow-2xl';
-                wrapper.innerHTML = window.generateDashboardHTML();
+                
+                if (equips[0] === 'DASHBOARD') wrapper.innerHTML = window.generateDashboardHTML();
+                if (equips[0] === 'OFFENDERS') wrapper.innerHTML = window.generateOffendersHTML();
+                
                 container.appendChild(wrapper);
                 return;
             }
