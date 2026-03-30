@@ -164,12 +164,31 @@
         <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
             <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
             
-            <div class="mb-4 flex items-center gap-3 bg-indigo-50 p-3 rounded border border-indigo-100">
-                <label class="font-bold text-sm text-indigo-800">Tempo de exibição por Tela (Segundos):</label>
-                <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-20 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+            <div class="mb-4 flex flex-col gap-3 bg-indigo-50 p-4 rounded border border-indigo-100">
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-sm text-indigo-800">Tempo de exibição (Tabelas):</label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <span class="text-xs text-indigo-600 font-bold">seg</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
+                    <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
+                        <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        Incluir Dashboard Geral no final do carrossel
+                    </label>
+                    <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
+                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dashboard):</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="presentation-dash-time" value="30" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                            <span class="text-xs text-indigo-600 font-bold">seg</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[200px]">
+            <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[150px]">
                 <h4 class="font-bold text-xs text-gray-500 mb-2 uppercase flex justify-between">
                     <span>Sequência do Carrossel</span>
                     <span class="text-[0.6rem] text-gray-400 lowercase">Máx 2 equip. por tela</span>
@@ -354,7 +373,7 @@
         let availableBackups = [];
 
         // --- VARIÁVEIS DO MODO APRESENTAÇÃO ---
-        let presentationConfig = { interval: 15, screens: [] };
+        let presentationConfig = { interval: 15, dashInterval: 30, screens: [] };
         let presentationIntervalObj = null;
         let progressIntervalObj = null;
         let currentPresentationIndex = 0;
@@ -403,7 +422,11 @@
 
         window.startPresentation = () => {
             const timeInput = parseInt(document.getElementById('presentation-time').value);
+            const dashTimeInput = parseInt(document.getElementById('presentation-dash-time').value);
+            const includeDash = document.getElementById('presentation-include-dash').checked;
+            
             if (isNaN(timeInput) || timeInput < 5) { alert('Tempo mínimo por tela é de 5 segundos.'); return; }
+            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para o Dashboard é de 5 segundos.'); return; }
 
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
@@ -417,9 +440,12 @@
                 }
             });
 
-            if (screens.length === 0) { alert('Adicione pelo menos uma tela contendo um equipamento antes de iniciar.'); return; }
+            if (screens.length === 0 && !includeDash) { alert('Adicione pelo menos uma tela ao carrossel.'); return; }
+            
+            if (includeDash) screens.push(['DASHBOARD']);
 
             presentationConfig.interval = timeInput;
+            presentationConfig.dashInterval = dashTimeInput;
             presentationConfig.screens = screens;
             currentPresentationIndex = 0;
 
@@ -432,8 +458,12 @@
         };
 
         window.startPresentationCycle = () => {
-            clearInterval(presentationIntervalObj);
+            clearTimeout(presentationIntervalObj);
             
+            const equips = presentationConfig.screens[currentPresentationIndex];
+            const isDash = equips.length === 1 && equips[0] === 'DASHBOARD';
+            const currentInterval = isDash ? presentationConfig.dashInterval : presentationConfig.interval;
+
             window.renderPresentationScreen();
             
             const progressBar = document.getElementById('presentation-progress');
@@ -441,21 +471,131 @@
             progressBar.style.width = '0%';
             
             setTimeout(() => {
-                progressBar.style.transition = `width ${presentationConfig.interval}s linear`;
+                progressBar.style.transition = `width ${currentInterval}s linear`;
                 progressBar.style.width = '100%';
             }, 50);
 
-            presentationIntervalObj = setInterval(() => {
+            presentationIntervalObj = setTimeout(() => {
                 currentPresentationIndex = (currentPresentationIndex + 1) % presentationConfig.screens.length;
                 window.startPresentationCycle(); 
-            }, presentationConfig.interval * 1000);
+            }, currentInterval * 1000);
         };
 
         window.stopPresentation = () => {
-            clearInterval(presentationIntervalObj);
+            clearTimeout(presentationIntervalObj);
             document.getElementById('presentation-mode-container').style.display = 'none';
             document.body.classList.remove('presentation-active');
             window.setViewMode('single', currentOven); 
+        };
+
+        // --- GERAÇÃO DO DASHBOARD GERAL ---
+        window.generateDashboardHTML = () => {
+            const activeOvens = ['FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
+            const todayStr = selectedDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            
+            const generateGauge = (title, value, target, isQuebra) => {
+                const radius = 38; 
+                const circumference = 2 * Math.PI * radius;
+                let isOk = isQuebra ? (value <= target) : (value >= target);
+                if (value === 0 && !isQuebra && title === 'Qualidade') isOk = true; 
+                
+                const color = isOk ? "#16a34a" : "#dc2626"; // green-600 ou red-600
+                
+                let percentFill = 0;
+                if (isQuebra) {
+                    let maxVisual = target * 2.5 || 3; 
+                    percentFill = Math.min((value / maxVisual) * 100, 100);
+                } else {
+                    percentFill = Math.min(Math.max(value, 0), 100);
+                }
+                
+                const strokeOffset = circumference - (percentFill / 100) * circumference;
+                const formattedVal = value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: isQuebra ? 2 : 1});
+                const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+
+                return `
+                    <div class="flex flex-col items-center">
+                        <span class="text-[0.6rem] sm:text-xs font-bold text-gray-800 mb-1 uppercase tracking-tighter">${title}</span>
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 transform -rotate-90 bg-white rounded-full drop-shadow-md">
+                            <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#f3f4f6" stroke-width="8" />
+                            <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="8" 
+                                stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" />
+                            <text x="0" y="0" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
+                                fill="${color}" font-weight="900" font-size="26" dy="-4">${formattedVal}</text>
+                            <text x="0" y="0" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
+                                fill="#6b7280" font-weight="700" font-size="10" dy="16">${formattedTarget} Meta</text>
+                        </svg>
+                    </div>
+                `;
+            };
+            
+            let rowsHTML = activeOvens.map(oven => {
+                const data = ovenDataStore[oven];
+                const targets = data?.targets || window.getTargets(oven);
+                
+                let qualAcum = 0.0;
+                let weightedScoreSum = 0;
+                let previousVolume = 0;
+                let hasVol = false;
+                let totalQuebra = 0;
+                let totalTempoVazio = 0;
+
+                if (data && data.rows) {
+                    for (let i = 0; i < 12; i++) {
+                        const r = data.rows[i];
+                        const volVal = parseFloat(String(r.vol).replace('.', '').replace(',', '.'));
+                        const hVal = parseFloat(String(r.qHora).replace(',', '.'));
+                        if (!isNaN(volVal)) {
+                            const deltaVol = volVal - previousVolume;
+                            if (!isNaN(hVal)) { weightedScoreSum += deltaVol * hVal; if (volVal > 0) { qualAcum = weightedScoreSum / volVal; hasVol = true; } }
+                            previousVolume = volVal;
+                        }
+                        if (r.quebras) {
+                            r.quebras.forEach(q => { if (q.val && String(q.val).trim() !== '') { const v = parseFloat(String(q.val).replace(',', '.')); if (!isNaN(v)) totalQuebra += v; } });
+                        }
+                        if (r.paradas) {
+                            r.paradas.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) totalTempoVazio += v; });
+                        }
+                    }
+                }
+                
+                if (!hasVol) qualAcum = 0;
+                const utilDia = ((1440 - totalTempoVazio) / 1440) * 100;
+                const shortName = oven.replace('FORNO', 'F').replace('RETÍFICA', 'RET');
+
+                return `
+                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white">
+                        <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full">
+                            <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
+                            <span class="text-[0.65rem] sm:text-sm font-bold text-gray-600 mt-1">${todayStr}</span>
+                            <div class="border border-blue-600 text-blue-700 bg-blue-50 font-black px-2 py-[2px] mt-1 rounded text-[0.65rem] sm:text-xs tracking-widest shadow-sm">${currentTimeStr}</div>
+                        </div>
+                        <div class="w-3/4 sm:w-4/5 flex flex-row justify-around items-center px-2 sm:px-4">
+                            ${generateGauge('Qualidade', qualAcum, targets.quality, false)}
+                            ${generateGauge('Quebra', totalQuebra, targets.breakage, true)}
+                            ${generateGauge('Utilização', utilDia, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 pointer-events-none">
+                    <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
+                        <div class="absolute left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
+                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-gray-800 tracking-widest uppercase">INFORMAÇÕES GERAIS</h1>
+                    </div>
+                    <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-hidden">
+                            ${rowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
         };
 
         window.renderPresentationScreen = () => {
@@ -466,22 +606,30 @@
             
             const equips = presentationConfig.screens[currentPresentationIndex];
             
-            // Define o agrupamento
+            // Renderiza o Dashboard se for a tela específica
+            if (equips.length === 1 && equips[0] === 'DASHBOARD') {
+                container.style.flexDirection = 'column';
+                container.style.gap = '0';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full h-full flex justify-center items-center drop-shadow-2xl';
+                wrapper.innerHTML = window.generateDashboardHTML();
+                container.appendChild(wrapper);
+                return;
+            }
+            
+            // Define o agrupamento para tabelas normais
             container.style.flexDirection = equips.length === 2 ? 'row' : 'column';
             container.style.gap = equips.length === 2 ? '2vw' : '0';
             
             // Redução adicional de 20% para evitar cortes nas bordas direitas da TV
-            // Antes: Dual 0.67 | Single 0.94 ---> Agora: Dual 0.53 | Single 0.75
             const scaleZoom = equips.length === 2 ? 0.53 : 0.75; 
             
-            // O PULO DO GATO PARA TELAS VERTICAIS:
-            // Como o zoom encolhe a altura da tabela, calculamos a altura "inversa" 
-            // para que ela estique e preencha 100% da tela física da TV até à base.
+            // Altura inversa
             const inverseHeight = `calc((100vh - 40px) / ${scaleZoom})`;
             
             equips.forEach(eq => {
                 const wrapper = document.createElement('div');
-                // Removemos a altura engessada (h-[94vh]) para usar a matemática do inverseHeight
                 wrapper.className = 'flex-1 flex flex-col justify-start items-center pointer-events-none drop-shadow-2xl mx-2 w-full';
                 wrapper.style.zoom = scaleZoom; 
                 wrapper.style.height = inverseHeight;
