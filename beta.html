@@ -111,15 +111,37 @@
         /* Em modo TV, o table-wrapper vai gerenciar sua própria altura para os headers ficarem fixos */
         .presentation-card { max-height: 95vh; }
         
-        /* --- ESTICAMENTO MODO TV VERTICAL (RETRATO) --- */
-        .presentation-active table { height: 100%; flex-grow: 1; }
+        /* --- ESTICAMENTO MODO TV VERTICAL (RETRATO) E MAXIMIZAÇÃO --- */
+        .presentation-active table { 
+            height: 100%; 
+            flex-grow: 1; 
+            width: 97% !important; /* Reduz a largura de todas as colunas em 3% proporcionalmente */
+            margin: 0 auto; 
+        }
         .presentation-active tbody tr { height: 1%; /* Força as linhas a dividirem o espaço extra vertical uniformemente */ }
         .presentation-active td > div.flex-col { justify-content: center; height: 100%; }
         .presentation-active .sub-row { flex-grow: 1; height: auto; }
         
+        /* Peso ajustável e Fontes maximizadas para preencher o máximo da célula */
+        .presentation-active input, 
+        .presentation-active select, 
+        .presentation-active td,
+        .presentation-active th,
+        .presentation-active span {
+            font-weight: 900 !important; /* Peso máximo e extremo para alta visibilidade */
+        }
+        .presentation-active .input-cod, 
+        .presentation-active .input-val { font-size: 1.15em !important; }
+        .presentation-active .input-desc { font-size: 1em !important; }
+        .presentation-active .ref-input { font-size: 1.25em !important; }
+        .presentation-active .input-quali-hora, 
+        .presentation-active .input-quali-acum { font-size: 1.6em !important; }
+        .presentation-active .quebra-total-box span.font-bold { font-size: 1.4em !important; }
+        .presentation-active .shift-stamp { font-size: 0.85em !important; }
+        
         @media (orientation: portrait) {
-            .presentation-active table { font-size: 1.15em; }
-            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.25em !important; }
+            .presentation-active table { font-size: 1.2em; }
+            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.8em !important; }
         }
     </style>
 </head>
