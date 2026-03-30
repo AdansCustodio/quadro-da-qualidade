@@ -110,6 +110,17 @@
         
         /* Em modo TV, o table-wrapper vai gerenciar sua própria altura para os headers ficarem fixos */
         .presentation-card { max-height: 95vh; }
+        
+        /* --- ESTICAMENTO MODO TV VERTICAL (RETRATO) --- */
+        .presentation-active table { height: 100%; flex-grow: 1; }
+        .presentation-active tbody tr { height: 1%; /* Força as linhas a dividirem o espaço extra vertical uniformemente */ }
+        .presentation-active td > div.flex-col { justify-content: center; height: 100%; }
+        .presentation-active .sub-row { flex-grow: 1; height: auto; }
+        
+        @media (orientation: portrait) {
+            .presentation-active table { font-size: 1.15em; }
+            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.25em !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-200 p-4 transition-all duration-300">
@@ -441,11 +452,17 @@
             // Antes: Dual 0.67 | Single 0.94 ---> Agora: Dual 0.53 | Single 0.75
             const scaleZoom = equips.length === 2 ? 0.53 : 0.75; 
             
+            // O PULO DO GATO PARA TELAS VERTICAIS:
+            // Como o zoom encolhe a altura da tabela, calculamos a altura "inversa" 
+            // para que ela estique e preencha 100% da tela física da TV até à base.
+            const inverseHeight = `calc((100vh - 40px) / ${scaleZoom})`;
+            
             equips.forEach(eq => {
                 const wrapper = document.createElement('div');
-                // Adicionamos flex-1, flex-col, h-[94vh] para forçar a limitação de altura e ativar o rolagem interna SE precisar
-                wrapper.className = 'flex-1 flex flex-col justify-start items-center pointer-events-none drop-shadow-2xl mx-2 h-[94vh] w-full';
+                // Removemos a altura engessada (h-[94vh]) para usar a matemática do inverseHeight
+                wrapper.className = 'flex-1 flex flex-col justify-start items-center pointer-events-none drop-shadow-2xl mx-2 w-full';
                 wrapper.style.zoom = scaleZoom; 
+                wrapper.style.height = inverseHeight;
                 
                 wrapper.innerHTML = generateOvenHTML(eq);
                 container.appendChild(wrapper);
@@ -1191,13 +1208,19 @@
                 ? "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2 shrink-0 sticky top-0 z-[60] shadow-md" 
                 : "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2";
 
+            // Adicionado "flex flex-col" para o wrapper permitir que a tabela expanda dentro dele
             const wrapperClass = isPres 
-                ? "table-responsive-wrapper flex-grow overflow-y-auto" 
+                ? "table-responsive-wrapper flex-grow overflow-y-auto flex flex-col" 
                 : "table-responsive-wrapper";
 
             const theadClass = isPres 
                 ? "sticky top-0 z-50 shadow-[0_2px_0_0_black]" 
                 : "";
+
+            // Adicionado "h-full flex-grow" para forçar a tabela a preencher a tela na TV
+            const tableClass = isPres
+                ? "w-full min-w-[1250px] relative h-full flex-grow"
+                : "w-full min-w-[1250px] relative";
 
             return `
                 <div class="${mainDivClass}">
@@ -1228,7 +1251,7 @@
                     </div>
                     
                     <div class="${wrapperClass}">
-                        <table class="w-full min-w-[1250px] relative">
+                        <table class="${tableClass}">
                             <thead class="${theadClass}">
                                 <tr class="bg-white font-bold uppercase text-[0.6rem]">
                                     <th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white">
