@@ -122,26 +122,26 @@
         .presentation-active td > div.flex-col { justify-content: center; height: 100%; }
         .presentation-active .sub-row { flex-grow: 1; height: auto; }
         
-        /* Peso ajustável e Fontes maximizadas para preencher o máximo da célula */
+        /* Peso ajustável e Fontes maximizadas para preencher o máximo da célula (Tamanho Reduzido ~10%) */
         .presentation-active input, 
         .presentation-active select, 
         .presentation-active td,
         .presentation-active th,
         .presentation-active span {
-            font-weight: 900 !important; /* Peso máximo e extremo para alta visibilidade */
+            font-weight: 800 !important; /* Peso extra bold, reduzido de 900 */
         }
         .presentation-active .input-cod, 
-        .presentation-active .input-val { font-size: 1.15em !important; }
-        .presentation-active .input-desc { font-size: 1em !important; }
-        .presentation-active .ref-input { font-size: 1.25em !important; }
+        .presentation-active .input-val { font-size: 1.05em !important; }
+        .presentation-active .input-desc { font-size: 0.9em !important; }
+        .presentation-active .ref-input { font-size: 1.15em !important; }
         .presentation-active .input-quali-hora, 
-        .presentation-active .input-quali-acum { font-size: 1.6em !important; }
-        .presentation-active .quebra-total-box span.font-bold { font-size: 1.4em !important; }
-        .presentation-active .shift-stamp { font-size: 0.85em !important; }
+        .presentation-active .input-quali-acum { font-size: 1.45em !important; }
+        .presentation-active .quebra-total-box span.font-bold { font-size: 1.25em !important; }
+        .presentation-active .shift-stamp { font-size: 0.75em !important; }
         
         @media (orientation: portrait) {
-            .presentation-active table { font-size: 1.2em; }
-            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.8em !important; }
+            .presentation-active table { font-size: 1.1em; }
+            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.6em !important; }
         }
     </style>
 </head>
@@ -514,6 +514,7 @@
                 const formattedVal = value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: isQuebra ? 2 : 1});
                 const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
+                // CORREÇÃO: As coordenadas (x="50" y="50") em conjunto com a rotação garantem a centralização perfeita do texto no eixo
                 return `
                     <div class="flex flex-col items-center">
                         <span class="text-[0.6rem] sm:text-xs font-bold text-gray-800 mb-1 uppercase tracking-tighter">${title}</span>
@@ -521,9 +522,9 @@
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#f3f4f6" stroke-width="8" />
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="8" 
                                 stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" />
-                            <text x="0" y="0" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
+                            <text x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
                                 fill="${color}" font-weight="900" font-size="26" dy="-4">${formattedVal}</text>
-                            <text x="0" y="0" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
+                            <text x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" 
                                 fill="#6b7280" font-weight="700" font-size="10" dy="16">${formattedTarget} Meta</text>
                         </svg>
                     </div>
