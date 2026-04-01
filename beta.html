@@ -166,10 +166,10 @@
                 <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
                     <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
                         <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        Intercalar Telas de Ofensores e Mostrar Dash Final
+                        Intercalar Telas Top 3 Ofensores e Dash Final
                     </label>
                     <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
-                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dashboards/Ofensores):</label>
+                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
                         <div class="flex items-center gap-1">
                             <input type="number" id="presentation-dash-time" value="20" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
                             <span class="text-xs text-indigo-600 font-bold">seg</span>
@@ -287,7 +287,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.1; 
+        const APP_VERSION = 5.2; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -377,7 +377,7 @@
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
             
-            // Lógica de Intercalação: Para cada tela de equipamentos, cria uma de ofensores daquele equipamento logo depois
+            // Lógica de Intercalação
             rows.forEach(row => {
                 const eq1 = row.querySelector('.equip-select-1').value;
                 const eq2 = row.querySelector('.equip-select-2').value;
@@ -433,11 +433,12 @@
 
         window.stopPresentation = () => { clearTimeout(presentationIntervalObj); document.getElementById('presentation-mode-container').style.display = 'none'; document.body.classList.remove('presentation-active'); window.setViewMode('single', currentOven); };
 
-        // --- GERAÇÃO DO RESUMO DE OFENSORES INDIVIDUAL/GIGANTE (VERTICAL) ---
+        // --- GERAÇÃO DO RESUMO DE OFENSORES TOP 3 ---
         window.generateSingleOffendersStepHTML = (equipsArr) => {
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             
-            const getTopOffender = (data, type) => {
+            // Alterado para trazer o TOP 3 com base no somatório
+            const getTop3Offenders = (data, type) => {
                 let map = {};
                 for (let i = 0; i < 12; i++) {
                     const row = data.rows[i];
@@ -452,49 +453,79 @@
                         });
                     }
                 }
-                let maxDesc = '-'; let maxVal = 0;
-                for (const [desc, val] of Object.entries(map)) { if (val > maxVal) { maxVal = val; maxDesc = desc; } }
-                return { desc: maxDesc, val: maxVal };
+                // Converte em array, ordena de forma decrescente e extrai os 3 primeiros
+                return Object.entries(map)
+                    .map(([desc, val]) => ({ desc, val }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 3);
             };
 
-            const renderBigCard = (title, offender, isMin, colorBase) => {
-                const hasData = offender.val > 0;
-                const valStr = hasData ? (isMin ? `${offender.val} minutos` : `${offender.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`) : 'MÁQUINA NO VERDE';
-                const descStr = hasData ? offender.desc : 'Dentro da Meta';
-                
-                let bg, border, titleColor, descColor, valColor;
+            const renderTop3Card = (title, offenders, isMin, theme) => {
+                const hasData = offenders.length > 0;
+
                 if (!hasData) {
-                    bg = 'bg-green-50'; border = 'border-green-300'; titleColor = 'text-green-800'; descColor = 'text-green-900'; valColor = 'text-green-600';
-                } else {
-                    bg = `bg-${colorBase}-50`; border = `border-${colorBase}-300`; titleColor = `text-${colorBase}-800`; descColor = 'text-gray-900'; valColor = `text-${colorBase}-700`;
+                    return `
+                        <div class="flex-1 bg-green-50 rounded-3xl border-4 border-green-300 p-6 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
+                            <span class="text-2xl font-black text-green-800 uppercase tracking-widest mb-4 z-10 drop-shadow-sm">${title}</span>
+                            <span class="text-5xl font-black text-center text-green-900 leading-tight z-10 drop-shadow-md">MÁQUINA NO VERDE</span>
+                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registo ofensor</span>
+                        </div>
+                    `;
                 }
 
+                // Configuração Visual do Pódio (1º, 2º e 3º lugares)
+                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/80 shadow-sm border-l-4 border-current opacity-90', 'bg-white/60 shadow-sm border-l-2 border-current opacity-80'];
+                const textSizes = ['text-2xl xl:text-3xl', 'text-xl xl:text-2xl', 'text-lg xl:text-xl'];
+                const valSizes = ['text-3xl xl:text-4xl', 'text-2xl xl:text-3xl', 'text-xl xl:text-2xl'];
+                const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700']; // Dourado, Prateado, Bronze
+                
+                let itemsHtml = offenders.map((off, index) => {
+                    const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
+                    
+                    return `
+                        <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <span class="text-3xl font-black ${rankColors[index]} drop-shadow-sm w-10 text-center">${index + 1}º</span>
+                                <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
+                            </div>
+                            <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
+                        </div>
+                    `;
+                }).join('');
+
                 return `
-                    <div class="flex-1 ${bg} rounded-3xl border-4 ${border} p-6 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
-                        <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMOCA4Wk04IDBMMCA4WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiPjwvcGF0aD4KPC9zdmc+')] mix-blend-multiply"></div>
-                        <span class="text-2xl font-black ${titleColor} uppercase tracking-widest mb-4 z-10 drop-shadow-sm">${title}</span>
-                        <span class="text-5xl font-black text-center ${descColor} leading-tight z-10 break-words max-w-full drop-shadow-md">${descStr}</span>
-                        <span class="text-4xl font-extrabold ${valColor} mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">${hasData ? (isMin ? 'Acumulado: ' : 'Soma Diária: ') + valStr : valStr}</span>
+                    <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
+                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-2 z-10 drop-shadow-sm text-center">${title}</span>
+                        <div class="flex flex-col gap-3 w-full mt-2 z-10 h-full justify-center">
+                            ${itemsHtml}
+                        </div>
                     </div>
                 `;
             };
 
+            // Dicionário de temas para Tailwind (para não quebrar a injeção de classes dinâmicas)
+            const themes = {
+                qualidade: { bg: 'bg-red-50', border: 'border-red-300', title: 'text-red-800', val: 'text-red-700' },
+                quebra: { bg: 'bg-orange-50', border: 'border-orange-300', title: 'text-orange-800', val: 'text-orange-700' },
+                parada: { bg: 'bg-blue-50', border: 'border-blue-300', title: 'text-blue-800', val: 'text-blue-700' }
+            };
+
             const blocks = equipsArr.map(eq => {
                 const data = ovenDataStore[eq];
-                const topDefect = getTopOffender(data, 'defects');
-                const topQuebra = getTopOffender(data, 'quebras');
-                const topParada = getTopOffender(data, 'paradas');
+                const topDefects = getTop3Offenders(data, 'defects');
+                const topQuebras = getTop3Offenders(data, 'quebras');
+                const topParadas = getTop3Offenders(data, 'paradas');
 
                 return `
                     <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-8 overflow-hidden">
                         <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative">
-                            <h1 class="text-6xl font-black text-gray-800 tracking-tighter drop-shadow-lg">${eq}</h1>
-                            <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PONTOS DE ATENÇÃO (OFENSORES DO DIA)</h2>
+                            <h1 class="text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
+                            <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
                         </div>
                         <div class="flex-1 flex flex-col gap-6">
-                            ${renderBigCard('Maior Ofensor Qualidade', topDefect, false, 'red')}
-                            ${renderBigCard('Maior Ofensor Quebra', topQuebra, false, 'orange')}
-                            ${renderBigCard('Maior Motivo de Parada', topParada, true, 'blue')}
+                            ${renderTop3Card('Maiores Ofensores - Qualidade', topDefects, false, themes.qualidade)}
+                            ${renderTop3Card('Maiores Ofensores - Quebra', topQuebras, false, themes.quebra)}
+                            ${renderTop3Card('Maiores Motivos de Parada', topParadas, true, themes.parada)}
                         </div>
                     </div>
                 `;
@@ -503,7 +534,7 @@
             return `
                 <div class="w-full h-full p-6 flex items-stretch justify-center gap-6 bg-gray-200">
                     ${blocks.join('')}
-                    <div class="absolute top-8 right-10 bg-white border-2 border-blue-600 text-blue-700 font-black px-6 py-2 rounded-xl text-2xl tracking-widest shadow-lg opacity-80">${currentTimeStr}</div>
+                    <div class="absolute top-8 right-10 bg-white border-2 border-blue-400 text-blue-700 font-black px-6 py-2 rounded-2xl text-3xl tracking-widest shadow-lg">${currentTimeStr}</div>
                 </div>
             `;
         };
@@ -583,7 +614,7 @@
                             }
                         }
                         
-                        // Snapshot Quebra: APENAS a quebra do último registro (fotografia)
+                        // Snapshot Quebra
                         if (r.quebras) {
                             r.quebras.forEach(q => {
                                 const v = parseFloat(String(q.val).replace(',', '.'));
@@ -591,7 +622,7 @@
                             });
                         }
                         
-                        // Snapshot Utilização: APENAS a utilização baseada na parada do último registro (fotografia)
+                        // Snapshot Utilização
                         let paradasLast = 0;
                         if (r.paradas) {
                             r.paradas.forEach(p => {
@@ -628,7 +659,7 @@
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
                         </div>
-                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-gray-800 tracking-widest uppercase">DESEMPENHO GERAL DA FÁBRICA (AGORA)</h1>
+                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase">DESEMPENHO GERAL DA FÁBRICA (AGORA)</h1>
                         <div class="absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
                     </div>
                     <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
@@ -1057,6 +1088,7 @@
             const locked = isDateLocked(); const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : ''; const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : ''; const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
             const baseTargets = window.getTargets(ovenName); const activeTargets = { quality: data.targets?.quality !== undefined ? data.targets.quality : baseTargets.quality, breakage: data.targets?.breakage !== undefined ? data.targets.breakage : baseTargets.breakage, utilization: data.targets?.utilization !== undefined ? data.targets.utilization : baseTargets.utilization };
             const isPres = viewMode === 'presentation';
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 
             currentSchedule.forEach((item, index) => {
                 const rowData = data.rows[index]; const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
@@ -1079,18 +1111,49 @@
             });
 
             const mainDivClass = isPres ? "bg-white shadow-lg border-t border-black rounded-b-lg flex flex-col w-full h-full overflow-hidden" : "bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden";
-            const equipHeaderClass = isPres ? "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2 shrink-0 sticky top-0 z-[60] shadow-md" : "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2";
+            
+            let headerHTML = '';
+            if (isPres) {
+                headerHTML = `
+                    <div class="flex flex-col items-center justify-center bg-white border-b-[6px] border-red-600 pb-3 pt-4 shrink-0 sticky top-0 z-[60] shadow-sm w-full relative">
+                        <div class="absolute left-8 top-1/2 transform -translate-y-1/2 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.8rem; line-height: 0.85;">MOHAWK</span>
+                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem; line-height: 1; margin-top: 4px;">BRASIL</span>
+                        </div>
+                        
+                        <h1 class="text-7xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-sm uppercase leading-none" style="font-family: Arial, sans-serif; letter-spacing: -0.05em;">${ovenName}</h1>
+                        <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2 mb-2">Acompanhamento de Produção</h2>
+                        
+                        <div class="flex gap-6 text-sm font-black mt-1 bg-gray-50 px-6 py-1.5 rounded-full border border-gray-200 shadow-inner">
+                            <span class="text-gray-500 uppercase tracking-widest">Metas:</span>
+                            <span class="text-blue-700">Qualidade: <span class="text-lg">${activeTargets.quality}%</span></span>
+                            <span class="text-red-700">Quebra: <span class="text-lg">${activeTargets.breakage}%</span></span>
+                            <span class="text-green-700">Utilização: <span class="text-lg">${activeTargets.utilization}%</span></span>
+                        </div>
+
+                        <div class="absolute right-8 top-6 bg-white border-2 border-blue-400 text-blue-700 font-black px-4 py-2 rounded-2xl text-3xl tracking-widest shadow-sm">
+                            ${currentTimeStr}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const equipHeaderClass = "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2";
+                headerHTML = `
+                    <div class="${equipHeaderClass}">
+                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span></div>
+                        <div class="flex flex-col items-center flex-grow"><div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center">Acompanhamento - ${ovenName}</div><div class="flex gap-3 text-[0.65rem] font-black mt-1 bg-white px-3 py-[2px] rounded-full shadow-sm border border-gray-200"><span class="text-gray-500 uppercase tracking-wider text-[0.55rem] pt-[2px]">Metas da Máquina:</span><span class="text-blue-600">Qualid: ${activeTargets.quality}%</span><span class="text-red-600">Quebra: ${activeTargets.breakage}%</span><span class="text-green-600">Utiliz: ${activeTargets.utilization}%</span></div></div>
+                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Unidade SC 2"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">SC</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 2px;">2</span></div>
+                    </div>
+                `;
+            }
+
             const wrapperClass = isPres ? "table-responsive-wrapper flex-grow overflow-y-auto flex flex-col" : "table-responsive-wrapper";
             const theadClass = isPres ? "sticky top-0 z-50 shadow-[0_2px_0_0_black]" : "";
             const tableClass = isPres ? "w-full min-w-[1250px] relative h-full flex-grow" : "w-full min-w-[1250px] relative";
 
             return `
                 <div class="${mainDivClass}">
-                    <div class="${equipHeaderClass}">
-                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span></div>
-                        <div class="flex flex-col items-center flex-grow"><div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center">Acompanhamento - ${ovenName}</div><div class="flex gap-3 text-[0.65rem] font-black mt-1 bg-white px-3 py-[2px] rounded-full shadow-sm border border-gray-200"><span class="text-gray-500 uppercase tracking-wider text-[0.55rem] pt-[2px]">Metas da Máquina:</span><span class="text-blue-600">Qualid: ${activeTargets.quality}%</span><span class="text-red-600">Quebra: ${activeTargets.breakage}%</span><span class="text-green-600">Utiliz: ${activeTargets.utilization}%</span></div></div>
-                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Unidade SC 2"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">SC</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 2px;">2</span></div>
-                    </div>
+                    ${headerHTML}
                     <div class="${wrapperClass}">
                         <table class="${tableClass}">
                             <thead class="${theadClass}">
