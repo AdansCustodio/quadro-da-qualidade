@@ -93,7 +93,7 @@
 
         #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
 
-        /* --- MODO APRESENTAÇÃO --- */
+        /* --- MODO APRESENTAÇÃO E MODAIS INTERATIVOS --- */
         #presentation-mode-container { display: none; position: fixed; inset: 0; background-color: #e5e7eb; z-index: 99999; flex-direction: column; }
         .presentation-active { overflow: hidden; }
         .presentation-exit-btn { position: fixed; bottom: 20px; right: 20px; opacity: 0.2; transition: opacity 0.3s; z-index: 100000; }
@@ -210,6 +210,14 @@
         <div id="presentation-content"></div>
     </div>
 
+    <!-- MODAL PÓDIO OFENSORES (DRILL-DOWN) -->
+    <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-4 sm:p-10">
+        <div class="bg-gray-200 w-full max-w-[95vw] h-full max-h-[90vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
+            <button onclick="window.closeOffendersModal()" class="absolute top-6 left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-14 h-14 flex items-center justify-center font-black text-2xl z-[7000] shadow-2xl border-4 border-white transition-transform hover:scale-110">✕</button>
+            <div id="offenders-modal-content" class="w-full h-full overflow-hidden rounded-3xl relative flex items-center justify-center"></div>
+        </div>
+    </div>
+
     <!-- NAVBAR PRINCIPAL -->
     <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
         <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil">
@@ -246,6 +254,11 @@
         
         <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase">
             📺 Modo TV
+        </button>
+
+        <!-- NOVO BOTÃO DE RESULTADOS -->
+        <button onclick="window.setViewMode('dashboard')" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-4 py-2 shadow-md flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase transition-all" id="btn-DASHBOARD">
+            📊 Resultados Agora
         </button>
 
         <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
@@ -287,7 +300,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.2; 
+        const APP_VERSION = 5.3; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -433,6 +446,21 @@
 
         window.stopPresentation = () => { clearTimeout(presentationIntervalObj); document.getElementById('presentation-mode-container').style.display = 'none'; document.body.classList.remove('presentation-active'); window.setViewMode('single', currentOven); };
 
+        // --- LÓGICA DO MODAL DOS OFENSORES (DRILL-DOWN) ---
+        window.openOffendersModal = (ovenName) => {
+            const modal = document.getElementById('offenders-modal');
+            const content = document.getElementById('offenders-modal-content');
+            content.innerHTML = window.generateSingleOffendersStepHTML([ovenName]);
+            modal.style.display = 'flex';
+        };
+
+        window.closeOffendersModal = () => {
+            const modal = document.getElementById('offenders-modal');
+            const content = document.getElementById('offenders-modal-content');
+            modal.style.display = 'none';
+            content.innerHTML = '';
+        };
+
         // --- GERAÇÃO DO RESUMO DE OFENSORES TOP 3 ---
         window.generateSingleOffendersStepHTML = (equipsArr) => {
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
@@ -517,7 +545,7 @@
                 const topParadas = getTop3Offenders(data, 'paradas');
 
                 return `
-                    <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-8 overflow-hidden">
+                    <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-8 overflow-hidden h-full">
                         <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative">
                             <h1 class="text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
                             <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
@@ -544,6 +572,7 @@
             const activeOvens = ['FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
             const todayStr = selectedDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            const isPres = viewMode === 'presentation';
             
             const generateGauge = (title, value, target, isQuebra) => {
                 const radius = 38; const circumference = 2 * Math.PI * radius;
@@ -635,25 +664,42 @@
                 }
                 
                 const shortName = oven.replace('FORNO', 'F').replace('RETÍFICA', 'RET');
+                
+                let btnOfensoresHTML = '';
+                if (!isPres) {
+                    btnOfensoresHTML = `
+                        <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
+                            <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
+                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">🏆</span>
+                                <span class="whitespace-nowrap text-center leading-none">Ver<br>Ofensores</span>
+                            </button>
+                        </div>
+                    `;
+                }
 
                 return `
-                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white">
+                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors">
                         <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
                             <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
                             <span class="text-[0.65rem] sm:text-sm font-black text-indigo-700 mt-1 uppercase text-center w-full px-2 py-1 rounded bg-indigo-50 border border-indigo-200 shadow-sm leading-tight break-words max-w-full" title="${currentRef}">${currentRef}</span>
                             <div class="absolute top-2 left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
                         </div>
-                        <div class="w-3/4 sm:w-4/5 flex flex-row justify-around items-center px-2 sm:px-4">
-                            ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
-                            ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
-                            ${generateGauge('Utilização (Últ. Reg.)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                        <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
+                            <div class="flex-1 flex flex-row justify-around items-center">
+                                ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
+                                ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
+                                ${generateGauge('Utilização (Últ. Reg.)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                            </div>
+                            ${btnOfensoresHTML}
                         </div>
                     </div>
                 `;
             }).join('');
 
+            const pointerClass = isPres ? 'pointer-events-none' : '';
+
             return `
-                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 pointer-events-none">
+                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
                     <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
                         <div class="absolute left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
@@ -719,7 +765,12 @@
             }
         };
 
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && viewMode === 'presentation') window.stopPresentation(); });
+        document.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') {
+                if (viewMode === 'presentation') window.stopPresentation(); 
+                if (document.getElementById('offenders-modal').style.display === 'flex') window.closeOffendersModal();
+            }
+        });
         // ------------------------------------
 
         window.getTargets = (ovenName) => {
@@ -891,7 +942,19 @@
 
         window.changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); isAdminUnlocked = false; updateDateUI(); resetStore(); window.setupRealtimeListener(); };
 
-        window.setViewMode = (mode, oven = null) => { viewMode = mode; if (oven) currentOven = oven; document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('btn-CONFIG')?.classList.remove('active'); if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active'); else if (mode === 'single') document.getElementById(`btn-${currentOven}`)?.classList.add('active'); renderContent(); };
+        window.setViewMode = (mode, oven = null) => { 
+            viewMode = mode; 
+            if (oven) currentOven = oven; 
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); 
+            document.getElementById('btn-CONFIG')?.classList.remove('active'); 
+            document.getElementById('btn-DASHBOARD')?.classList.remove('ring-4', 'ring-emerald-300');
+            
+            if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active'); 
+            else if (mode === 'single') document.getElementById(`btn-${currentOven}`)?.classList.add('active'); 
+            else if (mode === 'dashboard') document.getElementById('btn-DASHBOARD')?.classList.add('ring-4', 'ring-emerald-300');
+            
+            renderContent(); 
+        };
 
         window.syncData = (oven, row, field, val) => {
             if (!isDataLoaded || isDateLocked()) return; 
@@ -1171,8 +1234,18 @@
             if (viewMode === 'presentation') { window.renderPresentationScreen(); return; }
             const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null; if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
             const mainContent = document.getElementById('main-content');
+            
             if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
-            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML(); else { mainContent.innerHTML = generateOvenHTML(currentOven); window.attachCalculations(currentOven); }
+            
+            if (viewMode === 'config') {
+                mainContent.innerHTML = generateConfigHTML(); 
+            } else if (viewMode === 'dashboard') {
+                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full flex justify-center items-start">${window.generateDashboardHTML()}</div>`;
+            } else { 
+                mainContent.innerHTML = generateOvenHTML(currentOven); 
+                window.attachCalculations(currentOven); 
+            }
+            
             if (focusedId && isDataLoaded) { const el = document.getElementById(focusedId); if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} } }
         };
 
