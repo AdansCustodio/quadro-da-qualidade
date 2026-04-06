@@ -221,7 +221,6 @@
     <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
         <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
             <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
-            <!-- Alterado para overflow-y-auto -->
             <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
         </div>
     </div>
@@ -307,7 +306,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.4; 
+        const APP_VERSION = 5.5; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -530,8 +529,8 @@
 
                 return `
                     <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
-                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-2 z-10 drop-shadow-sm text-center">${title}</span>
-                        <div class="flex flex-col gap-3 w-full mt-2 z-10 h-full justify-center">
+                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-4 z-10 drop-shadow-sm text-center">${title}</span>
+                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-center">
                             ${itemsHtml}
                         </div>
                     </div>
@@ -582,6 +581,7 @@
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             const isPres = viewMode === 'presentation';
             
+            // ATUALIZADO: Layout do Gauge com GAP maior para afastar o título do círculo
             const generateGauge = (title, value, target, isQuebra) => {
                 const radius = 38; const circumference = 2 * Math.PI * radius;
                 let isOk = isQuebra ? (value <= target) : (value >= target);
@@ -601,9 +601,10 @@
                 const formattedVal = value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: isQuebra ? 2 : 1});
                 const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
+                // Substituído mb-1 por gap-1 sm:gap-2 no container flex, garantindo espaço
                 return `
-                    <div class="flex flex-col items-center">
-                        <span class="text-[0.6rem] sm:text-xs font-bold text-gray-800 mb-1 uppercase tracking-tighter text-center">${title}</span>
+                    <div class="flex flex-col items-center justify-center gap-1 sm:gap-2">
+                        <span class="text-[0.65rem] sm:text-xs font-black text-gray-800 uppercase tracking-tighter text-center leading-none">${title}</span>
                         <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 transform -rotate-90 bg-white rounded-full drop-shadow-md">
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#f3f4f6" stroke-width="8" />
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="8" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" />
@@ -685,12 +686,13 @@
                     `;
                 }
 
+                // ATUALIZADO: py-3 sm:py-4 e min-h-[160px] para dar espaço para o SVG respirar
                 return `
-                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[140px]">
+                    <div class="flex flex-row items-center justify-between py-3 sm:py-4 px-2 sm:px-4 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[160px]">
                         <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
                             <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
                             <span class="text-[0.65rem] sm:text-sm font-black text-indigo-700 mt-1 uppercase text-center w-full px-2 py-1 rounded bg-indigo-50 border border-indigo-200 shadow-sm leading-tight break-words max-w-full" title="${currentRef}">${currentRef}</span>
-                            <div class="absolute top-2 left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
+                            <div class="absolute top-0 sm:-top-2 left-0 sm:left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
                         </div>
                         <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
                             <div class="flex-1 flex flex-row justify-around items-center">
