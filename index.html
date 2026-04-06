@@ -12,6 +12,13 @@
         body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; }
         .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
         
+        /* --- SCROLLBAR PERSONALIZADA E ELEGANTE --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        * { scrollbar-width: thin; scrollbar-color: #9ca3af #f3f4f6; }
+        
         /* --- ESTRUTURA DA TABELA --- */
         table { border-collapse: collapse; width: 100%; transition: all 0.3s ease; }
         th, td { border: 1px solid black; text-align: center; padding: 2px; }
@@ -22,7 +29,7 @@
         /* --- INPUTS E CONTROLES --- */
         input, select { width: 100%; height: 100%; border: none; background: transparent; text-align: center; outline: none; font-size: 1rem; appearance: textfield; transition: background-color 0.2s; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        input:focus, select:focus { background-color: #fef08a; /* Amarelo suave no foco para acessibilidade */ }
+        input:focus, select:focus { background-color: #fef08a; }
         
         .nav-input { width: 100%; height: 100%; }
         .sub-row { display: flex; border-bottom: 1px solid #ccc; height: 1.4rem; align-items: center; }
@@ -67,10 +74,9 @@
         .quebra-total-box { width: 50px; flex-shrink: 0; border-left: 1px solid #999; display: flex; flex-direction: column; background-color: #fafafa; }
         .quebra-total-header { font-size: 0.5rem; font-weight: bold; border-bottom: 1px solid #999; padding: 1px 0; background-color: #f0f0f0; color: #444; }
         
-        /* Container de Rolagem Horizontal Suave */
         .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         
-        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; overflow-y: auto; max-height: 85vh; }
         .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
         
         .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
@@ -78,7 +84,6 @@
         .defect-item:nth-child(even) { background-color: white; }
         .defect-item input { text-align: left; }
         
-        /* Painéis Flutuantes (Modais e Lupa) */
         #password-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
         .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         
@@ -88,10 +93,6 @@
         .lookup-list { overflow-y: auto; border: 1px solid #eee; margin-top: 5px; flex-grow: 1; border-radius: 4px; background-color: #fafafa; }
         .search-trigger { cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%; background-color: #f3f4f6; transition: all 0.2s; font-size: 0.85rem; color: #6b7280; }
         .search-trigger:hover { background-color: #dbeafe; color: #1e40af; }
-        .sub-header-row { display: flex; font-size: 0.6rem; font-weight: bold; background: #e5e7eb; border-bottom: 1px solid #000; }
-        .sh-cod { width: 30px; border-right: 1px solid #ccc; }
-        .sh-desc { flex-grow: 1; border-right: 1px solid #ccc; }
-        .sh-val { width: 40px; }
         
         #loading-indicator { display: none; margin-left: 10px; font-size: 0.75rem; color: #2563eb; font-weight: bold; align-items: center; gap: 5px; }
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; width: 12px; height: 12px; animation: spin 1s linear infinite; }
@@ -99,13 +100,46 @@
 
         #version-blocker { display: none; position: fixed; inset: 0; background: #111827; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; color: white; }
 
-        /* --- MODO APRESENTAÇÃO --- */
+        /* --- MODO APRESENTAÇÃO E MODAIS INTERATIVOS --- */
         #presentation-mode-container { display: none; position: fixed; inset: 0; background-color: #e5e7eb; z-index: 99999; flex-direction: column; }
         .presentation-active { overflow: hidden; }
         .presentation-exit-btn { position: fixed; bottom: 20px; right: 20px; opacity: 0.2; transition: opacity 0.3s; z-index: 100000; }
         .presentation-exit-btn:hover { opacity: 1; }
-        #presentation-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; padding: 10px; overflow: hidden; width: 100%; height: 100%; }
-        #presentation-content .table-responsive-wrapper { overflow: hidden; } /* Bloqueia scroll nas TVs */
+        
+        #presentation-content { flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: hidden; width: 100%; height: 100vh; box-sizing: border-box; }
+        
+        /* Ajuste Redução Visual - TV */
+        .presentation-active table { 
+            height: 100%; 
+            flex-grow: 1; 
+            width: 92% !important; /* Colunas reduzidas para 92% */
+            margin: 0 auto; 
+        }
+        .presentation-active tbody tr { height: 1%; }
+        .presentation-active td > div.flex-col { justify-content: center; height: 100%; }
+        .presentation-active .sub-row { flex-grow: 1; height: auto; }
+        
+        /* Peso da fonte reduzido de 800 para 700 e tamanho levemente menor */
+        .presentation-active input, 
+        .presentation-active select, 
+        .presentation-active td,
+        .presentation-active th,
+        .presentation-active span {
+            font-weight: 700 !important; 
+        }
+        .presentation-active .input-cod, 
+        .presentation-active .input-val { font-size: 0.90em !important; }
+        .presentation-active .input-desc { font-size: 0.80em !important; }
+        .presentation-active .ref-input { font-size: 1.00em !important; }
+        .presentation-active .input-quali-hora, 
+        .presentation-active .input-quali-acum { font-size: 1.30em !important; }
+        .presentation-active .quebra-total-box span.font-bold { font-size: 1.10em !important; }
+        .presentation-active .shift-stamp { font-size: 0.65em !important; }
+        
+        @media (orientation: portrait) {
+            .presentation-active table { font-size: 1.05em; }
+            .presentation-active .input-quali-hora, .presentation-active .input-quali-acum { font-size: 1.45em !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-200 p-4 transition-all duration-300">
@@ -127,12 +161,31 @@
         <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
             <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
             
-            <div class="mb-4 flex items-center gap-3 bg-indigo-50 p-3 rounded border border-indigo-100">
-                <label class="font-bold text-sm text-indigo-800">Tempo de exibição por Tela (Segundos):</label>
-                <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-20 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+            <div class="mb-4 flex flex-col gap-3 bg-indigo-50 p-4 rounded border border-indigo-100">
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-sm text-indigo-800">Tempo de exibição (Tabelas):</label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <span class="text-xs text-indigo-600 font-bold">seg</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
+                    <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
+                        <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        Intercalar Telas Top 3 Ofensores e Dash Final
+                    </label>
+                    <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
+                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="presentation-dash-time" value="20" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                            <span class="text-xs text-indigo-600 font-bold">seg</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[200px]">
+            <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[150px]">
                 <h4 class="font-bold text-xs text-gray-500 mb-2 uppercase flex justify-between">
                     <span>Sequência do Carrossel</span>
                     <span class="text-[0.6rem] text-gray-400 lowercase">Máx 2 equip. por tela</span>
@@ -153,24 +206,29 @@
         </div>
     </div>
 
-    <!-- MODO APRESENTAÇÃO - CONTAINER (OVERLAY FULLSCREEN) -->
+    <!-- MODO APRESENTAÇÃO - CONTAINER -->
     <div id="presentation-mode-container">
-        <!-- Progress Bar -->
         <div class="w-full bg-gray-300 h-2 absolute top-0 z-50 shadow">
             <div id="presentation-progress" class="h-full bg-indigo-600 w-0 transition-all ease-linear shadow-lg"></div>
         </div>
-        
-        <!-- Botão Sair Invisível (Aparece no Hover) -->
         <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
             ❌ Sair do Modo TV (ESC)
         </button>
-        
-        <!-- Conteúdo Renderizado (Tabelas) -->
-        <div id="presentation-content" class="w-full h-full pt-4"></div>
+        <div id="presentation-content"></div>
     </div>
 
+    <!-- MODAL PÓDIO OFENSORES (DRILL-DOWN) -->
+    <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
+        <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
+            <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
+            <!-- Alterado para overflow-y-auto -->
+            <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
+        </div>
+    </div>
+
+    <!-- NAVBAR PRINCIPAL -->
     <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
-        <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil" title="Mohawk Brasil">
+        <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil">
             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
         </div>
@@ -202,14 +260,18 @@
         
         <div class="flex-grow"></div>
         
-        <!-- Botão Novo: Modo TV -->
-        <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase" title="Modo Apresentação (TVs da Fábrica)">
+        <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase">
             📺 Modo TV
+        </button>
+
+        <button onclick="window.setViewMode('dashboard')" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-4 py-2 shadow-md flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase transition-all" id="btn-DASHBOARD">
+            📊 Resultados Agora
         </button>
 
         <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
     </div>
 
+    <!-- MODAIS DE APOIO -->
     <div id="password-modal">
         <div class="pwd-content">
             <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
@@ -229,7 +291,7 @@
             <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
         </div>
         <div class="lookup-content">
-            <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar código ou nome..." oninput="window.renderDefectLookup()">
+            <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar..." oninput="window.renderDefectLookup()">
             <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
                 <span class="w-12 text-center border-r">Cód</span><span class="pl-2">Descrição</span>
             </div>
@@ -245,7 +307,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.0; 
+        const APP_VERSION = 5.4; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -264,26 +326,8 @@
         let app, auth, db;
         try { if (firebaseConfig.apiKey) { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } } catch (e) { console.error("Erro Firebase:", e); }
 
-        const seedOvenDefects = {
-            "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu",
-            "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte", "18": "Pingo de Engobe", 
-            "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral", "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", 
-            "34": "Ra Canto", "35": "RA Centro", "36": "Aresta", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", 
-            "47": "Massa contaminada", "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu", "74": "Peça de Prova", 
-            "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu", "88": "Grumo de esmalte", "93": "Pingo de Cobertura", 
-            "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta", "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", 
-            "109": "Marca de Lixa", "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem",
-            "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas"
-        };
-        const seedGrinderDefects = {
-            "1": "Arranhado", "2": "Empeno por Vazio", "3": "sem registro", "4": "Covinha", "5": "sem registro", "7": "Pingo Preto", "10": "Risco de Véu", "14": "Sujeira de Esmalte", 
-            "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha", "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro",
-            "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte", "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", 
-            "64": "Pingo d'água", "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu", "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", 
-            "99": "Outros", "111": "Reprensado", "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador",
-            "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno", "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", 
-            "122": "Chanfrado", "124": "Quebra de Retifica"
-        };
+        const seedOvenDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu", "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte", "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral", "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada", "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu", "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu", "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta", "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa", "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem", "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas" };
+        const seedGrinderDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "4": "Covinha", "7": "Pingo Preto", "10": "Risco de Véu", "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha", "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte", "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", "64": "Pingo d'água", "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu", "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", "99": "Outros", "111": "Reprensado", "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador", "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno", "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica" };
 
         let ovenDefectMap = { ...seedOvenDefects };
         let grinderDefectMap = { ...seedGrinderDefects };
@@ -291,16 +335,8 @@
         let lookupOven = 'FORNO 2';
 
         const ovenList = ['FORNO 1', 'FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
-        const scheduleOvens = [
-            { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" },
-            { time: "05:30", shift: "TA" }, { time: "07:30", shift: "TA" }, { time: "09:30", shift: "TA" }, { time: "11:30", shift: "TA" },
-            { time: "13:30", shift: "TB" }, { time: "15:30", shift: "TB" }, { time: "17:30", shift: "TB" }, { time: "19:30", shift: "TB" }
-        ];
-        const scheduleGrinders = [
-            { time: "23:00", shift: "TC" }, { time: "01:00", shift: "TC" }, { time: "03:00", shift: "TC" }, { time: "05:00", shift: "TC" },
-            { time: "07:00", shift: "TA" }, { time: "09:00", shift: "TA" }, { time: "11:00", shift: "TA" }, { time: "13:00", shift: "TA" },
-            { time: "15:00", shift: "TB" }, { time: "17:00", shift: "TB" }, { time: "19:00", shift: "TB" }, { time: "21:00", shift: "TB" }
-        ];
+        const scheduleOvens = [ { time: "21:30", shift: "TC" }, { time: "23:30", shift: "TC" }, { time: "01:30", shift: "TC" }, { time: "03:30", shift: "TC" }, { time: "05:30", shift: "TA" }, { time: "07:30", shift: "TA" }, { time: "09:30", shift: "TA" }, { time: "11:30", shift: "TA" }, { time: "13:30", shift: "TB" }, { time: "15:30", shift: "TB" }, { time: "17:30", shift: "TB" }, { time: "19:30", shift: "TB" } ];
+        const scheduleGrinders = [ { time: "23:00", shift: "TC" }, { time: "01:00", shift: "TC" }, { time: "03:00", shift: "TC" }, { time: "05:00", shift: "TC" }, { time: "07:00", shift: "TA" }, { time: "09:00", shift: "TA" }, { time: "11:00", shift: "TA" }, { time: "13:00", shift: "TA" }, { time: "15:00", shift: "TB" }, { time: "17:00", shift: "TB" }, { time: "19:00", shift: "TB" }, { time: "21:00", shift: "TB" } ];
 
         let currentOven = 'FORNO 2';
         let viewMode = 'single'; 
@@ -316,32 +352,18 @@
         let unsubscribeRefresh = null;
         let availableBackups = [];
 
-        // --- VARIÁVEIS DO MODO APRESENTAÇÃO ---
-        let presentationConfig = { interval: 15, screens: [] };
+        // --- MODO APRESENTAÇÃO ---
+        let presentationConfig = { interval: 15, dashInterval: 30, screens: [] };
         let presentationIntervalObj = null;
         let progressIntervalObj = null;
         let currentPresentationIndex = 0;
 
-        let globalConfig = {
-            equipments: {}, 
-            ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, 
-            grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, 
-            minVersion: APP_VERSION 
-        };
-
-        const saveTimeouts = {};
-        const ovenDataStore = {};
+        let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION };
+        const saveTimeouts = {}; const ovenDataStore = {};
 
         // --- LÓGICA DO MODO APRESENTAÇÃO ---
-        window.openPresentationSetup = () => {
-            document.getElementById('presentation-screens-list').innerHTML = '';
-            window.addPresentationScreenRow(); // Adiciona a primeira linha automaticamente
-            document.getElementById('presentation-setup-modal').style.display = 'flex';
-        };
-
-        window.closePresentationSetup = () => {
-            document.getElementById('presentation-setup-modal').style.display = 'none';
-        };
+        window.openPresentationSetup = () => { document.getElementById('presentation-screens-list').innerHTML = ''; window.addPresentationScreenRow(); document.getElementById('presentation-setup-modal').style.display = 'flex'; };
+        window.closePresentationSetup = () => { document.getElementById('presentation-setup-modal').style.display = 'none'; };
 
         window.addPresentationScreenRow = () => {
             const list = document.getElementById('presentation-screens-list');
@@ -351,12 +373,12 @@
             div.innerHTML = `
                 <span class="font-black text-xs text-indigo-800 bg-indigo-100 px-2 py-1 rounded">Tela ${idx}</span>
                 <select class="border p-1 text-xs rounded flex-grow equip-select-1 outline-none focus:ring-1 focus:ring-indigo-300">
-                    <option value="">- Topo -</option>
+                    <option value="">- Eq. Lado Esquerdo -</option>
                     ${ovenList.map(o => `<option value="${o}">${o}</option>`).join('')}
                 </select>
                 <span class="text-xs font-bold text-gray-400">&</span>
                 <select class="border p-1 text-xs rounded flex-grow equip-select-2 outline-none focus:ring-1 focus:ring-indigo-300">
-                    <option value="">- Base (Opcional) -</option>
+                    <option value="">- Eq. Lado Direito (Opcional) -</option>
                     ${ovenList.map(o => `<option value="${o}">${o}</option>`).join('')}
                 </select>
                 <button onclick="this.parentElement.remove()" class="text-white bg-red-500 hover:bg-red-600 font-bold px-2 py-1 rounded shadow-sm text-xs">X</button>
@@ -366,28 +388,40 @@
 
         window.startPresentation = () => {
             const timeInput = parseInt(document.getElementById('presentation-time').value);
+            const dashTimeInput = parseInt(document.getElementById('presentation-dash-time').value);
+            const includeDash = document.getElementById('presentation-include-dash').checked;
+            
             if (isNaN(timeInput) || timeInput < 5) { alert('Tempo mínimo por tela é de 5 segundos.'); return; }
+            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para Ofensores/Dashboards é de 5 segundos.'); return; }
 
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
+            
+            // Lógica de Intercalação
             rows.forEach(row => {
                 const eq1 = row.querySelector('.equip-select-1').value;
                 const eq2 = row.querySelector('.equip-select-2').value;
                 if (eq1) {
                     const arr = [eq1];
-                    if (eq2 && eq2 !== eq1) arr.push(eq2); // Evita o mesmo equipamento duas vezes na mesma tela
-                    screens.push(arr);
+                    if (eq2 && eq2 !== eq1) arr.push(eq2); 
+                    
+                    screens.push(['EQUIPS', arr]);
+                    if (includeDash) {
+                        screens.push(['OFFENDERS_STEP', arr]);
+                    }
                 }
             });
 
-            if (screens.length === 0) { alert('Adicione pelo menos uma tela contendo um equipamento antes de iniciar.'); return; }
+            if (screens.length === 0 && !includeDash) { alert('Adicione pelo menos uma tela ao carrossel.'); return; }
+            if (includeDash) screens.push(['DASHBOARD']);
 
             presentationConfig.interval = timeInput;
+            presentationConfig.dashInterval = dashTimeInput;
             presentationConfig.screens = screens;
             currentPresentationIndex = 0;
 
             window.closePresentationSetup();
-            window.setViewMode('presentation'); // Modifica a view
+            window.setViewMode('presentation'); 
             document.getElementById('presentation-mode-container').style.display = 'flex';
             document.body.classList.add('presentation-active');
             
@@ -395,32 +429,301 @@
         };
 
         window.startPresentationCycle = () => {
-            clearInterval(presentationIntervalObj);
-            
+            clearTimeout(presentationIntervalObj);
+            const stepData = presentationConfig.screens[currentPresentationIndex];
+            const type = stepData[0];
+            const currentInterval = (type === 'DASHBOARD' || type === 'OFFENDERS_STEP') ? presentationConfig.dashInterval : presentationConfig.interval;
+
             window.renderPresentationScreen();
             
-            // Controle da barra de progresso visual
             const progressBar = document.getElementById('presentation-progress');
             progressBar.style.transition = 'none';
             progressBar.style.width = '0%';
             
             setTimeout(() => {
-                progressBar.style.transition = `width ${presentationConfig.interval}s linear`;
+                progressBar.style.transition = `width ${currentInterval}s linear`;
                 progressBar.style.width = '100%';
             }, 50);
 
-            // Inicia o contador para a próxima tela
-            presentationIntervalObj = setInterval(() => {
+            presentationIntervalObj = setTimeout(() => {
                 currentPresentationIndex = (currentPresentationIndex + 1) % presentationConfig.screens.length;
-                window.startPresentationCycle(); // Chamada recursiva para reiniciar a barra e trocar a tela
-            }, presentationConfig.interval * 1000);
+                window.startPresentationCycle(); 
+            }, currentInterval * 1000);
         };
 
-        window.stopPresentation = () => {
-            clearInterval(presentationIntervalObj);
-            document.getElementById('presentation-mode-container').style.display = 'none';
-            document.body.classList.remove('presentation-active');
-            window.setViewMode('single', currentOven); // Restaura o modo normal
+        window.stopPresentation = () => { clearTimeout(presentationIntervalObj); document.getElementById('presentation-mode-container').style.display = 'none'; document.body.classList.remove('presentation-active'); window.setViewMode('single', currentOven); };
+
+        // --- LÓGICA DO MODAL DOS OFENSORES (DRILL-DOWN) ---
+        window.openOffendersModal = (ovenName) => {
+            const modal = document.getElementById('offenders-modal');
+            const content = document.getElementById('offenders-modal-content');
+            content.innerHTML = window.generateSingleOffendersStepHTML([ovenName]);
+            modal.style.display = 'flex';
+        };
+
+        window.closeOffendersModal = () => {
+            const modal = document.getElementById('offenders-modal');
+            const content = document.getElementById('offenders-modal-content');
+            modal.style.display = 'none';
+            content.innerHTML = '';
+        };
+
+        // --- GERAÇÃO DO RESUMO DE OFENSORES TOP 3 ---
+        window.generateSingleOffendersStepHTML = (equipsArr) => {
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            
+            // Alterado para trazer o TOP 3 com base no somatório
+            const getTop3Offenders = (data, type) => {
+                let map = {};
+                for (let i = 0; i < 12; i++) {
+                    const row = data.rows[i];
+                    if (row && row[type]) {
+                        row[type].forEach(item => {
+                            if (item && item.desc && item.desc.trim() !== '' && item.desc.toLowerCase() !== 'nenhum') {
+                                const v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(String(item.val).replace(',', '.'));
+                                if (!isNaN(v) && v > 0) {
+                                    map[item.desc] = (map[item.desc] || 0) + v;
+                                }
+                            }
+                        });
+                    }
+                }
+                // Converte em array, ordena de forma decrescente e extrai os 3 primeiros
+                return Object.entries(map)
+                    .map(([desc, val]) => ({ desc, val }))
+                    .sort((a, b) => b.val - a.val)
+                    .slice(0, 3);
+            };
+
+            const renderTop3Card = (title, offenders, isMin, theme) => {
+                const hasData = offenders.length > 0;
+
+                if (!hasData) {
+                    return `
+                        <div class="flex-1 bg-green-50 rounded-3xl border-4 border-green-300 p-6 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
+                            <span class="text-2xl font-black text-green-800 uppercase tracking-widest mb-4 z-10 drop-shadow-sm">${title}</span>
+                            <span class="text-5xl font-black text-center text-green-900 leading-tight z-10 drop-shadow-md">MÁQUINA NO VERDE</span>
+                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registo ofensor</span>
+                        </div>
+                    `;
+                }
+
+                // Configuração Visual do Pódio (1º, 2º e 3º lugares)
+                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/80 shadow-sm border-l-4 border-current opacity-90', 'bg-white/60 shadow-sm border-l-2 border-current opacity-80'];
+                const textSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
+                const valSizes = ['text-2xl sm:text-3xl xl:text-4xl', 'text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl'];
+                const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700']; // Dourado, Prateado, Bronze
+                
+                let itemsHtml = offenders.map((off, index) => {
+                    const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
+                    
+                    return `
+                        <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
+                            <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">${index + 1}º</span>
+                                <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
+                            </div>
+                            <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
+                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-2 z-10 drop-shadow-sm text-center">${title}</span>
+                        <div class="flex flex-col gap-3 w-full mt-2 z-10 h-full justify-center">
+                            ${itemsHtml}
+                        </div>
+                    </div>
+                `;
+            };
+
+            // Dicionário de temas para Tailwind (para não quebrar a injeção de classes dinâmicas)
+            const themes = {
+                qualidade: { bg: 'bg-red-50', border: 'border-red-300', title: 'text-red-800', val: 'text-red-700' },
+                quebra: { bg: 'bg-orange-50', border: 'border-orange-300', title: 'text-orange-800', val: 'text-orange-700' },
+                parada: { bg: 'bg-blue-50', border: 'border-blue-300', title: 'text-blue-800', val: 'text-blue-700' }
+            };
+
+            const blocks = equipsArr.map(eq => {
+                const data = ovenDataStore[eq];
+                const topDefects = getTop3Offenders(data, 'defects');
+                const topQuebras = getTop3Offenders(data, 'quebras');
+                const topParadas = getTop3Offenders(data, 'paradas');
+
+                return `
+                    <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-4 sm:p-6 lg:p-8 h-full min-h-[600px] lg:min-h-0">
+                        <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative shrink-0 mt-6 lg:mt-0">
+                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
+                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
+                        </div>
+                        <div class="flex-1 flex flex-col gap-4 lg:gap-6 overflow-y-visible">
+                            ${renderTop3Card('Maiores Ofensores - Qualidade', topDefects, false, themes.qualidade)}
+                            ${renderTop3Card('Maiores Ofensores - Quebra', topQuebras, false, themes.quebra)}
+                            ${renderTop3Card('Maiores Motivos de Parada', topParadas, true, themes.parada)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Container principal foi alterado para permitir rolagem vertical em telas menores (flex-col lg:flex-row)
+            return `
+                <div class="w-full min-h-full p-4 pt-20 sm:pt-6 lg:p-6 flex flex-col lg:flex-row items-stretch justify-center gap-6 bg-gray-200">
+                    ${blocks.join('')}
+                    <div class="absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-10 bg-white border-2 border-blue-400 text-blue-700 font-black px-4 py-1 sm:px-6 sm:py-2 rounded-2xl text-xl sm:text-2xl lg:text-3xl tracking-widest shadow-lg z-50">${currentTimeStr}</div>
+                </div>
+            `;
+        };
+
+        // --- GERAÇÃO DO DASHBOARD GERAL (FOTOGRAFIA DO ÚLTIMO HORÁRIO) ---
+        window.generateDashboardHTML = () => {
+            const activeOvens = ['FORNO 2', 'FORNO 3A', 'FORNO 3B', 'FORNO 4', 'RETÍFICA 1', 'RETÍFICA 2'];
+            const todayStr = selectedDate.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+            const isPres = viewMode === 'presentation';
+            
+            const generateGauge = (title, value, target, isQuebra) => {
+                const radius = 38; const circumference = 2 * Math.PI * radius;
+                let isOk = isQuebra ? (value <= target) : (value >= target);
+                if (value === 0 && !isQuebra && title.includes('Qualidade')) isOk = true; 
+                
+                const color = isOk ? "#16a34a" : "#dc2626"; 
+                
+                let percentFill = 0;
+                if (isQuebra) {
+                    let maxVisual = target * 2.5 || 3; 
+                    percentFill = Math.min((value / maxVisual) * 100, 100);
+                } else {
+                    percentFill = Math.min(Math.max(value, 0), 100);
+                }
+                
+                const strokeOffset = circumference - (percentFill / 100) * circumference;
+                const formattedVal = value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: isQuebra ? 2 : 1});
+                const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
+
+                return `
+                    <div class="flex flex-col items-center">
+                        <span class="text-[0.6rem] sm:text-xs font-bold text-gray-800 mb-1 uppercase tracking-tighter text-center">${title}</span>
+                        <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 transform -rotate-90 bg-white rounded-full drop-shadow-md">
+                            <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#f3f4f6" stroke-width="8" />
+                            <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="8" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" />
+                            <text x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" fill="${color}" font-weight="900" font-size="26" dy="-4">${formattedVal}</text>
+                            <text x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" fill="#6b7280" font-weight="700" font-size="10" dy="16">${formattedTarget} Meta</text>
+                        </svg>
+                    </div>
+                `;
+            };
+            
+            let rowsHTML = activeOvens.map(oven => {
+                const data = ovenDataStore[oven];
+                const targets = data?.targets || window.getTargets(oven);
+                
+                let qualSnapshot = 0.0;
+                let quebraSnapshot = 0.0;
+                let utilSnapshot = 100.0;
+                let currentRef = 'Aguardando Produção';
+                
+                if (data && data.rows) {
+                    let lastIdx = -1;
+                    // Encontrar o último horário válido preenchido
+                    for (let i = 11; i >= 0; i--) {
+                        const r = data.rows[i];
+                        if ((r.vol && r.vol.trim() !== '') || (r.ref && r.ref.trim() !== '') || (r.qHora && r.qHora.trim() !== '')) {
+                            lastIdx = i; break;
+                        }
+                    }
+                    
+                    if (lastIdx >= 0) {
+                        const r = data.rows[lastIdx];
+                        currentRef = r.ref || currentRef;
+                        
+                        // Recalcular Qualidade Acumulada EXATAMENTE até lastIdx
+                        let wSum = 0; let pVol = 0;
+                        for(let i = 0; i <= lastIdx; i++) {
+                            const row = data.rows[i];
+                            const v = parseFloat(String(row.vol).replace('.', '').replace(',', '.'));
+                            const qH = parseFloat(String(row.qHora).replace(',', '.'));
+                            if (!isNaN(v)) {
+                                let dVol = v - pVol;
+                                if (!isNaN(qH)) wSum += dVol * qH;
+                                if (v > 0) qualSnapshot = wSum / v;
+                                pVol = v;
+                            }
+                        }
+                        
+                        // Snapshot Quebra
+                        if (r.quebras) {
+                            r.quebras.forEach(q => {
+                                const v = parseFloat(String(q.val).replace(',', '.'));
+                                if (!isNaN(v)) quebraSnapshot += v;
+                            });
+                        }
+                        
+                        // Snapshot Utilização
+                        let paradasLast = 0;
+                        if (r.paradas) {
+                            r.paradas.forEach(p => {
+                                const v = parseInt(p.val, 10);
+                                if (!isNaN(v)) paradasLast += v;
+                            });
+                        }
+                        utilSnapshot = ((120 - paradasLast) / 120) * 100;
+                    }
+                }
+                
+                const shortName = oven.replace('FORNO', 'F').replace('RETÍFICA', 'RET');
+                
+                let btnOfensoresHTML = '';
+                if (!isPres) {
+                    btnOfensoresHTML = `
+                        <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
+                            <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
+                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">🏆</span>
+                                <span class="whitespace-nowrap text-center leading-none">Ver<br>Ofensores</span>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[140px]">
+                        <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
+                            <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
+                            <span class="text-[0.65rem] sm:text-sm font-black text-indigo-700 mt-1 uppercase text-center w-full px-2 py-1 rounded bg-indigo-50 border border-indigo-200 shadow-sm leading-tight break-words max-w-full" title="${currentRef}">${currentRef}</span>
+                            <div class="absolute top-2 left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
+                        </div>
+                        <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
+                            <div class="flex-1 flex flex-row justify-around items-center">
+                                ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
+                                ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
+                                ${generateGauge('Utilização (Últ. Reg.)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                            </div>
+                            ${btnOfensoresHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const pointerClass = isPres ? 'pointer-events-none' : '';
+
+            // Alterado overflow-hidden para overflow-y-auto no container das linhas HTML
+            return `
+                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
+                    <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
+                        <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
+                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                        </div>
+                        <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
+                        <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
+                    </div>
+                    <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
+                            ${rowsHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
         };
 
         window.renderPresentationScreen = () => {
@@ -429,55 +732,83 @@
             
             if (!presentationConfig.screens || presentationConfig.screens.length === 0) return;
             
-            const equips = presentationConfig.screens[currentPresentationIndex];
+            const stepData = presentationConfig.screens[currentPresentationIndex];
+            const type = stepData[0];
+            const payload = stepData[1];
             
-            // Ajuste Inteligente de Escala: Se for 1 equipamento por tela, aumenta o tamanho. Se forem 2, reduz para caber na TV.
-            // Utilizando propriedade 'zoom' do CSS pois afeta perfeitamente as dimensões do Flexbox.
-            const scaleZoom = equips.length === 2 ? 0.8 : 1.25; 
-            
-            equips.forEach(eq => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'flex justify-center items-center w-full pointer-events-none mb-1';
-                wrapper.style.zoom = scaleZoom; 
-                
-                wrapper.innerHTML = generateOvenHTML(eq);
+            if (type === 'DASHBOARD') {
+                container.style.flexDirection = 'column'; container.style.gap = '0';
+                const wrapper = document.createElement('div'); wrapper.className = 'w-full h-full flex justify-center items-center drop-shadow-2xl';
+                wrapper.innerHTML = window.generateDashboardHTML();
                 container.appendChild(wrapper);
+                return;
+            }
+            
+            if (type === 'OFFENDERS_STEP') {
+                container.style.flexDirection = 'column'; container.style.gap = '0';
+                const wrapper = document.createElement('div'); wrapper.className = 'w-full h-full';
+                wrapper.innerHTML = window.generateSingleOffendersStepHTML(payload);
+                container.appendChild(wrapper);
+                return;
+            }
+            
+            if (type === 'EQUIPS') {
+                const equips = payload;
+                container.style.flexDirection = equips.length === 2 ? 'row' : 'column';
+                container.style.gap = equips.length === 2 ? '2vw' : '0';
                 
-                window.attachCalculations(eq); // Recalcula totais para exibição visual
-            });
+                const scaleZoom = equips.length === 2 ? 0.53 : 0.75; 
+                const inverseHeight = `calc((100vh - 40px) / ${scaleZoom})`;
+                
+                equips.forEach(eq => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flex-1 flex flex-col justify-start items-center pointer-events-none drop-shadow-2xl mx-2 w-full';
+                    wrapper.style.zoom = scaleZoom; 
+                    wrapper.style.height = inverseHeight;
+                    
+                    wrapper.innerHTML = generateOvenHTML(eq);
+                    container.appendChild(wrapper);
+                    
+                    window.attachCalculations(eq); 
+                });
+            }
         };
 
-        // Escuta o botão ESC para sair da apresentação
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && viewMode === 'presentation') {
-                window.stopPresentation();
+        document.addEventListener('keydown', (e) => { 
+            if (e.key === 'Escape') {
+                if (viewMode === 'presentation') window.stopPresentation(); 
+                if (document.getElementById('offenders-modal').style.display === 'flex') window.closeOffendersModal();
             }
         });
         // ------------------------------------
 
         window.getTargets = (ovenName) => {
-            if (globalConfig.equipments && globalConfig.equipments[ovenName]) return globalConfig.equipments[ovenName];
             const isRet = ovenName.includes('RETÍFICA');
-            return globalConfig[isRet ? 'grinders' : 'ovens'];
+            let targets = { quality: 97.0, breakage: 1.2, utilization: isRet ? 89.0 : 90.0 };
+            
+            if (globalConfig.equipments && globalConfig.equipments[ovenName]) {
+                const eq = globalConfig.equipments[ovenName];
+                if (eq.quality !== undefined) targets.quality = eq.quality;
+                if (eq.breakage !== undefined) targets.breakage = eq.breakage;
+                if (eq.utilization !== undefined) targets.utilization = eq.utilization;
+            } else {
+                const legacy = globalConfig[isRet ? 'grinders' : 'ovens'];
+                if (legacy) {
+                    if (legacy.quality !== undefined) targets.quality = legacy.quality;
+                    if (legacy.breakage !== undefined) targets.breakage = legacy.breakage;
+                    if (legacy.utilization !== undefined) targets.utilization = legacy.utilization;
+                }
+            }
+            return targets;
         };
 
         const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
         const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
         window.handleLockClick = () => { const diffDays = getDiffDays(); if (diffDays > 3) { if (!isAdminUnlocked) window.openPasswordModal('unlock'); else { isAdminUnlocked = false; updateDateUI(); renderContent(); } } };
 
-        window.forceGlobalRefresh = async () => {
-            if (!db) return;
-            if (confirm("⚠️ ATENÇÃO: Esta ação vai forçar todos os ecrãs da fábrica e telemóveis a recarregarem a página imediatamente.\n\nTem a certeza absoluta?")) {
-                setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); }
-            }
-        };
+        window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todos os ecrãs a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
 
-        const setupRefreshListener = () => {
-            if (!db) return;
-            unsubscribeRefresh = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().timestamp > appLoadTime + 2000) window.location.reload(true);
-            });
-        };
+        const setupRefreshListener = () => { if (!db) return; unsubscribeRefresh = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), (docSnap) => { if (docSnap.exists() && docSnap.data().timestamp > appLoadTime + 2000) window.location.reload(true); }); };
 
         window.runManualBackup = async (overrideDate = null, isAuto = false) => {
             if (!db || !isDataLoaded) return;
@@ -521,36 +852,16 @@
                 const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'));
                 if (docSnap.exists()) {
                     globalConfig = docSnap.data();
-                    
                     let needsMigration = false;
-                    if (!globalConfig.equipments) {
-                        globalConfig.equipments = {};
-                        needsMigration = true;
-                    }
-
-                    ovenList.forEach(ov => {
-                        if (!globalConfig.equipments[ov]) {
-                            const isRet = ov.includes('RETÍFICA');
-                            globalConfig.equipments[ov] = { 
-                                quality: globalConfig[isRet ? 'grinders' : 'ovens']?.quality || 97.0,
-                                breakage: globalConfig[isRet ? 'grinders' : 'ovens']?.breakage || 1.2,
-                                utilization: globalConfig[isRet ? 'grinders' : 'ovens']?.utilization || (isRet ? 89.0 : 90.0)
-                            };
-                            needsMigration = true;
-                        }
-                    });
-                    
-                    if (needsMigration) saveGlobalConfigFirebase();
-                    
-                    if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) {
-                        document.getElementById('version-blocker-title').innerText = "Atualização Necessária"; document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas exige a versão ${globalConfig.minVersion}.`; document.getElementById('version-blocker').style.display = 'flex'; return; 
-                    }
-                } else {
-                    globalConfig.equipments = {};
+                    if (!globalConfig.equipments) { globalConfig.equipments = {}; needsMigration = true; }
                     ovenList.forEach(ov => {
                         const isRet = ov.includes('RETÍFICA');
-                        globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: isRet ? 89.0 : 90.0 };
+                        if (!globalConfig.equipments[ov]) { globalConfig.equipments[ov] = { quality: globalConfig[isRet ? 'grinders' : 'ovens']?.quality || 97.0, breakage: globalConfig[isRet ? 'grinders' : 'ovens']?.breakage || 1.2, utilization: globalConfig[isRet ? 'grinders' : 'ovens']?.utilization || (isRet ? 89.0 : 90.0) }; needsMigration = true; } else if (globalConfig.equipments[ov].utilization === undefined) { globalConfig.equipments[ov].utilization = isRet ? 89.0 : 90.0; needsMigration = true; }
                     });
+                    if (needsMigration) saveGlobalConfigFirebase();
+                    if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) { document.getElementById('version-blocker-title').innerText = "Atualização Necessária"; document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas exige a versão ${globalConfig.minVersion}.`; document.getElementById('version-blocker').style.display = 'flex'; return; }
+                } else {
+                    globalConfig.equipments = {}; ovenList.forEach(ov => { const isRet = ov.includes('RETÍFICA'); globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: isRet ? 89.0 : 90.0 }; });
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), globalConfig);
                 }
             } catch(e) { console.error("Erro config:", e); }
@@ -584,9 +895,7 @@
             const d = selectedDate.getDate().toString().padStart(2, '0'), m = (selectedDate.getMonth() + 1).toString().padStart(2, '0'), y = selectedDate.getFullYear();
             document.getElementById('display-date').innerText = `${d}/${m}/${y}`;
             const lockContainer = document.getElementById('lock-container'), lockIcon = document.getElementById('lock-icon');
-            if (lockIcon && lockContainer) {
-                if (getDiffDays() > 3) { lockContainer.style.display = 'flex'; if (!isAdminUnlocked) { lockIcon.innerHTML = '🔒'; lockContainer.title = "Histórico bloqueado (+3 dias). Clique para desbloquear."; } else { lockIcon.innerHTML = '🔓'; lockContainer.title = "Histórico desbloqueado (Admin). Clique para bloquear novamente."; } } else lockContainer.style.display = 'none';
-            }
+            if (lockIcon && lockContainer) { if (getDiffDays() > 3) { lockContainer.style.display = 'flex'; if (!isAdminUnlocked) { lockIcon.innerHTML = '🔒'; lockContainer.title = "Histórico bloqueado (+3 dias). Clique para desbloquear."; } else { lockIcon.innerHTML = '🔓'; lockContainer.title = "Histórico desbloqueado (Admin). Clique para bloquear novamente."; } } else lockContainer.style.display = 'none'; }
         };
 
         const setSaveStatus = (status) => {
@@ -599,7 +908,9 @@
         const saveToFirebase = (ovenId) => {
             if (!db || !ovenDataStore[ovenId] || !isDataLoaded || isDateLocked()) return;
             if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]); setSaveStatus('saving');
-            if (!ovenDataStore[ovenId].targets) ovenDataStore[ovenId].targets = { ...window.getTargets(ovenId) };
+            
+            if (!ovenDataStore[ovenId].targets) { ovenDataStore[ovenId].targets = { ...window.getTargets(ovenId) }; } else { const t = window.getTargets(ovenId); if (ovenDataStore[ovenId].targets.utilization === undefined) ovenDataStore[ovenId].targets.utilization = t.utilization; if (ovenDataStore[ovenId].targets.quality === undefined) ovenDataStore[ovenId].targets.quality = t.quality; if (ovenDataStore[ovenId].targets.breakage === undefined) ovenDataStore[ovenId].targets.breakage = t.breakage; }
+            
             const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
             saveTimeouts[ovenId] = setTimeout(async () => { try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`), dataToSave); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } }, 1000);
         };
@@ -607,15 +918,8 @@
         const toggleLoading = (show) => { const el = document.getElementById('loading-indicator'); if(el) el.style.display = show ? 'flex' : 'none'; };
 
         const fetchPreviousDayData = async (ovenName, currentDate) => {
-            if (!db) return null;
-            const prevDate = new Date(currentDate);
-            prevDate.setDate(prevDate.getDate() - 1);
-            const prevDateKey = getDateKey(prevDate);
-            try {
-                const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenName}_${prevDateKey}`));
-                if (docSnap.exists()) return docSnap.data();
-            } catch(e) {}
-            return null;
+            if (!db) return null; const prevDate = new Date(currentDate); prevDate.setDate(prevDate.getDate() - 1); const prevDateKey = getDateKey(prevDate);
+            try { const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenName}_${prevDateKey}`)); if (docSnap.exists()) return docSnap.data(); } catch(e) {} return null;
         };
 
         window.setupRealtimeListener = () => {
@@ -632,26 +936,12 @@
                             if (!r.paradas || r.paradas.length === 0) { r.paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; if (r.tempoVazio && typeof r.tempoVazio !== 'object') { r.paradas[0].val = r.tempoVazio; r.paradas[0].desc = "Registro Migrado"; r.tempoVazio = ''; } }
                         });
                         if (!data.closing) data.closing = [ { prod: '', quebra: '' }, { prod: '', quebra: '' }, { prod: '', quebra: '' } ];
-                        if (!data.targets) data.targets = null; data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
-                        
-                        if (!data.nominal) {
-                            fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
-                                if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
-                                    ovenDataStore[ovenName].nominal = prevData.nominal;
-                                    if (ovenName === currentOven) renderContent();
-                                }
-                            });
-                        }
-
+                        if (!data.targets) data.targets = null; else { const t = window.getTargets(ovenName); if (data.targets.utilization === undefined) data.targets.utilization = t.utilization; if (data.targets.quality === undefined) data.targets.quality = t.quality; if (data.targets.breakage === undefined) data.targets.breakage = t.breakage; }
+                        data.nominal = data.nominal || ''; ovenDataStore[ovenName] = data;
+                        if (!data.nominal) fetchPreviousDayData(ovenName, selectedDate).then(prevData => { if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) { ovenDataStore[ovenName].nominal = prevData.nominal; if (ovenName === currentOven) renderContent(); } });
                     } else { 
                         ovenDataStore[ovenName] = createEmptyOvenData(); 
-                        
-                        fetchPreviousDayData(ovenName, selectedDate).then(prevData => {
-                            if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) {
-                                ovenDataStore[ovenName].nominal = prevData.nominal;
-                                if (ovenName === currentOven) renderContent();
-                            }
-                        });
+                        fetchPreviousDayData(ovenName, selectedDate).then(prevData => { if (prevData && prevData.nominal && !ovenDataStore[ovenName].nominal) { ovenDataStore[ovenName].nominal = prevData.nominal; if (ovenName === currentOven) renderContent(); } });
                     }
                     loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } else if (isDataLoaded) renderContent();
                 }, (error) => { loadedCount++; if (loadedCount >= ovenList.length) { isDataLoaded = true; toggleLoading(false); renderContent(); } });
@@ -661,11 +951,18 @@
 
         window.changeDate = (offset) => { selectedDate.setDate(selectedDate.getDate() + offset); isAdminUnlocked = false; updateDateUI(); resetStore(); window.setupRealtimeListener(); };
 
-        window.setViewMode = (mode, oven = null) => {
-            viewMode = mode; if (oven) currentOven = oven; document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('btn-CONFIG')?.classList.remove('active');
+        window.setViewMode = (mode, oven = null) => { 
+            viewMode = mode; 
+            if (oven) currentOven = oven; 
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); 
+            document.getElementById('btn-CONFIG')?.classList.remove('active'); 
+            document.getElementById('btn-DASHBOARD')?.classList.remove('ring-4', 'ring-emerald-300');
+            
             if (mode === 'config') document.getElementById('btn-CONFIG')?.classList.add('active'); 
             else if (mode === 'single') document.getElementById(`btn-${currentOven}`)?.classList.add('active'); 
-            renderContent();
+            else if (mode === 'dashboard') document.getElementById('btn-DASHBOARD')?.classList.add('ring-4', 'ring-emerald-300');
+            
+            renderContent(); 
         };
 
         window.syncData = (oven, row, field, val) => {
@@ -685,56 +982,20 @@
         const getActiveDefectMap = (oven) => oven && oven.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
 
         window.highlightMax = (oven, row, type) => {
-            const safeOven = oven.replace(/\s+/g, '-');
-            const dataArr = ovenDataStore[oven].rows[row][type];
-            if (!dataArr) return;
+            const safeOven = oven.replace(/\s+/g, '-'); const dataArr = ovenDataStore[oven].rows[row][type]; if (!dataArr) return;
+            let shouldHighlight = false; let targets = ovenDataStore[oven]?.targets || window.getTargets(oven);
             
-            let shouldHighlight = false;
-            let targets = ovenDataStore[oven]?.targets || window.getTargets(oven);
-            
-            if (type === 'quebras') {
-                let targetB = targets.breakage;
-                let total = 0;
-                dataArr.forEach(item => { const v = parseFloat(item.val?.replace(',', '.')); if (!isNaN(v)) total += v; });
-                if (total > targetB) shouldHighlight = true; 
-            } else if (type === 'defects') {
-                let targetQ = targets.quality;
-                let qHoraStr = ovenDataStore[oven].rows[row].qHora;
-                let qHora = parseFloat(qHoraStr?.replace(',', '.'));
-                if (!isNaN(qHora) && qHora < targetQ) shouldHighlight = true;
-            } else if (type === 'paradas') {
-                let targetU = targets.utilization || 90.0;
-                let total = 0;
-                dataArr.forEach(item => { const v = parseInt(item.val, 10); if (!isNaN(v)) total += v; });
-                let utilPercent = ((120 - total) / 120) * 100;
-                if (utilPercent < targetU && total > 0) shouldHighlight = true;
-            }
+            if (type === 'quebras') { let targetB = targets.breakage; let total = 0; dataArr.forEach(item => { const v = parseFloat(item.val?.replace(',', '.')); if (!isNaN(v)) total += v; }); if (total > targetB) shouldHighlight = true; } 
+            else if (type === 'defects') { let targetQ = targets.quality; let qHoraStr = ovenDataStore[oven].rows[row].qHora; let qHora = parseFloat(qHoraStr?.replace(',', '.')); if (!isNaN(qHora) && qHora < targetQ) shouldHighlight = true; } 
+            else if (type === 'paradas') { let targetU = targets.utilization || 90.0; let total = 0; dataArr.forEach(item => { const v = parseInt(item.val, 10); if (!isNaN(v)) total += v; }); let utilPercent = ((120 - total) / 120) * 100; if (utilPercent < targetU && total > 0) shouldHighlight = true; }
 
             let maxVal = -1;
-            
-            if (shouldHighlight) {
-                dataArr.forEach((item) => {
-                    let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
-                    if (!isNaN(v) && v > maxVal && v > 0) maxVal = v;
-                });
-            }
+            if (shouldHighlight) { dataArr.forEach((item) => { let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.')); if (!isNaN(v) && v > maxVal && v > 0) maxVal = v; }); }
 
             dataArr.forEach((item, idx) => {
-                const elCod = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-cod`);
-                const elDesc = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-desc`);
-                const elVal = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-val`);
-                
+                const elCod = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-cod`), elDesc = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-desc`), elVal = document.getElementById(`input-${safeOven}-${row}-${type}-${idx}-val`);
                 let v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(item.val?.replace(',', '.'));
-                
-                if (shouldHighlight && !isNaN(v) && v === maxVal && maxVal > 0) {
-                    if(elCod) elCod.classList.add('highlight-max');
-                    if(elDesc) elDesc.classList.add('highlight-max');
-                    if(elVal) elVal.classList.add('highlight-max');
-                } else {
-                    if(elCod) elCod.classList.remove('highlight-max');
-                    if(elDesc) elDesc.classList.remove('highlight-max');
-                    if(elVal) elVal.classList.remove('highlight-max');
-                }
+                if (shouldHighlight && !isNaN(v) && v === maxVal && maxVal > 0) { if(elCod) elCod.classList.add('highlight-max'); if(elDesc) elDesc.classList.add('highlight-max'); if(elVal) elVal.classList.add('highlight-max'); } else { if(elCod) elCod.classList.remove('highlight-max'); if(elDesc) elDesc.classList.remove('highlight-max'); if(elVal) elVal.classList.remove('highlight-max'); }
             });
         };
 
@@ -742,74 +1003,38 @@
             if (!isDataLoaded || isDateLocked()) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
-            if (field === 'cod') {
-                const map = getActiveDefectMap(oven); const desc = map[val] || (val ? "Desconhecido" : ""); ovenDataStore[oven].rows[row][type][index]['desc'] = desc;
-                const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`);
-                if(descInput) { descInput.value = desc; if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); } else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); } }
-            }
-            saveToFirebase(oven); 
-            if (type === 'quebras') window.runQuebra(oven, row);
-            window.highlightMax(oven, row, type);
+            if (field === 'cod') { const map = getActiveDefectMap(oven); const desc = map[val] || (val ? "Desconhecido" : ""); ovenDataStore[oven].rows[row][type][index]['desc'] = desc; const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`); if(descInput) { descInput.value = desc; if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); } else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); } } }
+            saveToFirebase(oven); if (type === 'quebras') window.runQuebra(oven, row); window.highlightMax(oven, row, type);
         };
 
-        window.updateParada = (oven, row, index, field, val) => {
-            if (!isDataLoaded || isDateLocked()) return;
-            if (!ovenDataStore[oven].rows[row].paradas) ovenDataStore[oven].rows[row].paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()];
-            ovenDataStore[oven].rows[row].paradas[index][field] = val;
-            saveToFirebase(oven);
-            window.runParadaRow(oven, row);
-            window.updateTempoVazioSums(oven);
-        };
+        window.updateParada = (oven, row, index, field, val) => { if (!isDataLoaded || isDateLocked()) return; if (!ovenDataStore[oven].rows[row].paradas) ovenDataStore[oven].rows[row].paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; ovenDataStore[oven].rows[row].paradas[index][field] = val; saveToFirebase(oven); window.runParadaRow(oven, row); window.updateTempoVazioSums(oven); };
 
         window.updateTempoVazioSums = (oven) => {
-            const data = ovenDataStore[oven]; if (!data) return; const safeOven = oven.replace(/\s+/g, '-');
-            let targetU = data.targets?.utilization || window.getTargets(oven).utilization || 90.0;
-            
+            const data = ovenDataStore[oven]; if (!data) return; const safeOven = oven.replace(/\s+/g, '-'); let targetU = data.targets?.utilization || window.getTargets(oven).utilization || 90.0;
             const calculateSum = (start, end) => { let sum = 0; for (let i = start; i <= end; i++) { const paradas = data.rows[i].paradas || []; paradas.forEach(p => { const val = parseInt(p.val, 10); if (!isNaN(val) && val > 0) sum += val; }); } return sum; };
 
             const sumT1 = calculateSum(0, 3), sumT2 = calculateSum(4, 7), sumT3 = calculateSum(8, 11), sumTotal = sumT1 + sumT2 + sumT3;
-            
-            const utilT1 = parseFloat((((480 - sumT1) / 480) * 100).toFixed(1));
-            const utilT2 = parseFloat((((480 - sumT2) / 480) * 100).toFixed(1));
-            const utilT3 = parseFloat((((480 - sumT3) / 480) * 100).toFixed(1));
-            const utilDia = parseFloat((((1440 - sumTotal) / 1440) * 100).toFixed(1));
+            const utilT1 = parseFloat((((480 - sumT1) / 480) * 100).toFixed(1)); const utilT2 = parseFloat((((480 - sumT2) / 480) * 100).toFixed(1)); const utilT3 = parseFloat((((480 - sumT3) / 480) * 100).toFixed(1)); const utilDia = parseFloat((((1440 - sumTotal) / 1440) * 100).toFixed(1));
 
-            const el1 = document.getElementById(`sum-tempoVazio-${safeOven}-0`);
-            const u1 = document.getElementById(`util-tempoVazio-${safeOven}-0`);
-            const el2 = document.getElementById(`sum-tempoVazio-${safeOven}-1`);
-            const u2 = document.getElementById(`util-tempoVazio-${safeOven}-1`);
-            const el3Turno = document.getElementById(`sum-tempoVazio-${safeOven}-2-turno`);
-            const u3Turno = document.getElementById(`util-tempoVazio-${safeOven}-2-turno`);
-            const el3Dia = document.getElementById(`sum-tempoVazio-${safeOven}-2-dia`);
-            const u3Dia = document.getElementById(`util-tempoVazio-${safeOven}-2-dia`);
+            const el1 = document.getElementById(`sum-tempoVazio-${safeOven}-0`); const u1 = document.getElementById(`util-tempoVazio-${safeOven}-0`);
+            const el2 = document.getElementById(`sum-tempoVazio-${safeOven}-1`); const u2 = document.getElementById(`util-tempoVazio-${safeOven}-1`);
+            const el3Turno = document.getElementById(`sum-tempoVazio-${safeOven}-2-turno`); const u3Turno = document.getElementById(`util-tempoVazio-${safeOven}-2-turno`);
+            const el3Dia = document.getElementById(`sum-tempoVazio-${safeOven}-2-dia`); const u3Dia = document.getElementById(`util-tempoVazio-${safeOven}-2-dia`);
 
             if (el1) el1.innerText = sumT1 > 0 ? window.getTempoVazioFormat(sumT1) : '-';
             if (u1) { u1.innerText = `${utilT1.toFixed(1).replace('.', ',')}%`; u1.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT1 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
-            
             if (el2) el2.innerText = sumT2 > 0 ? window.getTempoVazioFormat(sumT2) : '-';
             if (u2) { u2.innerText = `${utilT2.toFixed(1).replace('.', ',')}%`; u2.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT2 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
-            
             if (el3Turno) el3Turno.innerText = sumT3 > 0 ? window.getTempoVazioFormat(sumT3) : '-';
             if (u3Turno) { u3Turno.innerText = `${utilT3.toFixed(1).replace('.', ',')}%`; u3Turno.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilT3 >= targetU ? 'text-green-700' : 'text-red-700'}`; }
-            
             if (el3Dia) el3Dia.innerText = sumTotal > 0 ? window.getTempoVazioFormat(sumTotal) : '-';
             if (u3Dia) { u3Dia.innerText = `${utilDia.toFixed(1).replace('.', ',')}%`; u3Dia.className = `font-black text-[0.65rem] tracking-tight leading-none ${utilDia >= targetU ? 'text-green-800' : 'text-red-800'}`; }
         };
 
-        window.attachCalculations = (oven) => { 
-            window.runCalcs(oven); 
-            for(let i=0; i<12; i++) {
-                window.runQuebra(oven, i); 
-                window.runParadaRow(oven, i);
-            }
-            window.updateTempoVazioSums(oven);
-        };
+        window.attachCalculations = (oven) => { window.runCalcs(oven); for(let i=0; i<12; i++) { window.runQuebra(oven, i); window.runParadaRow(oven, i); } window.updateTempoVazioSums(oven); };
 
         window.runCalcs = (oven) => {
-            const safeOven = oven.replace(/\s+/g, '-');
-            let targetQ = ovenDataStore[oven]?.targets?.quality || window.getTargets(oven).quality;
-            let weightedScoreSum = 0, previousVolume = 0;   
-            
+            const safeOven = oven.replace(/\s+/g, '-'); let targetQ = ovenDataStore[oven]?.targets?.quality || window.getTargets(oven).quality; let weightedScoreSum = 0, previousVolume = 0;   
             const nominalStr = ovenDataStore[oven]?.nominal || ''; const nominalVal = parseFloat(nominalStr.replace('.', '').replace(',', '.')); const expectedPerHour = (!isNaN(nominalVal) && nominalVal > 0) ? (nominalVal / 12) : null;
             
             for (let i = 0; i < 12; i++) {
@@ -828,75 +1053,35 @@
                     if (!isNaN(hVal)) {
                         weightedScoreSum += deltaVol * hVal;
                         if (volVal > 0) {
-                            const avg = weightedScoreSum / volVal; 
-                            let roundedAvg = parseFloat(avg.toFixed(1));
+                            const avg = weightedScoreSum / volVal; let roundedAvg = parseFloat(avg.toFixed(1));
                             aInput.value = roundedAvg.toFixed(1).replace('.', ','); aInput.className = roundedAvg >= targetQ ? `${baseAcumClasses} text-target-ok` : `${baseAcumClasses} text-target-low`;
-
-                            if (projAcumSpan) {
-                                let diffAcum = roundedAvg - targetQ; diffAcum = parseFloat(diffAcum.toFixed(1)); if (diffAcum === 0) diffAcum = 0; 
-                                const signAcum = diffAcum > 0 ? '+' : ''; const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ',');
-                                projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`; projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`;
-                            }
+                            if (projAcumSpan) { let diffAcum = roundedAvg - targetQ; diffAcum = parseFloat(diffAcum.toFixed(1)); if (diffAcum === 0) diffAcum = 0; const signAcum = diffAcum > 0 ? '+' : ''; const formattedDiffAcum = diffAcum.toFixed(1).replace('.', ','); projAcumSpan.innerText = `(${signAcum}${formattedDiffAcum})`; projAcumSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${diffAcum >= 0 ? 'text-green-600' : 'text-red-600'}`; }
                         } else { aInput.value = ''; aInput.className = baseAcumClasses; }
                     }
                     previousVolume = volVal;
                 } else { if (volValStr === '') { aInput.value = ''; aInput.className = baseAcumClasses; } }
                 
-                if (projSpan) {
-                    if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) {
-                        const diff = deltaVol - expectedPerHour; let roundedDiff = Math.round(diff); if (roundedDiff === 0) roundedDiff = 0;
-                        const sign = roundedDiff > 0 ? '+' : ''; projSpan.innerText = `(${sign}${roundedDiff})`; projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`;
-                    } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; }
-                }
-
+                if (projSpan) { if (expectedPerHour !== null && volValStr !== '' && !isNaN(volVal)) { const diff = deltaVol - expectedPerHour; let roundedDiff = Math.round(diff); if (roundedDiff === 0) roundedDiff = 0; const sign = roundedDiff > 0 ? '+' : ''; projSpan.innerText = `(${sign}${roundedDiff})`; projSpan.className = `text-[0.65rem] font-black tracking-tighter pb-[2px] ${roundedDiff >= 0 ? 'text-green-600' : 'text-red-600'}`; } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; } }
                 window.highlightMax(oven, i, 'defects');
             }
         };
 
         window.runQuebra = (oven, row) => {
-            let targetB = ovenDataStore[oven]?.targets?.breakage || window.getTargets(oven).breakage;
-            let total = 0, hasValue = false;
+            let targetB = ovenDataStore[oven]?.targets?.breakage || window.getTargets(oven).breakage; let total = 0, hasValue = false;
             ovenDataStore[oven].rows[row].quebras.forEach(item => { if (item && item.val && item.val.trim() !== '') { const v = parseFloat(item.val.replace(',', '.')); if (!isNaN(v)) { total += v; hasValue = true; } } });
-            
-            let roundedTotal = parseFloat(total.toFixed(2));
-            const display = document.getElementById(`total-${oven}-${row}`), projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
+            let roundedTotal = parseFloat(total.toFixed(2)); const display = document.getElementById(`total-${oven}-${row}`), projSpan = document.getElementById(`proj-${oven.replace(/\s+/g, '-')}-${row}-quebra`);
             
             if (display) { display.innerText = roundedTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }); display.className = `font-bold text-xs ${roundedTotal <= targetB ? 'text-target-ok' : 'text-target-low'}`; }
-            if (projSpan) {
-                if (hasValue) {
-                    let diff = roundedTotal - targetB; diff = parseFloat(diff.toFixed(2)); if (diff === 0) diff = 0; 
-                    const sign = diff > 0 ? '+' : ''; const formattedDiff = diff.toFixed(1).replace('.', ',');
-                    projSpan.innerText = `(${sign}${formattedDiff})`; projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`;
-                } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; }
-            }
-            
+            if (projSpan) { if (hasValue) { let diff = roundedTotal - targetB; diff = parseFloat(diff.toFixed(2)); if (diff === 0) diff = 0; const sign = diff > 0 ? '+' : ''; const formattedDiff = diff.toFixed(1).replace('.', ','); projSpan.innerText = `(${sign}${formattedDiff})`; projSpan.className = `text-[0.6rem] font-black tracking-tighter leading-none pb-[2px] ${diff <= 0 ? 'text-green-600' : 'text-red-600'}`; } else { projSpan.innerText = ''; projSpan.className = 'empty:hidden'; } }
             window.highlightMax(oven, row, 'quebras');
         };
 
         window.runParadaRow = (oven, row) => {
-            const data = ovenDataStore[oven].rows[row].paradas; let total = 0;
-            if (data) { data.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) total += v; }); }
-            
-            const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`);
-            const utilDisplay = document.getElementById(`util-parada-${oven.replace(/\s+/g, '-')}-${row}`);
-            let targetU = ovenDataStore[oven]?.targets?.utilization || window.getTargets(oven).utilization || 90.0;
+            const data = ovenDataStore[oven].rows[row].paradas; let total = 0; if (data) { data.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) total += v; }); }
+            const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`); const utilDisplay = document.getElementById(`util-parada-${oven.replace(/\s+/g, '-')}-${row}`); let targetU = ovenDataStore[oven]?.targets?.utilization || window.getTargets(oven).utilization || 90.0;
 
-            if (display) {
-                if (total > 0) { 
-                    const hrStr = window.getTempoVazioFormat(total).replace('min', 'm').replace(' ', ''); 
-                    display.innerText = `${total}m (${hrStr})`; 
-                    display.className = "text-[0.6rem] font-bold text-blue-800"; 
-                } 
-                else { display.innerText = '0m'; display.className = "text-[0.6rem] font-bold text-gray-500"; }
-            }
-
-            if (utilDisplay) {
-                let utilPercent = ((120 - total) / 120) * 100;
-                let roundedUtil = parseFloat(utilPercent.toFixed(1));
-                utilDisplay.innerText = `${roundedUtil.toFixed(1).replace('.', ',')}%`;
-                utilDisplay.className = `text-[0.6rem] font-black tracking-tighter leading-none ${roundedUtil >= targetU ? 'text-green-600' : 'text-red-600'}`;
-            }
-            
+            if (display) { if (total > 0) { const hrStr = window.getTempoVazioFormat(total).replace('min', 'm').replace(' ', ''); display.innerText = `${total}m (${hrStr})`; display.className = "text-[0.6rem] font-bold text-blue-800"; } else { display.innerText = '0m'; display.className = "text-[0.6rem] font-bold text-gray-500"; } }
+            if (utilDisplay) { let utilPercent = ((120 - total) / 120) * 100; let roundedUtil = parseFloat(utilPercent.toFixed(1)); utilDisplay.innerText = `${roundedUtil.toFixed(1).replace('.', ',')}%`; utilDisplay.className = `text-[0.6rem] font-black tracking-tighter leading-none ${roundedUtil >= targetU ? 'text-green-600' : 'text-red-600'}`; }
             window.highlightMax(oven, row, 'paradas');
         };
 
@@ -904,12 +1089,7 @@
         window.getTempoVazioFormat = (val) => { const num = parseInt(val, 10); if (isNaN(num) || num <= 0) return '-'; const hours = Math.floor(num / 60); const mins = num % 60; return hours > 0 ? `${hours}h${mins > 0 ? ' ' + mins + 'min' : ''}` : `${mins}min`; };
         window.setConfigDefectMode = (mode) => { configDefectMode = mode; renderContent(); };
         
-        window.addDefect = async () => {
-            const code = document.getElementById('new-defect-code').value.trim(), desc = document.getElementById('new-defect-desc').value.trim();
-            if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup(); } 
-            else alert("Preencha código e descrição.");
-        };
-
+        window.addDefect = async () => { const code = document.getElementById('new-defect-code').value.trim(), desc = document.getElementById('new-defect-desc').value.trim(); if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup(); } else alert("Preencha código e descrição."); };
         window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { const isOven = configDefectMode === 'ovens'; const map = isOven ? ovenDefectMap : grinderDefectMap; const seedMap = isOven ? seedOvenDefects : seedGrinderDefects; if (seedMap[code]) map[code] = "[REMOVIDO]"; else delete map[code]; await saveDefectsToFirebase(); } };
         window.updateDefectDesc = async (code, desc) => { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); };
         window.toggleDefectList = (ovenName) => { lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven; const panel = document.getElementById('defect-lookup-panel'); if (panel.style.display === 'flex') panel.style.display = 'none'; else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); } };
@@ -920,32 +1100,13 @@
         window.submitPassword = () => { if (document.getElementById('admin-password').value === "admin321") { window.closePasswordModal(); if (passwordContext === 'config') { window.setViewMode('config'); } else if (passwordContext === 'unlock') { isAdminUnlocked = true; updateDateUI(); renderContent(); } } else document.getElementById('pwd-error').classList.remove('hidden'); };
 
         window.saveConfig = () => {
-            if (!globalConfig.equipments) globalConfig.equipments = {};
-            let hasError = false;
-            
+            if (!globalConfig.equipments) globalConfig.equipments = {}; let hasError = false;
             ovenList.forEach(ov => {
-                if (ov === 'FORNO 1') {
-                    if(!globalConfig.equipments[ov]) globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: 90.0 };
-                    return; 
-                }
-                const safeOv = ov.replace(/\s+/g, '-');
-                const q = parseFloat(document.getElementById(`config-quality-${safeOv}`).value);
-                const b = parseFloat(document.getElementById(`config-breakage-${safeOv}`).value);
-                const u = parseFloat(document.getElementById(`config-util-${safeOv}`).value);
-                
-                if (isNaN(q) || isNaN(b) || isNaN(u)) hasError = true;
-                else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
+                if (ov === 'FORNO 1') { if(!globalConfig.equipments[ov] || globalConfig.equipments[ov].utilization === undefined) { globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: 90.0 }; } return; }
+                const safeOv = ov.replace(/\s+/g, '-'); const q = parseFloat(document.getElementById(`config-quality-${safeOv}`).value); const b = parseFloat(document.getElementById(`config-breakage-${safeOv}`).value); const u = parseFloat(document.getElementById(`config-util-${safeOv}`).value);
+                if (isNaN(q) || isNaN(b) || isNaN(u)) { hasError = true; } else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
             });
-
-            if (!hasError) {
-                globalConfig.minVersion = APP_VERSION; 
-                saveGlobalConfigFirebase();
-                ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; });
-                alert("Metas atualizadas com sucesso!"); 
-                window.setViewMode('single', currentOven || 'FORNO 2');
-            } else {
-                alert("Existem valores inválidos. Verifique os campos.");
-            }
+            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas atualizadas com sucesso!"); window.setViewMode('single', currentOven || 'FORNO 2'); } else { alert("Existem valores inválidos. Verifique os campos."); }
         };
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
@@ -959,31 +1120,11 @@
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Metas por Equipamento</h3>
                     <div class="p-2 bg-white rounded mb-4 border border-gray-300 shadow-sm overflow-x-auto">
                         <table class="w-full text-sm text-center border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 text-gray-700">
-                                    <th class="p-2 border border-gray-300 font-bold">Máquina</th>
-                                    <th class="p-2 border border-gray-300 font-bold">Qualidade (%)</th>
-                                    <th class="p-2 border border-gray-300 font-bold">Quebra (%)</th>
-                                    <th class="p-2 border border-gray-300 font-bold">Utilização (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${ovenList.filter(o => o !== 'FORNO 1').map(ov => {
-                                    const safeOv = ov.replace(/\s+/g, '-');
-                                    const t = window.getTargets(ov);
-                                    return `
-                                    <tr>
-                                        <td class="p-2 border border-gray-300 font-bold text-gray-700 bg-gray-50 uppercase text-xs">${ov}</td>
-                                        <td class="p-1 border border-gray-300 bg-blue-50/30"><input type="number" step="0.1" id="config-quality-${safeOv}" class="w-full text-center font-bold text-blue-700 bg-transparent outline-none" value="${t.quality}"></td>
-                                        <td class="p-1 border border-gray-300 bg-red-50/30"><input type="number" step="0.1" id="config-breakage-${safeOv}" class="w-full text-center font-bold text-red-700 bg-transparent outline-none" value="${t.breakage}"></td>
-                                        <td class="p-1 border border-gray-300 bg-green-50/30"><input type="number" step="0.1" id="config-util-${safeOv}" class="w-full text-center font-bold text-green-700 bg-transparent outline-none" value="${t.utilization}"></td>
-                                    </tr>`;
-                                }).join('')}
-                            </tbody>
+                            <thead><tr class="bg-gray-100 text-gray-700"><th class="p-2 border border-gray-300 font-bold">Máquina</th><th class="p-2 border border-gray-300 font-bold">Qualidade (%)</th><th class="p-2 border border-gray-300 font-bold">Quebra (%)</th><th class="p-2 border border-gray-300 font-bold">Utilização (%)</th></tr></thead>
+                            <tbody>${ovenList.filter(o => o !== 'FORNO 1').map(ov => { const safeOv = ov.replace(/\s+/g, '-'); const t = window.getTargets(ov); return `<tr><td class="p-2 border border-gray-300 font-bold text-gray-700 bg-gray-50 uppercase text-xs">${ov}</td><td class="p-1 border border-gray-300 bg-blue-50/30"><input type="number" step="0.1" id="config-quality-${safeOv}" class="w-full text-center font-bold text-blue-700 bg-transparent outline-none" value="${t.quality}"></td><td class="p-1 border border-gray-300 bg-red-50/30"><input type="number" step="0.1" id="config-breakage-${safeOv}" class="w-full text-center font-bold text-red-700 bg-transparent outline-none" value="${t.breakage}"></td><td class="p-1 border border-gray-300 bg-green-50/30"><input type="number" step="0.1" id="config-util-${safeOv}" class="w-full text-center font-bold text-green-700 bg-transparent outline-none" value="${t.utilization}"></td></tr>`; }).join('')}</tbody>
                         </table>
                     </div>
                     <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Novas Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
-                    
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
                     <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button></div>
@@ -998,74 +1139,28 @@
 
         const generateSubColumnHTML = (oven, row, type, dataArray, locked, lockedClass) => {
             const safeOven = oven.replace(/\s+/g, '-');
-            return dataArray.map((item, i) => `
-            <div class="sub-row relative">
-                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)">
-                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)">
-                <input type="text" id="input-${safeOven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)">
-            </div>`).join('');
+            return dataArray.map((item, i) => `<div class="sub-row relative"><input type="text" id="input-${safeOven}-${row}-${type}-${i}-cod" class="input-cod ${lockedClass}" placeholder="Cd" value="${item.cod || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'cod', this.value)"><input type="text" id="input-${safeOven}-${row}-${type}-${i}-desc" class="${item.cod === '99' && !locked ? 'input-desc input-desc-editable' : 'input-desc'} ${lockedClass}" ${locked || item.cod !== '99' ? 'readonly' : ''} value="${item.desc || ''}" tabindex="-1" oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'desc', this.value)"><input type="text" id="input-${safeOven}-${row}-${type}-${i}-val" class="input-val ${lockedClass}" placeholder="%" inputmode="decimal" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateSubStruct('${oven}', ${row}, '${type}', ${i}, 'val', this.value)"></div>`).join('');
         };
 
         const generateClosingRow = (ovenName, closingIndex, data, locked, lockedClass) => {
             const cd = data.closing && data.closing[closingIndex] ? data.closing[closingIndex] : { prod: '', quebra: '' };
             const safeOven = ovenName.replace(/\s+/g, '-'); const isRetifica = ovenName.includes('RETÍFICA'); const colSpan = isRetifica ? 5 : 6;
-            
             let tempoCellContent = '';
             if (closingIndex === 2) {
-                 tempoCellContent = `
-                    <div class="flex flex-col h-full w-full justify-center rounded-sm overflow-hidden border border-gray-400">
-                        <div class="flex flex-col items-center justify-center bg-gray-50 flex-1 py-[2px]">
-                            <span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span>
-                            <div class="flex items-center gap-1">
-                                <span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span>
-                                <span class="text-gray-300 text-[0.55rem] font-black">|</span>
-                                <span id="util-tempoVazio-${safeOven}-2-turno"></span>
-                            </div>
-                        </div>
-                        <div class="w-full border-t border-gray-300"></div>
-                        <div class="flex flex-col items-center justify-center bg-blue-50 flex-1 py-[2px]">
-                            <span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Dia</span>
-                            <div class="flex items-center gap-1">
-                                <span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.65rem] text-blue-900 leading-none">-</span>
-                                <span class="text-blue-200 text-[0.55rem] font-black">|</span>
-                                <span id="util-tempoVazio-${safeOven}-2-dia"></span>
-                            </div>
-                        </div>
-                    </div>`;
+                 tempoCellContent = `<div class="flex flex-col h-full w-full justify-center rounded-sm overflow-hidden border border-gray-400"><div class="flex flex-col items-center justify-center bg-gray-50 flex-1 py-[2px]"><span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span><div class="flex items-center gap-1"><span id="sum-tempoVazio-${safeOven}-2-turno" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span><span class="text-gray-300 text-[0.55rem] font-black">|</span><span id="util-tempoVazio-${safeOven}-2-turno"></span></div></div><div class="w-full border-t border-gray-300"></div><div class="flex flex-col items-center justify-center bg-blue-50 flex-1 py-[2px]"><span class="font-bold text-blue-800 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Dia</span><div class="flex items-center gap-1"><span id="sum-tempoVazio-${safeOven}-2-dia" class="font-black text-[0.65rem] text-blue-900 leading-none">-</span><span class="text-blue-200 text-[0.55rem] font-black">|</span><span id="util-tempoVazio-${safeOven}-2-dia"></span></div></div></div>`;
             } else {
-                 tempoCellContent = `
-                    <div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-gray-50 rounded-sm m-[2px] border border-gray-300 shadow-sm">
-                        <span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span>
-                        <div class="flex items-center gap-1">
-                            <span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span>
-                            <span class="text-gray-300 text-[0.55rem] font-black">|</span>
-                            <span id="util-tempoVazio-${safeOven}-${closingIndex}"></span>
-                        </div>
-                    </div>`;
+                 tempoCellContent = `<div class="flex flex-col h-full justify-center items-center text-gray-800 text-[0.6rem] leading-tight bg-gray-50 rounded-sm m-[2px] border border-gray-300 shadow-sm"><span class="font-bold text-gray-600 uppercase tracking-tighter text-[0.45rem] leading-none mb-[1px]">Total Turno</span><div class="flex items-center gap-1"><span id="sum-tempoVazio-${safeOven}-${closingIndex}" class="font-black text-[0.65rem] text-gray-800 leading-none">-</span><span class="text-gray-300 text-[0.55rem] font-black">|</span><span id="util-tempoVazio-${safeOven}-${closingIndex}"></span></div></div>`;
             }
-
-            return `<tr class="bg-gray-dark-custom h-auto border-t border-b border-black">
-                        <td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td>
-                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td>
-                        <td class="border-black bg-gray-300 p-[2px] w-[200px] min-w-[200px] shadow-inner">
-                            ${tempoCellContent}
-                        </td>
-                    </tr>`;
+            return `<tr class="bg-gray-dark-custom h-auto border-t border-b border-black"><td colspan="${colSpan}" class="font-bold text-sm align-middle border-r border-black">Fechamento do Turno</td><td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Produção</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.prod || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'prod', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td><td class="border-r border-black p-0"><div class="flex justify-between items-center px-2 h-full py-1"><span class="text-[0.65rem] font-bold mr-1">Vol Quebra</span><div class="flex bg-white/50 rounded px-1"><input type="text" inputmode="decimal" class="w-20 text-right font-bold text-xs bg-transparent ${lockedClass}" value="${cd.quebra || ''}" ${locked ? 'readonly' : ''} oninput="window.syncClosing('${ovenName}', ${closingIndex}, 'quebra', this.value)"><span class="text-[0.6rem] font-bold ml-1">m²</span></div></div></td><td class="border-black bg-gray-300 p-[2px] w-[200px] min-w-[200px] shadow-inner">${tempoCellContent}</td></tr>`;
         };
 
         const generateOvenHTML = (ovenName) => {
-            const data = ovenDataStore[ovenName];
-            const safeOven = ovenName.replace(/\s+/g, '-');
-            let rowsHTML = '';
-            const isRetifica = ovenName.includes('RETÍFICA');
-            const currentSchedule = isRetifica ? scheduleGrinders : scheduleOvens;
-            const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Parado' : 'Tempo de Forno Vazio';
-
-            const locked = isDateLocked(); const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : '';
-            const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : '';
-            const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
-            const activeTargets = data.targets || window.getTargets(ovenName);
+            const data = ovenDataStore[ovenName]; const safeOven = ovenName.replace(/\s+/g, '-'); let rowsHTML = '';
+            const isRetifica = ovenName.includes('RETÍFICA'); const currentSchedule = isRetifica ? scheduleGrinders : scheduleOvens; const tempoVazioTitle = isRetifica ? 'Tempo de Equip. Parado' : 'Tempo de Forno Vazio';
+            const locked = isDateLocked(); const lockedClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50' : ''; const selectClass = locked ? 'cursor-not-allowed opacity-70 text-gray-600 bg-gray-50 pointer-events-none' : ''; const attrReadonly = locked ? 'readonly' : ''; const attrDisabled = locked ? 'disabled' : '';
+            const baseTargets = window.getTargets(ovenName); const activeTargets = { quality: data.targets?.quality !== undefined ? data.targets.quality : baseTargets.quality, breakage: data.targets?.breakage !== undefined ? data.targets.breakage : baseTargets.breakage, utilization: data.targets?.utilization !== undefined ? data.targets.utilization : baseTargets.utilization };
+            const isPres = viewMode === 'presentation';
+            const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 
             currentSchedule.forEach((item, index) => {
                 const rowData = data.rows[index]; const rowBg = index % 2 !== 0 ? 'bg-gray-custom' : '';
@@ -1077,121 +1172,66 @@
                         <td class="font-bold border-black text-sm p-0">${item.time}<span class="shift-stamp">${item.shift}</span></td>
                         <td class="border-black"><input type="text" id="input-${safeOven}-${index}-ref" class="${refClasses}" ${attrReadonly} list="ref-suggestions" value="${rowData.ref || ''}" oninput="window.syncData('${ovenName}', ${index}, 'ref', this.value); window.sugerirReferencia(this, '${ovenName}')"></td>
                         ${isRetifica ? '' : `<td class="border-black"><select id="select-${safeOven}-${index}-turno" class="text-gray-700 font-medium nav-input ${selectClass}" ${attrDisabled} onchange="window.syncData('${ovenName}', ${index}, 'turno', this.value)"><option value="" ${rowData.turno === '' ? 'selected' : ''}>-</option><option value="A" ${rowData.turno === 'A' ? 'selected' : ''}>A</option><option value="B" ${rowData.turno === 'B' ? 'selected' : ''}>B</option><option value="C" ${rowData.turno === 'C' ? 'selected' : ''}>C</option><option value="A/B" ${rowData.turno === 'A/B' ? 'selected' : ''}>A/B</option><option value="B/C" ${rowData.turno === 'B/C' ? 'selected' : ''}>B/C</option><option value="C/A" ${rowData.turno === 'C/A' ? 'selected' : ''}>C/A</option></select></td>`}
-                        
-                        <td class="border-black p-0 align-middle">
-                            <div class="flex flex-col h-full w-full justify-center items-center">
-                                <input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="w-full text-center border-none bg-transparent outline-none flex-grow ${lockedClass}" ${attrReadonly} value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')" style="min-height: 20px; font-size: 1rem;">
-                                <span id="proj-${safeOven}-${index}-vol" class="empty:hidden text-[0.65rem] font-black tracking-tighter pb-[2px]"></span>
-                            </div>
-                        </td>
-
+                        <td class="border-black p-0 align-middle"><div class="flex flex-col h-full w-full justify-center items-center"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-vol" class="w-full text-center border-none bg-transparent outline-none flex-grow ${lockedClass}" ${attrReadonly} value="${rowData.vol || ''}" oninput="window.syncData('${ovenName}', ${index}, 'vol', this.value); window.runCalcs('${ovenName}')" style="min-height: 20px; font-size: 1rem;"><span id="proj-${safeOven}-${index}-vol" class="empty:hidden text-[0.65rem] font-black tracking-tighter pb-[2px]"></span></div></td>
                         <td class="border-black"><input type="text" inputmode="decimal" id="input-${safeOven}-${index}-qHora" class="input-quali-hora nav-input ${lockedClass}" ${attrReadonly} value="${rowData.qHora || ''}" oninput="window.syncData('${ovenName}', ${index}, 'qHora', this.value); window.runCalcs('${ovenName}')"></td>
-                        
-                        <td class="border-black p-0 align-middle">
-                            <div class="flex flex-col h-full w-full justify-center items-center">
-                                <input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow" readonly placeholder="0.00" style="min-height: 20px; font-size: 1rem;">
-                                <span id="proj-${safeOven}-${index}-qAcum" class="empty:hidden text-[0.65rem] font-black tracking-tighter pb-[2px]"></span>
-                            </div>
-                        </td>
-
+                        <td class="border-black p-0 align-middle"><div class="flex flex-col h-full w-full justify-center items-center"><input type="text" id="input-${safeOven}-${index}-qAcum" class="input-quali-acum w-full text-center border-none bg-transparent outline-none flex-grow" readonly placeholder="0.00" style="min-height: 20px; font-size: 1rem;"><span id="proj-${safeOven}-${index}-qAcum" class="empty:hidden text-[0.65rem] font-black tracking-tighter pb-[2px]"></span></div></td>
                         <td class="border-black p-0 w-[180px] min-w-[180px]"><div class="flex flex-col">${generateSubColumnHTML(ovenName, index, 'defects', rowData.defects, locked, lockedClass)}</div></td>
-                        <td class="border-black p-0 w-[230px] min-w-[230px]">
-                            <div class="flex h-full">
-                                <div class="flex flex-col flex-grow">
-                                    ${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}
-                                </div>
-                                <div class="quebra-total-box">
-                                    <div class="quebra-total-header uppercase">Total</div>
-                                    <div class="flex-grow flex flex-col items-center justify-center">
-                                        <span class="font-bold text-xs" id="total-${ovenName}-${index}">0,00</span>
-                                        <span id="proj-${safeOven}-${index}-quebra" class="empty:hidden text-[0.6rem] font-black tracking-tighter leading-none pb-[2px]"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="border-black p-0 w-[200px] min-w-[200px]">
-                            <div class="flex flex-col h-full bg-white">
-                                ${rowData.paradas.map((item, i) => `
-                                <div class="sub-row relative">
-                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-desc" class="input-desc flex-grow ${lockedClass}" placeholder="Motivo" value="${item.desc || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'desc', this.value)">
-                                    <input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val shrink-0 ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)">
-                                </div>`).join('')}
-                                <div class="bg-gray-100 flex flex-row items-center justify-center gap-1 border-t border-gray-200 h-[1.4rem] shrink-0">
-                                    <span id="total-parada-${safeOven}-${index}" class="text-[0.6rem] font-bold text-gray-500">0m</span>
-                                    <span class="text-gray-400 text-[0.5rem] font-black">|</span>
-                                    <span id="util-parada-${safeOven}-${index}"></span>
-                                </div>
-                            </div>
-                        </td>
+                        <td class="border-black p-0 w-[230px] min-w-[230px]"><div class="flex h-full"><div class="flex flex-col flex-grow">${generateSubColumnHTML(ovenName, index, 'quebras', rowData.quebras, locked, lockedClass)}</div><div class="quebra-total-box"><div class="quebra-total-header uppercase">Total</div><div class="flex-grow flex flex-col items-center justify-center"><span class="font-bold text-xs" id="total-${ovenName}-${index}">0,00</span><span id="proj-${safeOven}-${index}-quebra" class="empty:hidden text-[0.6rem] font-black tracking-tighter leading-none pb-[2px]"></span></div></div></div></td>
+                        <td class="border-black p-0 w-[200px] min-w-[200px]"><div class="flex flex-col h-full bg-white">${rowData.paradas.map((item, i) => `<div class="sub-row relative"><input type="text" id="input-${safeOven}-${index}-paradas-${i}-desc" class="input-desc flex-grow ${lockedClass}" placeholder="Motivo" value="${item.desc || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'desc', this.value)"><input type="text" id="input-${safeOven}-${index}-paradas-${i}-val" class="input-val shrink-0 ${lockedClass}" placeholder="min" inputmode="numeric" value="${item.val || ''}" ${locked ? 'readonly' : ''} oninput="window.updateParada('${ovenName}', ${index}, ${i}, 'val', this.value)"></div>`).join('')}<div class="bg-gray-100 flex flex-row items-center justify-center gap-1 border-t border-gray-200 h-[1.4rem] shrink-0"><span id="total-parada-${safeOven}-${index}" class="text-[0.6rem] font-bold text-gray-500">0m</span><span class="text-gray-400 text-[0.5rem] font-black">|</span><span id="util-parada-${safeOven}-${index}"></span></div></div></td>
                     </tr>`;
                 if (index === 3 || index === 7 || index === 11) rowsHTML += generateClosingRow(ovenName, index === 3 ? 0 : index === 7 ? 1 : 2, data, locked, lockedClass);
             });
 
-            return `
-                <div class="bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden">
-                    <div class="flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2">
-                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil">
-                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
-                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+            const mainDivClass = isPres ? "bg-white shadow-lg border-t border-black rounded-b-lg flex flex-col w-full h-full overflow-hidden" : "bg-white shadow-lg border-t border-black rounded-b-lg overflow-hidden";
+            
+            let headerHTML = '';
+            if (isPres) {
+                headerHTML = `
+                    <div class="flex flex-col items-center justify-center bg-white border-b-[6px] border-red-600 pb-3 pt-4 shrink-0 sticky top-0 z-[60] shadow-sm w-full relative">
+                        <div class="absolute left-8 top-1/2 transform -translate-y-1/2 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.8rem; line-height: 0.85;">MOHAWK</span>
+                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.7rem; line-height: 1; margin-top: 4px;">BRASIL</span>
                         </div>
                         
-                        <div class="flex flex-col items-center flex-grow">
-                            <div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center">
-                                Acompanhamento - ${ovenName}
-                            </div>
-                            
-                            <div class="flex gap-3 text-[0.65rem] font-black mt-1 bg-white px-3 py-[2px] rounded-full shadow-sm border border-gray-200">
-                                <span class="text-gray-500 uppercase tracking-wider text-[0.55rem] pt-[2px]">Metas da Máquina:</span>
-                                <span class="text-blue-600">Qualid: ${activeTargets.quality}%</span>
-                                <span class="text-red-600">Quebra: ${activeTargets.breakage}%</span>
-                                <span class="text-green-600">Utiliz: ${activeTargets.utilization}%</span>
-                            </div>
-                        </div>
+                        <h1 class="text-7xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-sm uppercase leading-none" style="font-family: Arial, sans-serif; letter-spacing: -0.05em;">${ovenName}</h1>
+                        <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2 mb-2">Acompanhamento de Produção</h2>
                         
-                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Unidade SC 2">
-                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">SC</span>
-                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 2px;">2</span>
+                        <div class="flex gap-6 text-sm font-black mt-1 bg-gray-50 px-6 py-1.5 rounded-full border border-gray-200 shadow-inner">
+                            <span class="text-gray-500 uppercase tracking-widest">Metas:</span>
+                            <span class="text-blue-700">Qualidade: <span class="text-lg">${activeTargets.quality}%</span></span>
+                            <span class="text-red-700">Quebra: <span class="text-lg">${activeTargets.breakage}%</span></span>
+                            <span class="text-green-700">Utilização: <span class="text-lg">${activeTargets.utilization}%</span></span>
+                        </div>
+
+                        <div class="absolute right-8 top-6 bg-white border-2 border-blue-400 text-blue-700 font-black px-4 py-2 rounded-2xl text-3xl tracking-widest shadow-sm">
+                            ${currentTimeStr}
                         </div>
                     </div>
-                    
-                    <div class="table-responsive-wrapper">
-                        <table class="w-full min-w-[1250px]">
-                            <thead>
-                                <tr class="bg-white font-bold uppercase text-[0.6rem]">
-                                    <th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white">
-                                        <div class="flex justify-center items-center gap-1">
-                                            <span>Nominal do Equip. (m²/dia):</span>
-                                            <input type="text" inputmode="decimal" class="border border-gray-300 rounded px-1 font-bold text-blue-700 h-5 w-20 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.nominal || ''}" oninput="window.syncNominal('${ovenName}', this.value); window.runCalcs('${ovenName}')">
-                                        </div>
-                                    </th>
-                                    <th colspan="3" class="border-b border-black p-1 bg-white">
-                                        <div class="flex justify-center items-center gap-1">
-                                            ${isRetifica ? 
-                                                `<span>Bitola:</span><input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">`
-                                                :
-                                                `<span>Linha:</span><select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`
-                                            }
-                                        </div>
-                                    </th>
-                                </tr>
-                                
-                                <tr class="header-blue font-bold text-xs leading-tight bg-gray-50">
-                                    <th rowspan="2" class="w-14 align-middle border-black">Hora</th>
-                                    <th rowspan="2" class="${isRetifica ? 'w-60' : 'w-48'} align-middle border-black">Referência</th>
-                                    ${isRetifica ? '' : '<th rowspan="2" class="w-12 align-middle border-black">Turno</th>'}
-                                    <th rowspan="2" class="w-20 align-middle border-black">Volume</th>
-                                    <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Hora (%)</th>
-                                    <th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Acumulada (%)</th>
-                                    
-                                    <th class="w-[180px] min-w-[180px] p-0 border-b border-black"><div class="text-center py-[4px]">Defeitos</div></th>
-                                    <th class="w-[230px] min-w-[230px] text-red-600 p-0 border-b border-black"><div class="text-center py-[4px]">Quebra</div></th>
-                                    <th class="w-[200px] min-w-[200px] text-gray-700 bg-gray-100 p-0 border-b border-black"><div class="text-center py-[4px]">${tempoVazioTitle}</div></th>
-                                </tr>
-                                <tr class="header-blue">
-                                    <th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb] font-bold text-[0.6rem]"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div></th>
-                                    <th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb]"><div class="flex-grow flex font-bold text-[0.6rem] text-red-600"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div><div class="w-[50px] shrink-0 border-l border-[#999] flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th>
-                                    <th class="p-0 border-black border-t-0 align-middle bg-gray-100"><div class="flex w-full h-full font-bold text-[0.6rem] text-gray-700"><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Motivo</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">min</span></div></th>
-                                </tr>
+                `;
+            } else {
+                const equipHeaderClass = "flex justify-between items-center bg-gray-50 border-b border-black px-4 py-2";
+                headerHTML = `
+                    <div class="${equipHeaderClass}">
+                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Logo Mohawk Brasil"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span></div>
+                        <div class="flex flex-col items-center flex-grow"><div class="text-xl font-bold uppercase text-gray-800 tracking-wide text-center">Acompanhamento - ${ovenName}</div><div class="flex gap-3 text-[0.65rem] font-black mt-1 bg-white px-3 py-[2px] rounded-full shadow-sm border border-gray-200"><span class="text-gray-500 uppercase tracking-wider text-[0.55rem] pt-[2px]">Metas da Máquina:</span><span class="text-blue-600">Qualid: ${activeTargets.quality}%</span><span class="text-red-600">Quebra: ${activeTargets.breakage}%</span><span class="text-green-600">Utiliz: ${activeTargets.utilization}%</span></div></div>
+                        <div class="flex flex-col items-center justify-center select-none w-[100px]" aria-label="Unidade SC 2"><span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">SC</span><span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 2px;">2</span></div>
+                    </div>
+                `;
+            }
+
+            const wrapperClass = isPres ? "table-responsive-wrapper flex-grow overflow-y-auto flex flex-col" : "table-responsive-wrapper";
+            const theadClass = isPres ? "sticky top-0 z-50 shadow-[0_2px_0_0_black]" : "";
+            const tableClass = isPres ? "w-full min-w-[1250px] relative h-full flex-grow" : "w-full min-w-[1250px] relative";
+
+            return `
+                <div class="${mainDivClass}">
+                    ${headerHTML}
+                    <div class="${wrapperClass}">
+                        <table class="${tableClass}">
+                            <thead class="${theadClass}">
+                                <tr class="bg-white font-bold uppercase text-[0.6rem]"><th colspan="${isRetifica ? 5 : 6}" class="border-b border-r border-black p-1 bg-white"><div class="flex justify-center items-center gap-1"><span>Nominal do Equip. (m²/dia):</span><input type="text" inputmode="decimal" class="border border-gray-300 rounded px-1 font-bold text-blue-700 h-5 w-20 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.nominal || ''}" oninput="window.syncNominal('${ovenName}', this.value); window.runCalcs('${ovenName}')"></div></th><th colspan="3" class="border-b border-black p-1 bg-white"><div class="flex justify-center items-center gap-1">${isRetifica ? `<span>Bitola:</span><input type="text" class="border border-gray-300 rounded px-1 font-bold text-red-600 h-5 w-32 text-center focus:bg-yellow-100 ${lockedClass}" ${attrReadonly} value="${data.linha || ''}" placeholder="Ex: 80x80" oninput="window.syncLinha('${ovenName}', this.value)">` : `<span>Linha:</span><select onchange="window.syncLinha('${ovenName}', this.value)" class="border border-gray-300 rounded px-1 font-normal text-red-600 h-5 w-12 ${selectClass}" ${attrDisabled}><option value="">-</option><option value="1" ${data.linha === '1' ? 'selected' : ''}>1</option><option value="2" ${data.linha === '2' ? 'selected' : ''}>2</option><option value="4" ${data.linha === '4' ? 'selected' : ''}>4</option><option value="5" ${data.linha === '5' ? 'selected' : ''}>5</option><option value="6" ${data.linha === '6' ? 'selected' : ''}>6</option></select>`}</div></th></tr>
+                                <tr class="header-blue font-bold text-xs leading-tight bg-gray-50"><th rowspan="2" class="w-14 align-middle border-black">Hora</th><th rowspan="2" class="${isRetifica ? 'w-60' : 'w-48'} align-middle border-black">Referência</th>${isRetifica ? '' : '<th rowspan="2" class="w-12 align-middle border-black">Turno</th>'}<th rowspan="2" class="w-20 align-middle border-black">Volume</th><th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Hora (%)</th><th rowspan="2" class="w-24 align-middle border-black px-1">Qualidade Acumulada (%)</th><th class="w-[180px] min-w-[180px] p-0 border-b border-black"><div class="text-center py-[4px]">Defeitos</div></th><th class="w-[230px] min-w-[230px] text-red-600 p-0 border-b border-black"><div class="text-center py-[4px]">Quebra</div></th><th class="w-[200px] min-w-[200px] text-gray-700 bg-gray-100 p-0 border-b border-black"><div class="text-center py-[4px]">${tempoVazioTitle}</div></th></tr>
+                                <tr class="header-blue"><th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb] font-bold text-[0.6rem]"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div></th><th class="p-0 border-black border-t-0 align-middle"><div class="flex w-full h-full bg-[#e5e7eb]"><div class="flex-grow flex font-bold text-[0.6rem] text-red-600"><span class="w-[30px] shrink-0 border-r border-[#ccc] flex items-center justify-center py-[3px]">Cód</span><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Descrição</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">%</span></div><div class="w-[50px] shrink-0 border-l border-[#999] flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300 search-trigger" onclick="window.toggleDefectList('${ovenName}')" title="Lista de Defeitos">🔍</div></div></th><th class="p-0 border-black border-t-0 align-middle bg-gray-100"><div class="flex w-full h-full font-bold text-[0.6rem] text-gray-700"><span class="flex-grow border-r border-[#ccc] flex items-center justify-center py-[3px]">Motivo</span><span class="w-[40px] shrink-0 flex items-center justify-center py-[3px]">min</span></div></th></tr>
                             </thead>
                             <tbody>${rowsHTML}</tbody>
                         </table>
@@ -1200,31 +1240,29 @@
         };
         
         const renderContent = () => {
-            // Se estivermos em modo de apresentação, interceptamos o render e atualizamos o carrossel (para dados em tempo real)
-            if (viewMode === 'presentation') {
-                window.renderPresentationScreen();
-                return;
-            }
-
-            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null;
-            if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
+            if (viewMode === 'presentation') { window.renderPresentationScreen(); return; }
+            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null; if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
             const mainContent = document.getElementById('main-content');
+            
             if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
-            if (viewMode === 'config') mainContent.innerHTML = generateConfigHTML(); else { mainContent.innerHTML = generateOvenHTML(currentOven); window.attachCalculations(currentOven); }
+            
+            if (viewMode === 'config') {
+                mainContent.innerHTML = generateConfigHTML(); 
+            } else if (viewMode === 'dashboard') {
+                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full flex justify-center items-start">${window.generateDashboardHTML()}</div>`;
+            } else { 
+                mainContent.innerHTML = generateOvenHTML(currentOven); 
+                window.attachCalculations(currentOven); 
+            }
+            
             if (focusedId && isDataLoaded) { const el = document.getElementById(focusedId); if(el) { el.focus(); try{el.setSelectionRange(cursorStart, cursorEnd)}catch(e){} } }
         };
 
         const init = async () => {
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); renderContent();
-            
             setInterval(() => { const now = new Date(); if (now.getDate() !== lastKnownDay) { const oldDate = new Date(selectedDate); lastKnownDay = now.getDate(); selectedDate = now; isAdminUnlocked = false; updateDateUI(); if (isDataLoaded && db) { window.runManualBackup(oldDate, true); } window.setupRealtimeListener(); return; } }, 60000);
-
-            if(auth) {
-                try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {}
-                onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } });
-            }
-
+            if(auth) { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {} onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } }); }
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return; e.preventDefault();
@@ -1234,10 +1272,7 @@
                         const [_, oven, rowStr, type, idxStr, field] = subMatch; const row = parseInt(rowStr), idx = parseInt(idxStr);
                         if (field === 'cod') { const descInput = document.getElementById(`input-${oven}-${row}-${type}-${idx}-desc`); if (descInput && !descInput.hasAttribute('readonly')) descInput.focus(); else document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus(); } 
                         else if (field === 'desc') { document.getElementById(`input-${oven}-${row}-${type}-${idx}-val`)?.focus(); } 
-                        else if (field === 'val') {
-                            if (type === 'paradas') { if (idx < 2) document.getElementById(`input-${oven}-${row}-paradas-${idx+1}-desc`)?.focus(); else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus(); } 
-                            else { if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus(); else { if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus(); else if (type === 'quebras') document.getElementById(`input-${oven}-${row}-paradas-0-desc`)?.focus(); } }
-                        }
+                        else if (field === 'val') { if (type === 'paradas') { if (idx < 2) document.getElementById(`input-${oven}-${row}-paradas-${idx+1}-desc`)?.focus(); else if (row < 11) document.getElementById(`input-${oven.replace(/\s+/g, '-')}-${row+1}-ref`)?.focus(); } else { if (idx < 3) document.getElementById(`input-${oven}-${row}-${type}-${idx+1}-cod`)?.focus(); else { if (type === 'defects') document.getElementById(`input-${oven}-${row}-quebras-0-cod`)?.focus(); else if (type === 'quebras') document.getElementById(`input-${oven}-${row}-paradas-0-desc`)?.focus(); } } }
                         return;
                     }
                     const inputs = Array.from(document.querySelectorAll('input:not([readonly]):not([disabled]), select:not([disabled])')); const currentIdx = inputs.indexOf(el); if (currentIdx >= 0 && currentIdx < inputs.length - 1) inputs[currentIdx + 1].focus();
