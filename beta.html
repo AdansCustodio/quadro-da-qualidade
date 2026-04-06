@@ -12,6 +12,13 @@
         body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; }
         .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
         
+        /* --- SCROLLBAR PERSONALIZADA E ELEGANTE --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        * { scrollbar-width: thin; scrollbar-color: #9ca3af #f3f4f6; }
+        
         /* --- ESTRUTURA DA TABELA --- */
         table { border-collapse: collapse; width: 100%; transition: all 0.3s ease; }
         th, td { border: 1px solid black; text-align: center; padding: 2px; }
@@ -69,7 +76,7 @@
         
         .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
         
-        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .config-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 800px; margin: 20px auto; border: 1px solid #e5e7eb; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; overflow-y: auto; max-height: 85vh; }
         .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
         
         .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
@@ -211,10 +218,11 @@
     </div>
 
     <!-- MODAL PÓDIO OFENSORES (DRILL-DOWN) -->
-    <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-4 sm:p-10">
-        <div class="bg-gray-200 w-full max-w-[95vw] h-full max-h-[90vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
-            <button onclick="window.closeOffendersModal()" class="absolute top-6 left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-14 h-14 flex items-center justify-center font-black text-2xl z-[7000] shadow-2xl border-4 border-white transition-transform hover:scale-110">✕</button>
-            <div id="offenders-modal-content" class="w-full h-full overflow-hidden rounded-3xl relative flex items-center justify-center"></div>
+    <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
+        <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
+            <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
+            <!-- Alterado para overflow-y-auto -->
+            <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
         </div>
     </div>
 
@@ -256,7 +264,6 @@
             📺 Modo TV
         </button>
 
-        <!-- NOVO BOTÃO DE RESULTADOS -->
         <button onclick="window.setViewMode('dashboard')" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-4 py-2 shadow-md flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase transition-all" id="btn-DASHBOARD">
             📊 Resultados Agora
         </button>
@@ -300,7 +307,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.3; 
+        const APP_VERSION = 5.4; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -503,8 +510,8 @@
 
                 // Configuração Visual do Pódio (1º, 2º e 3º lugares)
                 const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/80 shadow-sm border-l-4 border-current opacity-90', 'bg-white/60 shadow-sm border-l-2 border-current opacity-80'];
-                const textSizes = ['text-2xl xl:text-3xl', 'text-xl xl:text-2xl', 'text-lg xl:text-xl'];
-                const valSizes = ['text-3xl xl:text-4xl', 'text-2xl xl:text-3xl', 'text-xl xl:text-2xl'];
+                const textSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
+                const valSizes = ['text-2xl sm:text-3xl xl:text-4xl', 'text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl'];
                 const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700']; // Dourado, Prateado, Bronze
                 
                 let itemsHtml = offenders.map((off, index) => {
@@ -512,8 +519,8 @@
                     
                     return `
                         <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <span class="text-3xl font-black ${rankColors[index]} drop-shadow-sm w-10 text-center">${index + 1}º</span>
+                            <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">${index + 1}º</span>
                                 <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
                             </div>
                             <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
@@ -545,12 +552,12 @@
                 const topParadas = getTop3Offenders(data, 'paradas');
 
                 return `
-                    <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-8 overflow-hidden h-full">
-                        <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative">
-                            <h1 class="text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
-                            <h2 class="text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
+                    <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-4 sm:p-6 lg:p-8 h-full min-h-[600px] lg:min-h-0">
+                        <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative shrink-0 mt-6 lg:mt-0">
+                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
+                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
                         </div>
-                        <div class="flex-1 flex flex-col gap-6">
+                        <div class="flex-1 flex flex-col gap-4 lg:gap-6 overflow-y-visible">
                             ${renderTop3Card('Maiores Ofensores - Qualidade', topDefects, false, themes.qualidade)}
                             ${renderTop3Card('Maiores Ofensores - Quebra', topQuebras, false, themes.quebra)}
                             ${renderTop3Card('Maiores Motivos de Parada', topParadas, true, themes.parada)}
@@ -559,10 +566,11 @@
                 `;
             });
 
+            // Container principal foi alterado para permitir rolagem vertical em telas menores (flex-col lg:flex-row)
             return `
-                <div class="w-full h-full p-6 flex items-stretch justify-center gap-6 bg-gray-200">
+                <div class="w-full min-h-full p-4 pt-20 sm:pt-6 lg:p-6 flex flex-col lg:flex-row items-stretch justify-center gap-6 bg-gray-200">
                     ${blocks.join('')}
-                    <div class="absolute top-8 right-10 bg-white border-2 border-blue-400 text-blue-700 font-black px-6 py-2 rounded-2xl text-3xl tracking-widest shadow-lg">${currentTimeStr}</div>
+                    <div class="absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-10 bg-white border-2 border-blue-400 text-blue-700 font-black px-4 py-1 sm:px-6 sm:py-2 rounded-2xl text-xl sm:text-2xl lg:text-3xl tracking-widest shadow-lg z-50">${currentTimeStr}</div>
                 </div>
             `;
         };
@@ -678,7 +686,7 @@
                 }
 
                 return `
-                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors">
+                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[140px]">
                         <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
                             <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
                             <span class="text-[0.65rem] sm:text-sm font-black text-indigo-700 mt-1 uppercase text-center w-full px-2 py-1 rounded bg-indigo-50 border border-indigo-200 shadow-sm leading-tight break-words max-w-full" title="${currentRef}">${currentRef}</span>
@@ -698,18 +706,19 @@
 
             const pointerClass = isPres ? 'pointer-events-none' : '';
 
+            // Alterado overflow-hidden para overflow-y-auto no container das linhas HTML
             return `
                 <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
                     <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
-                        <div class="absolute left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                        <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
                             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
                             <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
                         </div>
-                        <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase">DESEMPENHO GERAL DA FÁBRICA (AGORA)</h1>
-                        <div class="absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
+                        <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
+                        <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
                     </div>
                     <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
-                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-hidden">
+                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
                             ${rowsHTML}
                         </div>
                     </div>
