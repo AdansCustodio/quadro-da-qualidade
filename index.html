@@ -173,7 +173,7 @@
                 <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
                     <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
                         <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        Intercalar Telas Top 3 Ofensores e Dash Final
+                        Intercalar Telas Análise Ofensores e Dash Final
                     </label>
                     <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
                         <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
@@ -217,7 +217,7 @@
         <div id="presentation-content"></div>
     </div>
 
-    <!-- MODAL PÓDIO OFENSORES (DRILL-DOWN) -->
+    <!-- MODAL ANÁLISE OFENSORES (DRILL-DOWN) -->
     <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
         <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
             <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
@@ -306,7 +306,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.5; 
+        const APP_VERSION = 5.6; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -391,7 +391,7 @@
             const includeDash = document.getElementById('presentation-include-dash').checked;
             
             if (isNaN(timeInput) || timeInput < 5) { alert('Tempo mínimo por tela é de 5 segundos.'); return; }
-            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para Ofensores/Dashboards é de 5 segundos.'); return; }
+            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para Análise de Ofensores/Dashboards é de 5 segundos.'); return; }
 
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
@@ -502,16 +502,16 @@
                         <div class="flex-1 bg-green-50 rounded-3xl border-4 border-green-300 p-6 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
                             <span class="text-2xl font-black text-green-800 uppercase tracking-widest mb-4 z-10 drop-shadow-sm">${title}</span>
                             <span class="text-5xl font-black text-center text-green-900 leading-tight z-10 drop-shadow-md">MÁQUINA NO VERDE</span>
-                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registo ofensor</span>
+                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registro ofensor</span>
                         </div>
                     `;
                 }
 
-                // Configuração Visual do Pódio (1º, 2º e 3º lugares)
-                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/80 shadow-sm border-l-4 border-current opacity-90', 'bg-white/60 shadow-sm border-l-2 border-current opacity-80'];
-                const textSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
-                const valSizes = ['text-2xl sm:text-3xl xl:text-4xl', 'text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl'];
-                const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700']; // Dourado, Prateado, Bronze
+                // Configuração Visual de Ranking Neutro/Alerta (substitui pódio dourado)
+                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/90 shadow-sm border-l-4 border-current', 'bg-white/80 shadow-sm border-l-2 border-current'];
+                const textSizes = ['text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl', 'text-sm sm:text-base xl:text-lg'];
+                const valSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
+                const rankColors = [theme.title, theme.title, theme.title]; 
                 
                 let itemsHtml = offenders.map((off, index) => {
                     const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
@@ -519,7 +519,7 @@
                     return `
                         <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
                             <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">${index + 1}º</span>
+                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">#${index + 1}</span>
                                 <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
                             </div>
                             <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
@@ -554,7 +554,7 @@
                     <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-4 sm:p-6 lg:p-8 h-full min-h-[600px] lg:min-h-0">
                         <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative shrink-0 mt-6 lg:mt-0">
                             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
-                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
+                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PRINCIPAIS OFENSORES DO DIA</h2>
                         </div>
                         <div class="flex-1 flex flex-col gap-4 lg:gap-6 overflow-y-visible">
                             ${renderTop3Card('Maiores Ofensores - Qualidade', topDefects, false, themes.qualidade)}
@@ -676,11 +676,12 @@
                 
                 let btnOfensoresHTML = '';
                 if (!isPres) {
+                    // Ícone alterado de Troféu para Lupa/Alerta, tirando a conotação de "prémio"
                     btnOfensoresHTML = `
                         <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
                             <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
-                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">🏆</span>
-                                <span class="whitespace-nowrap text-center leading-none">Ver<br>Ofensores</span>
+                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">⚠️</span>
+                                <span class="whitespace-nowrap text-center leading-none">Análise<br>Ofensores</span>
                             </button>
                         </div>
                     `;
