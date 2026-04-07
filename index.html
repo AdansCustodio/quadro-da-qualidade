@@ -306,7 +306,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.6; 
+        const APP_VERSION = 5.7; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -419,6 +419,10 @@
             presentationConfig.screens = screens;
             currentPresentationIndex = 0;
 
+            // SALVA A CONFIGURAÇÃO PARA O MODO TV CONTINUAR APÓS REFRESH
+            localStorage.setItem('presentationConfig', JSON.stringify(presentationConfig));
+            localStorage.setItem('isPresentationActive', 'true');
+
             window.closePresentationSetup();
             window.setViewMode('presentation'); 
             document.getElementById('presentation-mode-container').style.display = 'flex';
@@ -450,7 +454,13 @@
             }, currentInterval * 1000);
         };
 
-        window.stopPresentation = () => { clearTimeout(presentationIntervalObj); document.getElementById('presentation-mode-container').style.display = 'none'; document.body.classList.remove('presentation-active'); window.setViewMode('single', currentOven); };
+        window.stopPresentation = () => { 
+            clearTimeout(presentationIntervalObj); 
+            localStorage.removeItem('isPresentationActive'); // LIMPA O ESTADO
+            document.getElementById('presentation-mode-container').style.display = 'none'; 
+            document.body.classList.remove('presentation-active'); 
+            window.setViewMode('single', currentOven); 
+        };
 
         // --- LÓGICA DO MODAL DOS OFENSORES (DRILL-DOWN) ---
         window.openOffendersModal = (ovenName) => {
@@ -676,7 +686,7 @@
                 
                 let btnOfensoresHTML = '';
                 if (!isPres) {
-                    // Ícone alterado de Troféu para Lupa/Alerta, tirando a conotação de "prémio"
+                    // Ícone alterado de Troféu para Lupa/Alerta, tirando a conotação de "prêmio"
                     btnOfensoresHTML = `
                         <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
                             <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
@@ -809,7 +819,7 @@
         const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
         window.handleLockClick = () => { const diffDays = getDiffDays(); if (diffDays > 3) { if (!isAdminUnlocked) window.openPasswordModal('unlock'); else { isAdminUnlocked = false; updateDateUI(); renderContent(); } } };
 
-        window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todos os ecrãs a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
+        window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todas as telas a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
 
         const setupRefreshListener = () => { if (!db) return; unsubscribeRefresh = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), (docSnap) => { if (docSnap.exists() && docSnap.data().timestamp > appLoadTime + 2000) window.location.reload(true); }); };
 
@@ -1130,7 +1140,7 @@
                     <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Novas Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
-                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button></div>
+                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
@@ -1263,9 +1273,31 @@
 
         const init = async () => {
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
-            resetStore(); updateDateUI(); renderContent();
+            resetStore(); updateDateUI(); 
+
+            // --- AUTO-RESUME MODO TV APÓS REFRESH ---
+            const isPresActive = localStorage.getItem('isPresentationActive') === 'true';
+            if (isPresActive) {
+                const savedConfig = localStorage.getItem('presentationConfig');
+                if (savedConfig) {
+                    try {
+                        presentationConfig = JSON.parse(savedConfig);
+                        viewMode = 'presentation';
+                        currentPresentationIndex = 0;
+                        document.getElementById('presentation-mode-container').style.display = 'flex';
+                        document.body.classList.add('presentation-active');
+                        window.startPresentationCycle();
+                    } catch(e) {
+                         localStorage.removeItem('isPresentationActive');
+                    }
+                }
+            }
+
+            renderContent();
+            
             setInterval(() => { const now = new Date(); if (now.getDate() !== lastKnownDay) { const oldDate = new Date(selectedDate); lastKnownDay = now.getDate(); selectedDate = now; isAdminUnlocked = false; updateDateUI(); if (isDataLoaded && db) { window.runManualBackup(oldDate, true); } window.setupRealtimeListener(); return; } }, 60000);
             if(auth) { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {} onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } }); }
+            
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return; e.preventDefault();
