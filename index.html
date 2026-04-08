@@ -208,9 +208,14 @@
 
     <!-- MODO APRESENTAÇÃO - CONTAINER -->
     <div id="presentation-mode-container">
-        <div class="w-full bg-gray-300 h-2 absolute top-0 z-50 shadow">
-            <div id="presentation-progress" class="h-full bg-indigo-600 w-0 transition-all ease-linear shadow-lg"></div>
+        <!-- Relógio Circular APENAS PREENCHIMENTO -->
+        <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
+            <svg viewBox="0 0 100 100" class="w-12 h-12 transform -rotate-90">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" />
+                <circle id="presentation-timer-circle" cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
         </div>
+
         <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
             ❌ Sair do Modo TV (ESC)
         </button>
@@ -306,7 +311,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.7; 
+        const APP_VERSION = 5.9; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -354,7 +359,6 @@
         // --- MODO APRESENTAÇÃO ---
         let presentationConfig = { interval: 15, dashInterval: 30, screens: [] };
         let presentationIntervalObj = null;
-        let progressIntervalObj = null;
         let currentPresentationIndex = 0;
 
         let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION };
@@ -396,7 +400,6 @@
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
             
-            // Lógica de Intercalação
             rows.forEach(row => {
                 const eq1 = row.querySelector('.equip-select-1').value;
                 const eq2 = row.querySelector('.equip-select-2').value;
@@ -419,7 +422,6 @@
             presentationConfig.screens = screens;
             currentPresentationIndex = 0;
 
-            // SALVA A CONFIGURAÇÃO PARA O MODO TV CONTINUAR APÓS REFRESH
             localStorage.setItem('presentationConfig', JSON.stringify(presentationConfig));
             localStorage.setItem('isPresentationActive', 'true');
 
@@ -433,20 +435,25 @@
 
         window.startPresentationCycle = () => {
             clearTimeout(presentationIntervalObj);
+            
             const stepData = presentationConfig.screens[currentPresentationIndex];
             const type = stepData[0];
             const currentInterval = (type === 'DASHBOARD' || type === 'OFFENDERS_STEP') ? presentationConfig.dashInterval : presentationConfig.interval;
 
             window.renderPresentationScreen();
             
-            const progressBar = document.getElementById('presentation-progress');
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '0%';
+            const timerCircle = document.getElementById('presentation-timer-circle');
+            const circumference = 2 * Math.PI * 40; // 251.2
             
-            setTimeout(() => {
-                progressBar.style.transition = `width ${currentInterval}s linear`;
-                progressBar.style.width = '100%';
-            }, 50);
+            if (timerCircle) {
+                timerCircle.style.transition = 'none';
+                timerCircle.style.strokeDashoffset = '0';
+                
+                setTimeout(() => {
+                    timerCircle.style.transition = `stroke-dashoffset ${currentInterval}s linear`;
+                    timerCircle.style.strokeDashoffset = circumference;
+                }, 50);
+            }
 
             presentationIntervalObj = setTimeout(() => {
                 currentPresentationIndex = (currentPresentationIndex + 1) % presentationConfig.screens.length;
@@ -456,7 +463,7 @@
 
         window.stopPresentation = () => { 
             clearTimeout(presentationIntervalObj); 
-            localStorage.removeItem('isPresentationActive'); // LIMPA O ESTADO
+            localStorage.removeItem('isPresentationActive'); 
             document.getElementById('presentation-mode-container').style.display = 'none'; 
             document.body.classList.remove('presentation-active'); 
             window.setViewMode('single', currentOven); 
@@ -477,11 +484,9 @@
             content.innerHTML = '';
         };
 
-        // --- GERAÇÃO DO RESUMO DE OFENSORES TOP 3 ---
         window.generateSingleOffendersStepHTML = (equipsArr) => {
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             
-            // Alterado para trazer o TOP 3 com base no somatório
             const getTop3Offenders = (data, type) => {
                 let map = {};
                 for (let i = 0; i < 12; i++) {
@@ -497,7 +502,6 @@
                         });
                     }
                 }
-                // Converte em array, ordena de forma decrescente e extrai os 3 primeiros
                 return Object.entries(map)
                     .map(([desc, val]) => ({ desc, val }))
                     .sort((a, b) => b.val - a.val)
@@ -517,7 +521,6 @@
                     `;
                 }
 
-                // Configuração Visual de Ranking Neutro/Alerta (substitui pódio dourado)
                 const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/90 shadow-sm border-l-4 border-current', 'bg-white/80 shadow-sm border-l-2 border-current'];
                 const textSizes = ['text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl', 'text-sm sm:text-base xl:text-lg'];
                 const valSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
@@ -547,7 +550,6 @@
                 `;
             };
 
-            // Dicionário de temas para Tailwind (para não quebrar a injeção de classes dinâmicas)
             const themes = {
                 qualidade: { bg: 'bg-red-50', border: 'border-red-300', title: 'text-red-800', val: 'text-red-700' },
                 quebra: { bg: 'bg-orange-50', border: 'border-orange-300', title: 'text-orange-800', val: 'text-orange-700' },
@@ -575,7 +577,6 @@
                 `;
             });
 
-            // Container principal foi alterado para permitir rolagem vertical em telas menores (flex-col lg:flex-row)
             return `
                 <div class="w-full min-h-full p-4 pt-20 sm:pt-6 lg:p-6 flex flex-col lg:flex-row items-stretch justify-center gap-6 bg-gray-200">
                     ${blocks.join('')}
@@ -591,7 +592,6 @@
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             const isPres = viewMode === 'presentation';
             
-            // ATUALIZADO: Layout do Gauge com GAP maior para afastar o título do círculo
             const generateGauge = (title, value, target, isQuebra) => {
                 const radius = 38; const circumference = 2 * Math.PI * radius;
                 let isOk = isQuebra ? (value <= target) : (value >= target);
@@ -611,7 +611,6 @@
                 const formattedVal = value.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: isQuebra ? 2 : 1});
                 const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
-                // Substituído mb-1 por gap-1 sm:gap-2 no container flex, garantindo espaço
                 return `
                     <div class="flex flex-col items-center justify-center gap-1 sm:gap-2">
                         <span class="text-[0.65rem] sm:text-xs font-black text-gray-800 uppercase tracking-tighter text-center leading-none">${title}</span>
@@ -636,7 +635,6 @@
                 
                 if (data && data.rows) {
                     let lastIdx = -1;
-                    // Encontrar o último horário válido preenchido
                     for (let i = 11; i >= 0; i--) {
                         const r = data.rows[i];
                         if ((r.vol && r.vol.trim() !== '') || (r.ref && r.ref.trim() !== '') || (r.qHora && r.qHora.trim() !== '')) {
@@ -648,7 +646,6 @@
                         const r = data.rows[lastIdx];
                         currentRef = r.ref || currentRef;
                         
-                        // Recalcular Qualidade Acumulada EXATAMENTE até lastIdx
                         let wSum = 0; let pVol = 0;
                         for(let i = 0; i <= lastIdx; i++) {
                             const row = data.rows[i];
@@ -662,7 +659,6 @@
                             }
                         }
                         
-                        // Snapshot Quebra
                         if (r.quebras) {
                             r.quebras.forEach(q => {
                                 const v = parseFloat(String(q.val).replace(',', '.'));
@@ -670,7 +666,6 @@
                             });
                         }
                         
-                        // Snapshot Utilização
                         let paradasLast = 0;
                         if (r.paradas) {
                             r.paradas.forEach(p => {
@@ -686,7 +681,6 @@
                 
                 let btnOfensoresHTML = '';
                 if (!isPres) {
-                    // Ícone alterado de Troféu para Lupa/Alerta, tirando a conotação de "prêmio"
                     btnOfensoresHTML = `
                         <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
                             <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
@@ -697,7 +691,6 @@
                     `;
                 }
 
-                // ATUALIZADO: py-3 sm:py-4 e min-h-[160px] para dar espaço para o SVG respirar
                 return `
                     <div class="flex flex-row items-center justify-between py-3 sm:py-4 px-2 sm:px-4 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[160px]">
                         <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
@@ -719,20 +712,21 @@
 
             const pointerClass = isPres ? 'pointer-events-none' : '';
 
-            // Alterado overflow-hidden para overflow-y-auto no container das linhas HTML
             return `
-                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
-                    <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
-                        <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
-                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
-                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                <div class="w-full h-full flex justify-center gap-4">
+                    <div class="w-full h-full max-h-[96vh] max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
+                        <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
+                            <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                                <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
+                                <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                            </div>
+                            <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
+                            <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
                         </div>
-                        <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
-                        <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
-                    </div>
-                    <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
-                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
-                            ${rowsHTML}
+                        <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+                            <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
+                                ${rowsHTML}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -793,7 +787,6 @@
                 if (document.getElementById('offenders-modal').style.display === 'flex') window.closeOffendersModal();
             }
         });
-        // ------------------------------------
 
         window.getTargets = (ovenName) => {
             const isRet = ovenName.includes('RETÍFICA');
@@ -1119,7 +1112,8 @@
                 const safeOv = ov.replace(/\s+/g, '-'); const q = parseFloat(document.getElementById(`config-quality-${safeOv}`).value); const b = parseFloat(document.getElementById(`config-breakage-${safeOv}`).value); const u = parseFloat(document.getElementById(`config-util-${safeOv}`).value);
                 if (isNaN(q) || isNaN(b) || isNaN(u)) { hasError = true; } else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
             });
-            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas atualizadas com sucesso!"); window.setViewMode('single', currentOven || 'FORNO 2'); } else { alert("Existem valores inválidos. Verifique os campos."); }
+
+            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas e Configurações atualizadas com sucesso!"); window.setViewMode('dashboard'); } else { alert("Existem valores inválidos. Verifique os campos."); }
         };
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
@@ -1137,9 +1131,10 @@
                             <tbody>${ovenList.filter(o => o !== 'FORNO 1').map(ov => { const safeOv = ov.replace(/\s+/g, '-'); const t = window.getTargets(ov); return `<tr><td class="p-2 border border-gray-300 font-bold text-gray-700 bg-gray-50 uppercase text-xs">${ov}</td><td class="p-1 border border-gray-300 bg-blue-50/30"><input type="number" step="0.1" id="config-quality-${safeOv}" class="w-full text-center font-bold text-blue-700 bg-transparent outline-none" value="${t.quality}"></td><td class="p-1 border border-gray-300 bg-red-50/30"><input type="number" step="0.1" id="config-breakage-${safeOv}" class="w-full text-center font-bold text-red-700 bg-transparent outline-none" value="${t.breakage}"></td><td class="p-1 border border-gray-300 bg-green-50/30"><input type="number" step="0.1" id="config-util-${safeOv}" class="w-full text-center font-bold text-green-700 bg-transparent outline-none" value="${t.utilization}"></td></tr>`; }).join('')}</tbody>
                         </table>
                     </div>
-                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Novas Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
+                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Metas e Voltar</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Cancelar</button></div>
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
+                    
                     <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
                 </div>
                 <div>
@@ -1262,7 +1257,7 @@
             if (viewMode === 'config') {
                 mainContent.innerHTML = generateConfigHTML(); 
             } else if (viewMode === 'dashboard') {
-                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full flex justify-center items-start">${window.generateDashboardHTML()}</div>`;
+                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full overflow-hidden">${window.generateDashboardHTML()}</div>`;
             } else { 
                 mainContent.innerHTML = generateOvenHTML(currentOven); 
                 window.attachCalculations(currentOven); 
@@ -1275,7 +1270,6 @@
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); 
 
-            // --- AUTO-RESUME MODO TV APÓS REFRESH ---
             const isPresActive = localStorage.getItem('isPresentationActive') === 'true';
             if (isPresActive) {
                 const savedConfig = localStorage.getItem('presentationConfig');
