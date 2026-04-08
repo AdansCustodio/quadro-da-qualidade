@@ -208,12 +208,11 @@
 
     <!-- MODO APRESENTAÇÃO - CONTAINER -->
     <div id="presentation-mode-container">
-        <!-- Relógio Circular -->
+        <!-- Relógio Circular APENAS PREENCHIMENTO -->
         <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
-            <svg viewBox="0 0 100 100" class="w-16 h-16 transform -rotate-90">
+            <svg viewBox="0 0 100 100" class="w-12 h-12 transform -rotate-90">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" />
                 <circle id="presentation-timer-circle" cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" />
-                <text id="presentation-timer-text" x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" fill="white" font-weight="900" font-size="28">0</text>
             </svg>
         </div>
 
@@ -312,7 +311,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.7; 
+        const APP_VERSION = 5.8; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -360,7 +359,6 @@
         // --- MODO APRESENTAÇÃO ---
         let presentationConfig = { interval: 15, dashInterval: 30, screens: [] };
         let presentationIntervalObj = null;
-        let progressIntervalObj = null;
         let currentPresentationIndex = 0;
 
         let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION, banners: { left: '', right: '' } };
@@ -437,7 +435,6 @@
 
         window.startPresentationCycle = () => {
             clearTimeout(presentationIntervalObj);
-            clearInterval(progressIntervalObj);
             
             const stepData = presentationConfig.screens[currentPresentationIndex];
             const type = stepData[0];
@@ -446,29 +443,19 @@
             window.renderPresentationScreen();
             
             const timerCircle = document.getElementById('presentation-timer-circle');
-            const timerText = document.getElementById('presentation-timer-text');
             const circumference = 2 * Math.PI * 40; // 251.2
             
-            if (timerCircle && timerText) {
+            if (timerCircle) {
                 timerCircle.style.transition = 'none';
                 timerCircle.style.strokeDashoffset = '0';
-                timerText.innerText = currentInterval;
-
-                let timeLeft = currentInterval;
                 
                 setTimeout(() => {
                     timerCircle.style.transition = `stroke-dashoffset ${currentInterval}s linear`;
                     timerCircle.style.strokeDashoffset = circumference;
                 }, 50);
-
-                progressIntervalObj = setInterval(() => {
-                    timeLeft--;
-                    if (timeLeft >= 0) timerText.innerText = timeLeft;
-                }, 1000);
             }
 
             presentationIntervalObj = setTimeout(() => {
-                clearInterval(progressIntervalObj);
                 currentPresentationIndex = (currentPresentationIndex + 1) % presentationConfig.screens.length;
                 window.startPresentationCycle(); 
             }, currentInterval * 1000);
@@ -476,7 +463,6 @@
 
         window.stopPresentation = () => { 
             clearTimeout(presentationIntervalObj); 
-            clearInterval(progressIntervalObj);
             localStorage.removeItem('isPresentationActive'); 
             document.getElementById('presentation-mode-container').style.display = 'none'; 
             document.body.classList.remove('presentation-active'); 
@@ -732,11 +718,12 @@
             let leftBannerHtml = '';
             let rightBannerHtml = '';
             
+            // Agora usa um ID específico para esconder o banner inteiro se a imagem não carregar
             if (leftBannerUrl) {
-                leftBannerHtml = `<div class="hidden xl:flex w-[100px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0"><img src="${leftBannerUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'"></div>`;
+                leftBannerHtml = `<div id="dash-banner-left" class="hidden xl:flex w-[120px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0 relative items-center justify-center"><img src="${leftBannerUrl}" class="w-full h-full object-cover absolute inset-0" onerror="document.getElementById('dash-banner-left').style.display='none'"></div>`;
             }
             if (rightBannerUrl) {
-                rightBannerHtml = `<div class="hidden xl:flex w-[100px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0"><img src="${rightBannerUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'"></div>`;
+                rightBannerHtml = `<div id="dash-banner-right" class="hidden xl:flex w-[120px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0 relative items-center justify-center"><img src="${rightBannerUrl}" class="w-full h-full object-cover absolute inset-0" onerror="document.getElementById('dash-banner-right').style.display='none'"></div>`;
             }
 
             return `
@@ -1148,7 +1135,7 @@
             globalConfig.banners.left = document.getElementById('config-banner-left')?.value || '';
             globalConfig.banners.right = document.getElementById('config-banner-right')?.value || '';
 
-            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas e Configurações atualizadas com sucesso!"); window.setViewMode('single', currentOven || 'FORNO 2'); } else { alert("Existem valores inválidos. Verifique os campos."); }
+            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas e Configurações atualizadas com sucesso!"); window.setViewMode('dashboard'); } else { alert("Existem valores inválidos. Verifique os campos."); }
         };
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
@@ -1166,13 +1153,32 @@
                             <tbody>${ovenList.filter(o => o !== 'FORNO 1').map(ov => { const safeOv = ov.replace(/\s+/g, '-'); const t = window.getTargets(ov); return `<tr><td class="p-2 border border-gray-300 font-bold text-gray-700 bg-gray-50 uppercase text-xs">${ov}</td><td class="p-1 border border-gray-300 bg-blue-50/30"><input type="number" step="0.1" id="config-quality-${safeOv}" class="w-full text-center font-bold text-blue-700 bg-transparent outline-none" value="${t.quality}"></td><td class="p-1 border border-gray-300 bg-red-50/30"><input type="number" step="0.1" id="config-breakage-${safeOv}" class="w-full text-center font-bold text-red-700 bg-transparent outline-none" value="${t.breakage}"></td><td class="p-1 border border-gray-300 bg-green-50/30"><input type="number" step="0.1" id="config-util-${safeOv}" class="w-full text-center font-bold text-green-700 bg-transparent outline-none" value="${t.utilization}"></td></tr>`; }).join('')}</tbody>
                         </table>
                     </div>
-                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Metas e Configurações</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
+                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Metas e Voltar</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Cancelar</button></div>
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
                     
                     <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
 
-                    <div class="mt-8 p-3 bg-indigo-50 rounded border border-indigo-200"><h4 class="font-bold text-indigo-800 text-sm uppercase mb-2">Banners Laterais (Resultados Agora)</h4><p class="text-[0.65rem] text-indigo-700 mb-3 text-justify">Insira links de imagens (JPG/PNG) para exibir nas laterais do ecrã de Resultados. Deixe em branco para ocultar. (Tamanho sugerido: 90 a 100px de largura).</p><div class="flex flex-col gap-2"><input type="text" id="config-banner-left" placeholder="URL do Banner Esquerdo" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.left || ''}"><input type="text" id="config-banner-right" placeholder="URL do Banner Direito" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.right || ''}"></div></div>
+                    <div class="mt-8 p-3 bg-indigo-50 rounded border border-indigo-200">
+                        <h4 class="font-bold text-indigo-800 text-sm uppercase mb-2">Banners Laterais (Resultados Agora)</h4>
+                        <p class="text-[0.65rem] text-indigo-700 mb-2 text-justify">
+                            Insira links de imagens (JPG/PNG) para exibir nas laterais do ecrã de Resultados. Deixe em branco para ocultar.<br>
+                        </p>
+                        <p class="text-[0.60rem] text-red-600 font-bold mb-3 text-justify">
+                            ⚠️ ATENÇÃO: Links de compartilhamento do SharePoint abrem uma página, não a imagem direta. É necessário um link que termine com .jpg ou .png (você pode subir em um site como imgur.com para testar).
+                        </p>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex gap-2 items-center">
+                                <input type="text" id="config-banner-left" placeholder="URL do Banner Esquerdo" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.left || ''}" oninput="document.getElementById('preview-banner-left').src=this.value; document.getElementById('preview-banner-left').style.display='block';">
+                                <img id="preview-banner-left" src="${globalConfig.banners?.left || ''}" class="w-10 h-10 object-cover border border-gray-300 rounded shadow-sm" onerror="this.style.display='none'">
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <input type="text" id="config-banner-right" placeholder="URL do Banner Direito" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.right || ''}" oninput="document.getElementById('preview-banner-right').src=this.value; document.getElementById('preview-banner-right').style.display='block';">
+                                <img id="preview-banner-right" src="${globalConfig.banners?.right || ''}" class="w-10 h-10 object-cover border border-gray-300 rounded shadow-sm" onerror="this.style.display='none'">
+                            </div>
+                            <button onclick="window.saveConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all mt-1">Salvar e Testar Banners</button>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
