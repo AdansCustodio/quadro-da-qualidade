@@ -173,7 +173,7 @@
                 <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
                     <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
                         <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        Intercalar Telas Top 3 Ofensores e Dash Final
+                        Intercalar Telas Análise Ofensores e Dash Final
                     </label>
                     <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
                         <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
@@ -208,20 +208,25 @@
 
     <!-- MODO APRESENTAÇÃO - CONTAINER -->
     <div id="presentation-mode-container">
-        <div class="w-full bg-gray-300 h-2 absolute top-0 z-50 shadow">
-            <div id="presentation-progress" class="h-full bg-indigo-600 w-0 transition-all ease-linear shadow-lg"></div>
+        <!-- Relógio Circular -->
+        <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
+            <svg viewBox="0 0 100 100" class="w-16 h-16 transform -rotate-90">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" />
+                <circle id="presentation-timer-circle" cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" />
+                <text id="presentation-timer-text" x="50" y="50" transform="rotate(90 50 50)" text-anchor="middle" dominant-baseline="central" fill="white" font-weight="900" font-size="28">0</text>
+            </svg>
         </div>
+
         <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
             ❌ Sair do Modo TV (ESC)
         </button>
         <div id="presentation-content"></div>
     </div>
 
-    <!-- MODAL PÓDIO OFENSORES (DRILL-DOWN) -->
+    <!-- MODAL ANÁLISE OFENSORES (DRILL-DOWN) -->
     <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
         <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
             <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
-            <!-- Alterado para overflow-y-auto -->
             <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
         </div>
     </div>
@@ -307,7 +312,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 5.4; 
+        const APP_VERSION = 5.7; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -358,7 +363,7 @@
         let progressIntervalObj = null;
         let currentPresentationIndex = 0;
 
-        let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION };
+        let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION, banners: { left: '', right: '' } };
         const saveTimeouts = {}; const ovenDataStore = {};
 
         // --- LÓGICA DO MODO APRESENTAÇÃO ---
@@ -392,12 +397,11 @@
             const includeDash = document.getElementById('presentation-include-dash').checked;
             
             if (isNaN(timeInput) || timeInput < 5) { alert('Tempo mínimo por tela é de 5 segundos.'); return; }
-            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para Ofensores/Dashboards é de 5 segundos.'); return; }
+            if (includeDash && (isNaN(dashTimeInput) || dashTimeInput < 5)) { alert('Tempo mínimo para Análise de Ofensores/Dashboards é de 5 segundos.'); return; }
 
             const rows = document.querySelectorAll('#presentation-screens-list > div');
             const screens = [];
             
-            // Lógica de Intercalação
             rows.forEach(row => {
                 const eq1 = row.querySelector('.equip-select-1').value;
                 const eq2 = row.querySelector('.equip-select-2').value;
@@ -420,6 +424,9 @@
             presentationConfig.screens = screens;
             currentPresentationIndex = 0;
 
+            localStorage.setItem('presentationConfig', JSON.stringify(presentationConfig));
+            localStorage.setItem('isPresentationActive', 'true');
+
             window.closePresentationSetup();
             window.setViewMode('presentation'); 
             document.getElementById('presentation-mode-container').style.display = 'flex';
@@ -430,28 +437,51 @@
 
         window.startPresentationCycle = () => {
             clearTimeout(presentationIntervalObj);
+            clearInterval(progressIntervalObj);
+            
             const stepData = presentationConfig.screens[currentPresentationIndex];
             const type = stepData[0];
             const currentInterval = (type === 'DASHBOARD' || type === 'OFFENDERS_STEP') ? presentationConfig.dashInterval : presentationConfig.interval;
 
             window.renderPresentationScreen();
             
-            const progressBar = document.getElementById('presentation-progress');
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '0%';
+            const timerCircle = document.getElementById('presentation-timer-circle');
+            const timerText = document.getElementById('presentation-timer-text');
+            const circumference = 2 * Math.PI * 40; // 251.2
             
-            setTimeout(() => {
-                progressBar.style.transition = `width ${currentInterval}s linear`;
-                progressBar.style.width = '100%';
-            }, 50);
+            if (timerCircle && timerText) {
+                timerCircle.style.transition = 'none';
+                timerCircle.style.strokeDashoffset = '0';
+                timerText.innerText = currentInterval;
+
+                let timeLeft = currentInterval;
+                
+                setTimeout(() => {
+                    timerCircle.style.transition = `stroke-dashoffset ${currentInterval}s linear`;
+                    timerCircle.style.strokeDashoffset = circumference;
+                }, 50);
+
+                progressIntervalObj = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft >= 0) timerText.innerText = timeLeft;
+                }, 1000);
+            }
 
             presentationIntervalObj = setTimeout(() => {
+                clearInterval(progressIntervalObj);
                 currentPresentationIndex = (currentPresentationIndex + 1) % presentationConfig.screens.length;
                 window.startPresentationCycle(); 
             }, currentInterval * 1000);
         };
 
-        window.stopPresentation = () => { clearTimeout(presentationIntervalObj); document.getElementById('presentation-mode-container').style.display = 'none'; document.body.classList.remove('presentation-active'); window.setViewMode('single', currentOven); };
+        window.stopPresentation = () => { 
+            clearTimeout(presentationIntervalObj); 
+            clearInterval(progressIntervalObj);
+            localStorage.removeItem('isPresentationActive'); 
+            document.getElementById('presentation-mode-container').style.display = 'none'; 
+            document.body.classList.remove('presentation-active'); 
+            window.setViewMode('single', currentOven); 
+        };
 
         // --- LÓGICA DO MODAL DOS OFENSORES (DRILL-DOWN) ---
         window.openOffendersModal = (ovenName) => {
@@ -468,11 +498,9 @@
             content.innerHTML = '';
         };
 
-        // --- GERAÇÃO DO RESUMO DE OFENSORES TOP 3 ---
         window.generateSingleOffendersStepHTML = (equipsArr) => {
             const currentTimeStr = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
             
-            // Alterado para trazer o TOP 3 com base no somatório
             const getTop3Offenders = (data, type) => {
                 let map = {};
                 for (let i = 0; i < 12; i++) {
@@ -488,7 +516,6 @@
                         });
                     }
                 }
-                // Converte em array, ordena de forma decrescente e extrai os 3 primeiros
                 return Object.entries(map)
                     .map(([desc, val]) => ({ desc, val }))
                     .sort((a, b) => b.val - a.val)
@@ -503,16 +530,15 @@
                         <div class="flex-1 bg-green-50 rounded-3xl border-4 border-green-300 p-6 flex flex-col items-center justify-center shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
                             <span class="text-2xl font-black text-green-800 uppercase tracking-widest mb-4 z-10 drop-shadow-sm">${title}</span>
                             <span class="text-5xl font-black text-center text-green-900 leading-tight z-10 drop-shadow-md">MÁQUINA NO VERDE</span>
-                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registo ofensor</span>
+                            <span class="text-3xl font-extrabold text-green-600 mt-6 z-10 bg-white/70 px-6 py-2 rounded-full shadow-sm">Nenhum registro ofensor</span>
                         </div>
                     `;
                 }
 
-                // Configuração Visual do Pódio (1º, 2º e 3º lugares)
-                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/80 shadow-sm border-l-4 border-current opacity-90', 'bg-white/60 shadow-sm border-l-2 border-current opacity-80'];
-                const textSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
-                const valSizes = ['text-2xl sm:text-3xl xl:text-4xl', 'text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl'];
-                const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700']; // Dourado, Prateado, Bronze
+                const bgColors = ['bg-white shadow-md border-l-8 border-current', 'bg-white/90 shadow-sm border-l-4 border-current', 'bg-white/80 shadow-sm border-l-2 border-current'];
+                const textSizes = ['text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl', 'text-sm sm:text-base xl:text-lg'];
+                const valSizes = ['text-xl sm:text-2xl xl:text-3xl', 'text-lg sm:text-xl xl:text-2xl', 'text-base sm:text-lg xl:text-xl'];
+                const rankColors = [theme.title, theme.title, theme.title]; 
                 
                 let itemsHtml = offenders.map((off, index) => {
                     const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
@@ -520,7 +546,7 @@
                     return `
                         <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
                             <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">${index + 1}º</span>
+                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">#${index + 1}</span>
                                 <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
                             </div>
                             <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
@@ -530,15 +556,14 @@
 
                 return `
                     <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
-                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-2 z-10 drop-shadow-sm text-center">${title}</span>
-                        <div class="flex flex-col gap-3 w-full mt-2 z-10 h-full justify-center">
+                        <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-4 z-10 drop-shadow-sm text-center">${title}</span>
+                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-center">
                             ${itemsHtml}
                         </div>
                     </div>
                 `;
             };
 
-            // Dicionário de temas para Tailwind (para não quebrar a injeção de classes dinâmicas)
             const themes = {
                 qualidade: { bg: 'bg-red-50', border: 'border-red-300', title: 'text-red-800', val: 'text-red-700' },
                 quebra: { bg: 'bg-orange-50', border: 'border-orange-300', title: 'text-orange-800', val: 'text-orange-700' },
@@ -555,7 +580,7 @@
                     <div class="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-2xl border-4 border-gray-300 p-4 sm:p-6 lg:p-8 h-full min-h-[600px] lg:min-h-0">
                         <div class="text-center mb-6 border-b-8 border-red-600 pb-4 relative shrink-0 mt-6 lg:mt-0">
                             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-[#1a1e2b] tracking-tighter drop-shadow-lg">${eq}</h1>
-                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PÓDIO DE OFENSORES DO DIA</h2>
+                            <h2 class="text-lg sm:text-xl lg:text-2xl font-black text-red-600 uppercase tracking-widest mt-2">PRINCIPAIS OFENSORES DO DIA</h2>
                         </div>
                         <div class="flex-1 flex flex-col gap-4 lg:gap-6 overflow-y-visible">
                             ${renderTop3Card('Maiores Ofensores - Qualidade', topDefects, false, themes.qualidade)}
@@ -566,7 +591,6 @@
                 `;
             });
 
-            // Container principal foi alterado para permitir rolagem vertical em telas menores (flex-col lg:flex-row)
             return `
                 <div class="w-full min-h-full p-4 pt-20 sm:pt-6 lg:p-6 flex flex-col lg:flex-row items-stretch justify-center gap-6 bg-gray-200">
                     ${blocks.join('')}
@@ -602,8 +626,8 @@
                 const formattedTarget = target.toLocaleString('pt-BR', {minimumFractionDigits: 1, maximumFractionDigits: 2});
 
                 return `
-                    <div class="flex flex-col items-center">
-                        <span class="text-[0.6rem] sm:text-xs font-bold text-gray-800 mb-1 uppercase tracking-tighter text-center">${title}</span>
+                    <div class="flex flex-col items-center justify-center gap-1 sm:gap-2">
+                        <span class="text-[0.65rem] sm:text-xs font-black text-gray-800 uppercase tracking-tighter text-center leading-none">${title}</span>
                         <svg viewBox="0 0 100 100" class="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 transform -rotate-90 bg-white rounded-full drop-shadow-md">
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="#f3f4f6" stroke-width="8" />
                             <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${color}" stroke-width="8" stroke-dasharray="${circumference}" stroke-dashoffset="${strokeOffset}" stroke-linecap="round" />
@@ -625,7 +649,6 @@
                 
                 if (data && data.rows) {
                     let lastIdx = -1;
-                    // Encontrar o último horário válido preenchido
                     for (let i = 11; i >= 0; i--) {
                         const r = data.rows[i];
                         if ((r.vol && r.vol.trim() !== '') || (r.ref && r.ref.trim() !== '') || (r.qHora && r.qHora.trim() !== '')) {
@@ -637,7 +660,6 @@
                         const r = data.rows[lastIdx];
                         currentRef = r.ref || currentRef;
                         
-                        // Recalcular Qualidade Acumulada EXATAMENTE até lastIdx
                         let wSum = 0; let pVol = 0;
                         for(let i = 0; i <= lastIdx; i++) {
                             const row = data.rows[i];
@@ -651,7 +673,6 @@
                             }
                         }
                         
-                        // Snapshot Quebra
                         if (r.quebras) {
                             r.quebras.forEach(q => {
                                 const v = parseFloat(String(q.val).replace(',', '.'));
@@ -659,7 +680,6 @@
                             });
                         }
                         
-                        // Snapshot Utilização
                         let paradasLast = 0;
                         if (r.paradas) {
                             r.paradas.forEach(p => {
@@ -678,19 +698,19 @@
                     btnOfensoresHTML = `
                         <div class="flex items-center justify-center pl-2 sm:pl-4 border-l-2 border-gray-100 ml-2 h-full">
                             <button onclick="window.openOffendersModal('${oven}')" class="bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 font-bold px-2 sm:px-3 py-2 rounded-xl text-[0.6rem] sm:text-xs tracking-wider shadow-sm transition-all flex flex-col items-center justify-center gap-1 uppercase group h-[80%] min-w-[80px]">
-                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">🏆</span>
-                                <span class="whitespace-nowrap text-center leading-none">Ver<br>Ofensores</span>
+                                <span class="text-xl sm:text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">⚠️</span>
+                                <span class="whitespace-nowrap text-center leading-none">Análise<br>Ofensores</span>
                             </button>
                         </div>
                     `;
                 }
 
                 return `
-                    <div class="flex flex-row items-center justify-between p-2 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[140px]">
+                    <div class="flex flex-row items-center justify-between py-3 sm:py-4 px-2 sm:px-4 flex-1 border-b border-gray-300 last:border-0 hover:bg-gray-50 bg-white group transition-colors min-h-[160px]">
                         <div class="w-1/4 sm:w-1/5 flex flex-col items-center justify-center border-r-2 border-gray-200 px-2 sm:px-4 h-full relative">
                             <span class="text-xl sm:text-2xl md:text-4xl font-black text-gray-800 tracking-tighter">${shortName}</span>
                             <span class="text-[0.65rem] sm:text-sm font-black text-indigo-700 mt-1 uppercase text-center w-full px-2 py-1 rounded bg-indigo-50 border border-indigo-200 shadow-sm leading-tight break-words max-w-full" title="${currentRef}">${currentRef}</span>
-                            <div class="absolute top-2 left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
+                            <div class="absolute top-0 sm:-top-2 left-0 sm:left-2 text-[0.60rem] sm:text-[0.65rem] font-bold text-gray-500">${todayStr}</div>
                         </div>
                         <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
                             <div class="flex-1 flex flex-row justify-around items-center">
@@ -706,22 +726,38 @@
 
             const pointerClass = isPres ? 'pointer-events-none' : '';
 
-            // Alterado overflow-hidden para overflow-y-auto no container das linhas HTML
+            const leftBannerUrl = globalConfig.banners?.left;
+            const rightBannerUrl = globalConfig.banners?.right;
+            
+            let leftBannerHtml = '';
+            let rightBannerHtml = '';
+            
+            if (leftBannerUrl) {
+                leftBannerHtml = `<div class="hidden xl:flex w-[100px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0"><img src="${leftBannerUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'"></div>`;
+            }
+            if (rightBannerUrl) {
+                rightBannerHtml = `<div class="hidden xl:flex w-[100px] h-full bg-gray-100 border-2 border-gray-300 shadow-2xl rounded-2xl overflow-hidden shrink-0"><img src="${rightBannerUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'"></div>`;
+            }
+
             return `
-                <div class="w-full h-full max-h-[96vh] max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
-                    <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
-                        <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
-                            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
-                            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                <div class="w-full h-full flex justify-center gap-4">
+                    ${leftBannerHtml}
+                    <div class="w-full h-full max-h-[96vh] max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden flex flex-col border-2 border-gray-300 ${pointerClass}">
+                        <div class="bg-gray-50 flex items-center justify-center py-4 border-b-2 border-gray-300 shadow-sm relative shrink-0">
+                            <div class="absolute left-4 sm:left-6 flex flex-col items-center justify-center select-none" aria-label="Logo Mohawk Brasil">
+                                <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.25rem; line-height: 0.85;">MOHAWK</span>
+                                <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.5rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+                            </div>
+                            <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
+                            <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
                         </div>
-                        <h1 class="text-lg sm:text-xl md:text-3xl font-black text-[#1a1e2b] tracking-widest uppercase text-center px-16 sm:px-0">DESEMPENHO GERAL DA FÁBRICA</h1>
-                        <div class="hidden sm:block absolute right-6 border border-blue-600 text-blue-700 bg-blue-50 font-black px-3 py-1 rounded text-sm tracking-widest shadow-sm">${currentTimeStr}</div>
-                    </div>
-                    <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
-                        <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
-                            ${rowsHTML}
+                        <div class="flex flex-col flex-grow bg-gray-100 p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+                            <div class="flex flex-col flex-grow bg-white border border-gray-300 rounded-xl shadow-inner overflow-y-auto">
+                                ${rowsHTML}
+                            </div>
                         </div>
                     </div>
+                    ${rightBannerHtml}
                 </div>
             `;
         };
@@ -780,7 +816,6 @@
                 if (document.getElementById('offenders-modal').style.display === 'flex') window.closeOffendersModal();
             }
         });
-        // ------------------------------------
 
         window.getTargets = (ovenName) => {
             const isRet = ovenName.includes('RETÍFICA');
@@ -806,7 +841,7 @@
         const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
         window.handleLockClick = () => { const diffDays = getDiffDays(); if (diffDays > 3) { if (!isAdminUnlocked) window.openPasswordModal('unlock'); else { isAdminUnlocked = false; updateDateUI(); renderContent(); } } };
 
-        window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todos os ecrãs a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
+        window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todas as telas a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
 
         const setupRefreshListener = () => { if (!db) return; unsubscribeRefresh = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), (docSnap) => { if (docSnap.exists() && docSnap.data().timestamp > appLoadTime + 2000) window.location.reload(true); }); };
 
@@ -854,6 +889,7 @@
                     globalConfig = docSnap.data();
                     let needsMigration = false;
                     if (!globalConfig.equipments) { globalConfig.equipments = {}; needsMigration = true; }
+                    if (!globalConfig.banners) { globalConfig.banners = { left: '', right: '' }; needsMigration = true; }
                     ovenList.forEach(ov => {
                         const isRet = ov.includes('RETÍFICA');
                         if (!globalConfig.equipments[ov]) { globalConfig.equipments[ov] = { quality: globalConfig[isRet ? 'grinders' : 'ovens']?.quality || 97.0, breakage: globalConfig[isRet ? 'grinders' : 'ovens']?.breakage || 1.2, utilization: globalConfig[isRet ? 'grinders' : 'ovens']?.utilization || (isRet ? 89.0 : 90.0) }; needsMigration = true; } else if (globalConfig.equipments[ov].utilization === undefined) { globalConfig.equipments[ov].utilization = isRet ? 89.0 : 90.0; needsMigration = true; }
@@ -862,6 +898,7 @@
                     if (globalConfig.minVersion && APP_VERSION < parseFloat(globalConfig.minVersion)) { document.getElementById('version-blocker-title').innerText = "Atualização Necessária"; document.getElementById('version-blocker-desc').innerText = `Você está usando a versão ${APP_VERSION}, mas exige a versão ${globalConfig.minVersion}.`; document.getElementById('version-blocker').style.display = 'flex'; return; }
                 } else {
                     globalConfig.equipments = {}; ovenList.forEach(ov => { const isRet = ov.includes('RETÍFICA'); globalConfig.equipments[ov] = { quality: 97.0, breakage: 1.2, utilization: isRet ? 89.0 : 90.0 }; });
+                    globalConfig.banners = { left: '', right: '' };
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), globalConfig);
                 }
             } catch(e) { console.error("Erro config:", e); }
@@ -1106,7 +1143,12 @@
                 const safeOv = ov.replace(/\s+/g, '-'); const q = parseFloat(document.getElementById(`config-quality-${safeOv}`).value); const b = parseFloat(document.getElementById(`config-breakage-${safeOv}`).value); const u = parseFloat(document.getElementById(`config-util-${safeOv}`).value);
                 if (isNaN(q) || isNaN(b) || isNaN(u)) { hasError = true; } else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
             });
-            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas atualizadas com sucesso!"); window.setViewMode('single', currentOven || 'FORNO 2'); } else { alert("Existem valores inválidos. Verifique os campos."); }
+
+            if (!globalConfig.banners) globalConfig.banners = {};
+            globalConfig.banners.left = document.getElementById('config-banner-left')?.value || '';
+            globalConfig.banners.right = document.getElementById('config-banner-right')?.value || '';
+
+            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas e Configurações atualizadas com sucesso!"); window.setViewMode('single', currentOven || 'FORNO 2'); } else { alert("Existem valores inválidos. Verifique os campos."); }
         };
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
@@ -1124,10 +1166,13 @@
                             <tbody>${ovenList.filter(o => o !== 'FORNO 1').map(ov => { const safeOv = ov.replace(/\s+/g, '-'); const t = window.getTargets(ov); return `<tr><td class="p-2 border border-gray-300 font-bold text-gray-700 bg-gray-50 uppercase text-xs">${ov}</td><td class="p-1 border border-gray-300 bg-blue-50/30"><input type="number" step="0.1" id="config-quality-${safeOv}" class="w-full text-center font-bold text-blue-700 bg-transparent outline-none" value="${t.quality}"></td><td class="p-1 border border-gray-300 bg-red-50/30"><input type="number" step="0.1" id="config-breakage-${safeOv}" class="w-full text-center font-bold text-red-700 bg-transparent outline-none" value="${t.breakage}"></td><td class="p-1 border border-gray-300 bg-green-50/30"><input type="number" step="0.1" id="config-util-${safeOv}" class="w-full text-center font-bold text-green-700 bg-transparent outline-none" value="${t.utilization}"></td></tr>`; }).join('')}</tbody>
                         </table>
                     </div>
-                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Novas Metas</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
+                    <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Metas e Configurações</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Voltar</button></div>
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
-                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controlo de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e ecrãs abertos na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todos os Ecrãs</button></div>
+                    
+                    <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
+
+                    <div class="mt-8 p-3 bg-indigo-50 rounded border border-indigo-200"><h4 class="font-bold text-indigo-800 text-sm uppercase mb-2">Banners Laterais (Resultados Agora)</h4><p class="text-[0.65rem] text-indigo-700 mb-3 text-justify">Insira links de imagens (JPG/PNG) para exibir nas laterais do ecrã de Resultados. Deixe em branco para ocultar. (Tamanho sugerido: 90 a 100px de largura).</p><div class="flex flex-col gap-2"><input type="text" id="config-banner-left" placeholder="URL do Banner Esquerdo" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.left || ''}"><input type="text" id="config-banner-right" placeholder="URL do Banner Direito" class="border p-2 text-xs rounded w-full outline-none focus:ring-1 focus:ring-indigo-400" value="${globalConfig.banners?.right || ''}"></div></div>
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
@@ -1249,7 +1294,7 @@
             if (viewMode === 'config') {
                 mainContent.innerHTML = generateConfigHTML(); 
             } else if (viewMode === 'dashboard') {
-                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full flex justify-center items-start">${window.generateDashboardHTML()}</div>`;
+                mainContent.innerHTML = `<div class="py-2 h-[calc(100vh-120px)] w-full overflow-hidden">${window.generateDashboardHTML()}</div>`;
             } else { 
                 mainContent.innerHTML = generateOvenHTML(currentOven); 
                 window.attachCalculations(currentOven); 
@@ -1260,9 +1305,30 @@
 
         const init = async () => {
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
-            resetStore(); updateDateUI(); renderContent();
+            resetStore(); updateDateUI(); 
+
+            const isPresActive = localStorage.getItem('isPresentationActive') === 'true';
+            if (isPresActive) {
+                const savedConfig = localStorage.getItem('presentationConfig');
+                if (savedConfig) {
+                    try {
+                        presentationConfig = JSON.parse(savedConfig);
+                        viewMode = 'presentation';
+                        currentPresentationIndex = 0;
+                        document.getElementById('presentation-mode-container').style.display = 'flex';
+                        document.body.classList.add('presentation-active');
+                        window.startPresentationCycle();
+                    } catch(e) {
+                         localStorage.removeItem('isPresentationActive');
+                    }
+                }
+            }
+
+            renderContent();
+            
             setInterval(() => { const now = new Date(); if (now.getDate() !== lastKnownDay) { const oldDate = new Date(selectedDate); lastKnownDay = now.getDate(); selectedDate = now; isAdminUnlocked = false; updateDateUI(); if (isDataLoaded && db) { window.runManualBackup(oldDate, true); } window.setupRealtimeListener(); return; } }, 60000);
             if(auth) { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {} onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } }); }
+            
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search') return; e.preventDefault();
