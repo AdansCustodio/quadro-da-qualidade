@@ -633,6 +633,21 @@
                 let utilSnapshot = 100.0;
                 let currentRef = 'Aguardando Produção';
                 
+                // LÓGICA DE UTILIZAÇÃO (TOTAL DIA ACUMULADO)
+                let totalParadasDia = 0;
+                if (data && data.rows) {
+                    for (let i = 0; i < 12; i++) {
+                        if (data.rows[i] && data.rows[i].paradas) {
+                            data.rows[i].paradas.forEach(p => {
+                                const v = parseInt(p.val, 10);
+                                if (!isNaN(v) && v > 0) totalParadasDia += v;
+                            });
+                        }
+                    }
+                }
+                utilSnapshot = ((1440 - totalParadasDia) / 1440) * 100;
+
+                // LOGICA DE QUALIDADE E QUEBRA (ÚLTIMO REGISTRO / SNAPSHOT)
                 if (data && data.rows) {
                     let lastIdx = -1;
                     for (let i = 11; i >= 0; i--) {
@@ -665,15 +680,6 @@
                                 if (!isNaN(v)) quebraSnapshot += v;
                             });
                         }
-                        
-                        let paradasLast = 0;
-                        if (r.paradas) {
-                            r.paradas.forEach(p => {
-                                const v = parseInt(p.val, 10);
-                                if (!isNaN(v)) paradasLast += v;
-                            });
-                        }
-                        utilSnapshot = ((120 - paradasLast) / 120) * 100;
                     }
                 }
                 
@@ -702,7 +708,7 @@
                             <div class="flex-1 flex flex-row justify-around items-center">
                                 ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
                                 ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
-                                ${generateGauge('Utilização (Últ. Reg.)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
+                                ${generateGauge('Utilização (Total Dia)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
                             </div>
                             ${btnOfensoresHTML}
                         </div>
