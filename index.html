@@ -157,6 +157,7 @@
         </button>
     </div>
 
+    <!-- MODO APRESENTAÇÃO - SETUP MODAL -->
     <div id="presentation-setup-modal" style="display:none;" class="fixed inset-0 bg-black/70 z-[4000] flex justify-center items-center">
         <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
             <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
@@ -206,6 +207,7 @@
         </div>
     </div>
 
+    <!-- MODO APRESENTAÇÃO - CONTAINER -->
     <div id="presentation-mode-container">
         <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
             <svg viewBox="0 0 100 100" class="w-12 h-12 transform -rotate-90">
@@ -220,6 +222,7 @@
         <div id="presentation-content"></div>
     </div>
 
+    <!-- MODAL ANÁLISE OFENSORES (DRILL-DOWN) -->
     <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
         <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
             <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
@@ -227,6 +230,7 @@
         </div>
     </div>
 
+    <!-- NAVBAR PRINCIPAL -->
     <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
         <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil">
             <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
@@ -271,6 +275,7 @@
         <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
     </div>
 
+    <!-- MODAIS DE APOIO -->
     <div id="password-modal">
         <div class="pwd-content">
             <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
@@ -1067,14 +1072,82 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    
                     Object.keys(ovenDefectMap).forEach(k => { if (!ovenDefectMap[k] || ovenDefectMap[k] === "[REMOVIDO]") delete ovenDefectMap[k]; });
                     Object.keys(grinderDefectMap).forEach(k => { if (!grinderDefectMap[k] || grinderDefectMap[k] === "[REMOVIDO]") delete grinderDefectMap[k]; });
-                    if (viewMode === 'config') renderContent(); const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup();
+                    
+                    if (viewMode === 'config') renderContent(); 
+                    const panel = document.getElementById('defect-lookup-panel'); 
+                    if (panel && panel.style.display === 'flex') window.renderDefectLookup();
                 } else setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects });
             });
         };
 
-        const saveDefectsToFirebase = async () => { if(!db) return; setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: ovenDefectMap, grinders: grinderDefectMap }); setSaveStatus('saved'); } catch(e) { setSaveStatus('error'); } };
+        // As funções de Defeitos agora usam salvamento cirúrgico com { merge: true }
+        window.addDefect = async () => { 
+            const code = document.getElementById('new-defect-code').value.trim();
+            const desc = document.getElementById('new-defect-desc').value.trim();
+            
+            if(code && desc) { 
+                const isOven = configDefectMode === 'ovens';
+                const mapName = isOven ? 'ovens' : 'grinders';
+                
+                // Atualiza tela imediatamente
+                (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+                window.renderContent();
+                const panel = document.getElementById('defect-lookup-panel'); 
+                if (panel && panel.style.display === 'flex') window.renderDefectLookup();
+                
+                setSaveStatus('saving'); 
+                try { 
+                    // Salvamento Cirúrgico: Altera APENAS o código que foi digitado, sem tocar nos outros.
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                        [mapName]: { [code]: desc }
+                    }, { merge: true }); 
+                    
+                    setSaveStatus('saved'); 
+                } catch(e) { setSaveStatus('error'); } 
+            } else {
+                alert("Preencha código e descrição."); 
+            }
+        };
+
+        window.deleteDefect = async (code) => { 
+            if(confirm(`Remover defeito ${code}?`)) { 
+                const isOven = configDefectMode === 'ovens'; 
+                const mapName = isOven ? 'ovens' : 'grinders';
+                
+                // Atualiza tela imediatamente
+                (isOven ? ovenDefectMap : grinderDefectMap)[code] = "[REMOVIDO]";
+                window.renderContent();
+
+                setSaveStatus('saving'); 
+                try {
+                    // Salvamento Cirúrgico
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                        [mapName]: { [code]: "[REMOVIDO]" }
+                    }, { merge: true });
+                    setSaveStatus('saved');
+                } catch(e) { setSaveStatus('error'); }
+            } 
+        };
+
+        window.updateDefectDesc = async (code, desc) => { 
+            const isOven = configDefectMode === 'ovens'; 
+            const mapName = isOven ? 'ovens' : 'grinders';
+            
+            // Atualiza tela imediatamente
+            (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+
+            setSaveStatus('saving');
+            try {
+                // Salvamento Cirúrgico
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                    [mapName]: { [code]: desc }
+                }, { merge: true });
+                setSaveStatus('saved');
+            } catch(e) { setSaveStatus('error'); }
+        };
 
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
         const createEmptyParadaRow = () => ({ desc: '', val: '' }); 
@@ -1268,7 +1341,6 @@
             window.highlightMax(oven, row, 'quebras');
         };
 
-        // --- CÁLCULO DE UTILIZAÇÃO (ALTERADO PARA O MODO TV) ---
         window.runParadaRow = (oven, row) => {
             const data = ovenDataStore[oven].rows[row].paradas; let total = 0; if (data) { data.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) total += v; }); }
             const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`); 
@@ -1288,8 +1360,6 @@
             
             if (utilDisplay) { 
                 let utilPercent = 0;
-                
-                // Se for MODO TV, calcula a % baseada na Utilização Diária Global
                 if (viewMode === 'presentation') {
                     let totalDia = 0;
                     for (let i = 0; i < 12; i++) {
@@ -1303,7 +1373,6 @@
                     }
                     utilPercent = ((1440 - totalDia) / 1440) * 100;
                 } 
-                // Se for MODO OPERAÇÃO NORMAL, calcula a % isolada das 2 horas
                 else {
                     utilPercent = ((120 - total) / 120) * 100; 
                 }
@@ -1319,9 +1388,6 @@
         window.getTempoVazioFormat = (val) => { const num = parseInt(val, 10); if (isNaN(num) || num <= 0) return '-'; const hours = Math.floor(num / 60); const mins = num % 60; return hours > 0 ? `${hours}h${mins > 0 ? ' ' + mins + 'min' : ''}` : `${mins}min`; };
         window.setConfigDefectMode = (mode) => { configDefectMode = mode; renderContent(); };
         
-        window.addDefect = async () => { const code = document.getElementById('new-defect-code').value.trim(), desc = document.getElementById('new-defect-desc').value.trim(); if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup(); } else alert("Preencha código e descrição."); };
-        window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { const isOven = configDefectMode === 'ovens'; const map = isOven ? ovenDefectMap : grinderDefectMap; const seedMap = isOven ? seedOvenDefects : seedGrinderDefects; if (seedMap[code]) map[code] = "[REMOVIDO]"; else delete map[code]; await saveDefectsToFirebase(); } };
-        window.updateDefectDesc = async (code, desc) => { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); };
         window.toggleDefectList = (ovenName) => { lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven; const panel = document.getElementById('defect-lookup-panel'); if (panel.style.display === 'flex') panel.style.display = 'none'; else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); } };
         window.renderDefectLookup = () => { const filter = document.getElementById('defect-search').value.toLowerCase(); const activeMap = getActiveDefectMap(lookupOven) || {}; document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter))).map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join(''); };
 
