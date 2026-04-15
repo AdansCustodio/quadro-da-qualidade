@@ -8,27 +8,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* --- VERSÃO 6.1 - SIMULADOR DE LOGIN CORPORATIVO (MOCK SSO MICROSOFT) --- */
+        /* --- VERSÃO 6.1 - MODO TV INTELIGENTE COM CAUSAS E AÇÕES (BASE DE CONHECIMENTO) --- */
         
         /* --- ESTILOS GERAIS E TIPOGRAFIA --- */
-        body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; margin: 0; }
+        body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; }
         .vertical-text { writing-mode: vertical-rl; transform: rotate(180deg); }
         
-        /* --- MOCK LOGIN SSO MICROSOFT --- */
-        #mock-login-overlay { display: flex; position: fixed; inset: 0; background-color: #f3f4f6; z-index: 9999999; justify-content: center; align-items: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .ms-box { background: white; padding: 44px; width: 100%; max-width: 440px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 2px; }
-        .ms-logo { width: 24px; height: 24px; margin-bottom: 24px; }
-        .ms-title { font-size: 1.5rem; color: #1b1b1b; font-weight: 600; margin-bottom: 8px; }
-        .ms-subtitle { font-size: 0.95rem; color: #1b1b1b; margin-bottom: 24px; }
-        .ms-input { width: 100%; border: none; border-bottom: 1px solid #8d8d8d; padding: 8px 0; font-size: 0.95rem; outline: none; transition: border-color 0.2s; margin-bottom: 24px; }
-        .ms-input:focus { border-bottom: 2px solid #0067b8; padding-bottom: 7px; }
-        .ms-btn { background-color: #0067b8; color: white; border: none; padding: 10px 24px; font-size: 0.95rem; cursor: pointer; float: right; transition: background-color 0.2s; font-weight: 500;}
-        .ms-btn:hover { background-color: #005da6; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .ms-btn:disabled { background-color: #cccccc; cursor: not-allowed; box-shadow: none; }
-        .ms-helper { font-size: 0.8rem; color: #666; margin-top: 40px; border-top: 1px solid #eee; padding-top: 15px; background: #f9fafb; padding: 15px; border-radius: 4px;}
-        
-        #app-wrapper { display: none; flex-direction: column; padding: 1rem; }
-
         /* --- SCROLLBAR PERSONALIZADA E ELEGANTE --- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 4px; }
@@ -97,9 +82,8 @@
         .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
         
         .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
-        .defect-item { display: flex; border-bottom: 1px solid #eee; padding: 4px; align-items: center; font-size: 0.8rem; }
-        .defect-item:nth-child(even) { background-color: white; }
-        .defect-item input { text-align: left; }
+        .defect-item { display: flex; flex-direction: column; border-bottom: 1px solid #eee; padding: 8px; font-size: 0.85rem; background-color: white; transition: background-color 0.2s; }
+        .defect-item:hover { background-color: #f0f9ff; }
         
         #password-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
         .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
@@ -160,201 +144,166 @@
 </head>
 <body class="bg-gray-200 transition-all duration-300">
 
-    <!-- SIMULADOR DE LOGIN CORPORATIVO (MOCK SSO) -->
-    <div id="mock-login-overlay">
-        <div class="ms-box">
-            <svg class="ms-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 23">
-                <path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/>
-            </svg>
-            <h2 class="ms-title">Entrar</h2>
-            <p class="ms-subtitle">Use a sua conta corporativa da Mohawk.</p>
-            
-            <div id="mock-error" class="hidden text-red-600 text-sm mb-4 font-bold bg-red-50 p-2 border border-red-200 rounded"></div>
-            
-            <input type="email" id="mock-email" class="ms-input" placeholder="E-mail corporativo" onkeypress="if(event.key === 'Enter') window.simulateSSOLogin()">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                <span style="font-size: 0.85rem; color: #0067b8; cursor: pointer;">Não consegue acessar a conta?</span>
-                <button id="mock-login-btn" onclick="window.simulateSSOLogin()" class="ms-btn">Avançar</button>
-            </div>
-            
-            <div class="ms-helper">
-                <strong style="color: #333;">💡 Simulador de Papéis (RBAC):</strong><br><br>
-                <span style="font-size: 0.75rem;">Para testar o acesso de <b>Gestão</b> (Liberta Histórico, Config e Dashboards):</span><br>
-                <code style="color: #0067b8; font-weight: bold; background: #e0f2fe; padding: 2px 4px; border-radius: 2px;">adans.custodio@mohawkbr.com</code><br><br>
-                <span style="font-size: 0.75rem;">Para testar o acesso de <b>Operação</b> (Bloqueado apenas na tela de Produção):</span><br>
-                <code style="color: #0067b8; font-weight: bold; background: #e0f2fe; padding: 2px 4px; border-radius: 2px;">operador@mohawkbr.com</code>
-            </div>
-        </div>
+    <div id="version-blocker">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-red-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h1 class="text-4xl font-black text-red-500 mb-4 uppercase tracking-wider">Acesso Bloqueado</h1>
+        <h2 id="version-blocker-title" class="text-2xl font-bold mb-4 text-gray-200">Você está usando uma versão obsoleta ou não oficial.</h2>
+        <p id="version-blocker-desc" class="mb-8 text-gray-400 max-w-lg text-lg">Para garantir que os dados não sejam perdidos e sejam salvos no servidor oficial, é necessário acessar o sistema pelo link correto da fábrica.</p>
+        <button onclick="window.location.href='https://mohawkllc.sharepoint.com/sites/QuadrodaQualidade'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-transform hover:scale-105 uppercase tracking-wide">
+            Acessar Sistema Oficial
+        </button>
     </div>
 
-    <!-- ENVOLVRO PRINCIPAL DA APLICAÇÃO (OCULTO ATÉ O LOGIN) -->
-    <div id="app-wrapper">
-        <div id="version-blocker">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-red-500 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <h1 class="text-4xl font-black text-red-500 mb-4 uppercase tracking-wider">Acesso Bloqueado</h1>
-            <h2 id="version-blocker-title" class="text-2xl font-bold mb-4 text-gray-200">Você está usando uma versão obsoleta ou não oficial.</h2>
-            <p id="version-blocker-desc" class="mb-8 text-gray-400 max-w-lg text-lg">Para garantir que os dados não sejam perdidos e sejam salvos no servidor oficial, é necessário acessar o sistema pelo link correto da fábrica.</p>
-            <button onclick="window.location.href='https://mohawkllc.sharepoint.com/sites/QuadrodaQualidade'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg transition-transform hover:scale-105 uppercase tracking-wide">
-                Acessar Sistema Oficial
-            </button>
-        </div>
-
-        <!-- MODO APRESENTAÇÃO - SETUP MODAL -->
-        <div id="presentation-setup-modal" style="display:none;" class="fixed inset-0 bg-black/70 z-[4000] flex justify-center items-center">
-            <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
-                <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
+    <!-- MODO APRESENTAÇÃO - SETUP MODAL -->
+    <div id="presentation-setup-modal" style="display:none;" class="fixed inset-0 bg-black/70 z-[4000] flex justify-center items-center">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
+            <h3 class="text-xl font-black mb-4 text-gray-800 border-b pb-2">Configurar Modo TV (Apresentação)</h3>
+            
+            <div class="mb-4 flex flex-col gap-3 bg-indigo-50 p-4 rounded border border-indigo-100">
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-sm text-indigo-800">Tempo de exibição (Tabelas):</label>
+                    <div class="flex items-center gap-1">
+                        <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                        <span class="text-xs text-indigo-600 font-bold">seg</span>
+                    </div>
+                </div>
                 
-                <div class="mb-4 flex flex-col gap-3 bg-indigo-50 p-4 rounded border border-indigo-100">
-                    <div class="flex items-center justify-between">
-                        <label class="font-bold text-sm text-indigo-800">Tempo de exibição (Tabelas):</label>
+                <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
+                    <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
+                        <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        Intercalar Telas Análise Ofensores e Dash Final
+                    </label>
+                    <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
+                        <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
                         <div class="flex items-center gap-1">
-                            <input type="number" id="presentation-time" value="15" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
+                            <input type="number" id="presentation-dash-time" value="20" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
                             <span class="text-xs text-indigo-600 font-bold">seg</span>
                         </div>
                     </div>
-                    
-                    <div class="border-t border-indigo-200 pt-3 flex flex-col gap-2">
-                        <label class="flex items-center gap-2 font-bold text-sm text-indigo-800 cursor-pointer w-fit" onchange="document.getElementById('dash-time-container').style.opacity = this.querySelector('input').checked ? '1' : '0.5'">
-                            <input type="checkbox" id="presentation-include-dash" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            Intercalar Telas Análise Ofensores e Dash Final
-                        </label>
-                        <div class="flex items-center justify-between pl-6 transition-opacity" id="dash-time-container">
-                            <label class="text-xs font-bold text-indigo-700">Tempo de exibição (Dash/Ofensores):</label>
-                            <div class="flex items-center gap-1">
-                                <input type="number" id="presentation-dash-time" value="20" min="5" class="border-2 border-indigo-300 rounded p-1 w-16 text-center font-bold text-indigo-900 outline-none focus:ring-2 focus:ring-indigo-400">
-                                <span class="text-xs text-indigo-600 font-bold">seg</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[150px]">
-                    <h4 class="font-bold text-xs text-gray-500 mb-2 uppercase flex justify-between">
-                        <span>Sequência do Carrossel</span>
-                        <span class="text-[0.6rem] text-gray-400 lowercase">Máx 2 equip. por tela</span>
-                    </h4>
-                    <div id="presentation-screens-list" class="space-y-2"></div>
-                    <button onclick="window.addPresentationScreenRow()" class="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 px-4 rounded w-full transition-colors border border-gray-300 border-dashed">
-                        + Adicionar Tela ao Carrossel
-                    </button>
-                </div>
-
-                <div class="flex justify-end gap-3 pt-3 border-t">
-                    <button onclick="window.closePresentationSetup()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow">Cancelar</button>
-                    <button onclick="window.startPresentation()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 px-6 rounded text-sm transition-colors shadow-lg flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
-                        Iniciar Transmissão
-                    </button>
                 </div>
             </div>
-        </div>
 
-        <!-- MODO APRESENTAÇÃO - CONTAINER -->
-        <div id="presentation-mode-container">
-            <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
-                <svg viewBox="0 0 100 100" class="w-12 h-12 transform -rotate-90">
-                    <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" />
-                    <circle id="presentation-timer-circle" cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" />
-                </svg>
+            <div class="flex-grow overflow-y-auto border border-gray-200 p-3 rounded bg-gray-50 mb-4 shadow-inner min-h-[150px]">
+                <h4 class="font-bold text-xs text-gray-500 mb-2 uppercase flex justify-between">
+                    <span>Sequência do Carrossel</span>
+                    <span class="text-[0.6rem] text-gray-400 lowercase">Máx 2 equip. por tela</span>
+                </h4>
+                <div id="presentation-screens-list" class="space-y-2"></div>
+                <button onclick="window.addPresentationScreenRow()" class="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold py-2 px-4 rounded w-full transition-colors border border-gray-300 border-dashed">
+                    + Adicionar Tela ao Carrossel
+                </button>
             </div>
 
-            <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
-                ❌ Sair do Modo TV (ESC)
-            </button>
-            <div id="presentation-content"></div>
-        </div>
-
-        <!-- MODAL ANÁLISE OFENSORES (DRILL-DOWN) -->
-        <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
-            <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
-                <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
-                <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
+            <div class="flex justify-end gap-3 pt-3 border-t">
+                <button onclick="window.closePresentationSetup()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow">Cancelar</button>
+                <button onclick="window.startPresentation()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 px-6 rounded text-sm transition-colors shadow-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                    Iniciar Transmissão
+                </button>
             </div>
         </div>
-
-        <!-- NAVBAR PRINCIPAL -->
-        <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
-            <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil">
-                <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
-                <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
-            </div>
-
-            <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1" style="display:none;">Forno 1</button>
-            <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
-            <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
-            <button onclick="window.setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
-            <button onclick="window.setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
-            <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
-            <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
-            
-            <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2 shrink-0">
-                <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" aria-label="Dia Anterior"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
-                <div class="flex flex-col items-center min-w-[100px] relative">
-                    <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
-                    <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
-                    <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;"><span id="lock-icon" class="text-[10px]">🔒</span></div>
-                </div>
-                <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
-                <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização">Carregar Dados</button>
-            </div>
-
-            <div id="save-status" class="text-[0.65rem] font-bold text-gray-400 ml-4 flex items-center gap-1 min-w-[120px] shrink-0">
-                <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span><span id="save-text">Aguardando Auth...</span>
-            </div>
-            
-            <div id="loading-indicator" class="shrink-0"><div class="spinner"></div> Carregando...</div>
-            
-            <div class="flex-grow"></div>
-            
-            <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase" style="display: none;">
-                📺 Modo TV
-            </button>
-
-            <button onclick="window.setViewMode('dashboard')" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-4 py-2 shadow-md flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase transition-all" id="btn-DASHBOARD" style="display: none;">
-                📊 Resultados Agora
-            </button>
-
-            <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG" style="display: none;"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
-            
-            <button class="bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold ml-2 shrink-0 cursor-help" title="Perfil do Utilizador" id="btn-USER-PROFILE">
-                U
-            </button>
-        </div>
-
-        <!-- MODAIS DE APOIO -->
-        <div id="password-modal">
-            <div class="pwd-content">
-                <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
-                <p id="pwd-desc" class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
-                <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
-                <div class="flex justify-between gap-2">
-                    <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
-                    <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
-                </div>
-                <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
-            </div>
-        </div>
-
-        <div id="defect-lookup-panel">
-            <div class="lookup-header">
-                <h3 class="font-bold text-gray-800 text-sm" id="lookup-title">Lista de Defeitos</h3>
-                <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
-            </div>
-            <div class="lookup-content">
-                <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar..." oninput="window.renderDefectLookup()">
-                <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
-                    <span class="w-12 text-center border-r">Cód</span><span class="pl-2">Descrição</span>
-                </div>
-                <div id="defect-lookup-list" class="lookup-list"></div>
-            </div>
-        </div>
-
-        <div id="main-content" class="max-w-7xl mx-auto transition-opacity duration-300"></div>
-        <datalist id="ref-suggestions"></datalist>
     </div>
+
+    <!-- MODO APRESENTAÇÃO - CONTAINER -->
+    <div id="presentation-mode-container">
+        <div id="presentation-timer-container" class="fixed bottom-5 left-5 z-[100000] opacity-40 hover:opacity-100 transition-opacity flex items-center justify-center bg-black/40 rounded-full backdrop-blur-md p-1 border-2 border-white/20 shadow-2xl">
+            <svg viewBox="0 0 100 100" class="w-12 h-12 transform -rotate-90">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8" />
+                <circle id="presentation-timer-circle" cx="50" cy="50" r="40" fill="none" stroke="white" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="0" stroke-linecap="round" />
+            </svg>
+        </div>
+
+        <button onclick="window.stopPresentation()" class="presentation-exit-btn bg-red-600 hover:bg-red-700 text-white font-black py-2 px-6 rounded-full shadow-2xl border-4 border-white text-sm">
+            ❌ Sair do Modo TV (ESC)
+        </button>
+        <div id="presentation-content"></div>
+    </div>
+
+    <!-- MODAL ANÁLISE OFENSORES (DRILL-DOWN) -->
+    <div id="offenders-modal" style="display:none;" class="fixed inset-0 bg-black/85 z-[6000] flex-col items-center justify-center p-2 sm:p-6">
+        <div class="bg-gray-200 w-full max-w-[98vw] h-full max-h-[95vh] flex flex-col relative rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-400">
+            <button onclick="window.closeOffendersModal()" class="absolute top-4 left-4 sm:top-6 sm:left-6 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center font-black text-xl sm:text-2xl z-[7000] shadow-2xl border-2 sm:border-4 border-white transition-transform hover:scale-110">✕</button>
+            <div id="offenders-modal-content" class="w-full h-full overflow-y-auto rounded-3xl relative"></div>
+        </div>
+    </div>
+
+    <!-- NAVBAR PRINCIPAL -->
+    <div class="navbar-container sticky top-0 z-50 max-w-[98%] mx-auto mb-4 flex space-x-1 bg-white p-1 shadow-md rounded-lg border border-gray-200 overflow-x-auto items-center">
+        <div class="px-5 flex flex-col items-center justify-center border-r border-gray-300 mr-2 shrink-0 bg-white select-none py-1" aria-label="Logo Mohawk Brasil">
+            <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 1.15rem; line-height: 0.85;">MOHAWK</span>
+            <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.45rem; line-height: 1; margin-top: 3px;">BRASIL</span>
+        </div>
+
+        <button onclick="window.setViewMode('single', 'FORNO 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 active whitespace-nowrap" id="btn-FORNO 1" style="display:none;">Forno 1</button>
+        <button onclick="window.setViewMode('single', 'FORNO 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 2">Forno 2</button>
+        <button onclick="window.setViewMode('single', 'FORNO 3A')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3A">Forno 3A</button>
+        <button onclick="window.setViewMode('single', 'FORNO 3B')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 3B">Forno 3B</button>
+        <button onclick="window.setViewMode('single', 'FORNO 4')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-FORNO 4">Forno 4</button>
+        <button onclick="window.setViewMode('single', 'RETÍFICA 1')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 1">Retífica 1</button>
+        <button onclick="window.setViewMode('single', 'RETÍFICA 2')" class="tab-btn px-4 py-2 font-bold uppercase text-xs hover:bg-gray-50 whitespace-nowrap" id="btn-RETÍFICA 2">Retífica 2</button>
+        
+        <div class="flex items-center px-4 space-x-2 border-l border-gray-300 ml-2 shrink-0">
+            <button onclick="window.changeDate(-1)" class="btn-nav-date p-1" aria-label="Dia Anterior"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+            <div class="flex flex-col items-center min-w-[100px] relative">
+                <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
+                <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
+                <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;"><span id="lock-icon" class="text-[10px]">🔒</span></div>
+            </div>
+            <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+            <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização">Carregar Dados</button>
+        </div>
+
+        <div id="save-status" class="text-[0.65rem] font-bold text-gray-400 ml-4 flex items-center gap-1 min-w-[120px] shrink-0">
+            <span class="w-2 h-2 rounded-full bg-gray-400" id="save-dot"></span><span id="save-text">Nuvem Sincronizada</span>
+        </div>
+        
+        <div id="loading-indicator" class="shrink-0"><div class="spinner"></div> Carregando...</div>
+        
+        <div class="flex-grow"></div>
+        
+        <button onclick="window.openPresentationSetup()" class="btn-presentation px-4 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase" id="btn-PRESENTATION">
+            📺 Modo TV
+        </button>
+
+        <button onclick="window.setViewMode('dashboard')" class="bg-emerald-600 hover:bg-emerald-700 text-white rounded px-4 py-2 shadow-md flex items-center justify-center mr-2 shrink-0 font-bold text-xs uppercase transition-all" id="btn-DASHBOARD">
+            📊 Resultados Agora
+        </button>
+
+        <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+    </div>
+
+    <!-- MODAIS DE APOIO -->
+    <div id="password-modal">
+        <div class="pwd-content">
+            <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
+            <p id="pwd-desc" class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
+            <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
+            <div class="flex justify-between gap-2">
+                <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
+                <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
+            </div>
+            <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
+        </div>
+    </div>
+
+    <div id="defect-lookup-panel">
+        <div class="lookup-header">
+            <h3 class="font-bold text-gray-800 text-sm" id="lookup-title">Lista de Defeitos</h3>
+            <button onclick="window.toggleDefectList()" class="text-gray-500 hover:text-red-600 font-bold px-2">✕</button>
+        </div>
+        <div class="lookup-content">
+            <input type="text" id="defect-search" class="w-[150px] h-[50px] border border-blue-300 rounded p-2 text-xs focus:ring-2 focus:ring-blue-200 outline-none mb-2" placeholder="Pesquisar..." oninput="window.renderDefectLookup()">
+            <div class="flex text-[10px] font-bold text-gray-500 px-2 border-b pb-1">
+                <span class="w-12 text-center border-r">Cód</span><span class="pl-2">Descrição</span>
+            </div>
+            <div id="defect-lookup-list" class="lookup-list"></div>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-7xl mx-auto transition-opacity duration-300"></div>
+    <datalist id="ref-suggestions"></datalist>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -382,9 +331,78 @@
 
         const seedOvenDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu", "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte", "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral", "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada", "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu", "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu", "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta", "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa", "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem", "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas" };
         const seedGrinderDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "4": "Covinha", "7": "Pingo Preto", "10": "Risco de Véu", "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha", "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte", "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", "64": "Pingo d'água", "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu", "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", "99": "Outros", "111": "Reprensado", "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador", "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno", "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica" };
+        
+        const seedTroubleshooting = {
+            "1": "Contato mecânico abrasivo; peças encavaladas, guias gastas ou trancamentos na linha de transporte, possível empilhado na classificação solto posteriormente.",
+            "2": "Desequilíbrio térmico no forno causado por falta de material, trancamentos na entrada ou falhas na alimentação devido a problemas na descarga box.",
+            "3": "Respingos das cabeças de impressão ou excesso de tinta acumulada na barra da máquina de decoração digital, reduzir temperatura/vapor das peças ou reduzir o tempo de purga.",
+            "4": "Secagem longa no esmalte, ou bolhas que não \"alisaram\" devido à alta viscosidade da camada. Bater sopros, retirar pó das estruturas, acelerar a secagem.",
+            "7": "Contaminação pontual por resíduos metálicos ou orgânicos que fundem e mancham a peça durante a queima. Fazer limpeza nas peneiras, colocar imãs nas massa e PHs.",
+            "9": "Batidas, lascamentos e pontas quebradas antes da aplicação de engobe/esmalte.",
+            "10": "Instabilidade reológica na campana; viscosidade ou densidade da suspensão inadequadas, ou presença de sujeira no bocal/disco da campana.",
+            "12": "Impacto mecânico durante o transporte ou manipulação na linha de aplicação de esmaltes. Fazer uma verificação reversa, da entrada do forno para trás. Carga e descarga BOX podem ser pontos sensíveis.",
+            "13": "Desprendimento de fragmentos do vidrado antes da queima, geralmente por baixa resistência mecânica da camada seca, mal rebarbado eu rebarbadores gastos ou desregulados.",
+            "14": "Falha na filtragem dos insumos ou presença de resíduos grosseiros provenientes de uma moagem ineficiente ou agentes externos. Verificar peneiras e filtros rasgados, lavar com frequência, correias com sujeira secas, raspadores ineficientes, atenção a sujeira de biscoito, o defeito pode estar vindo da PH e sendo confundido com grumo.",
+            "15": "Decomposição de partículas de carbonato de cálcio (calcário) na massa; o gás CO2 fica aprisionado se o esmalte selar a superfície antes da saída total dos gases. Verificar temperaturas das peças e camada de água, ver se biscoito não está chegando “molhado” na aplicação de engobe ou na aplicação de esmalte.",
+            "18": "Respingos acidentais durante a aplicação da camada de fundo (engobe) na linha de esmaltação. Verificar raspadores de correias, polias sujas ou muito rápidas.",
+            "25": "Irregularidade superficial assemelhando-se a batidas, vinculada a viscosidade dos insumos alta ou na superfície irregular do biscoito.",
+            "26": "Presença de material estranho grosseiro, como fragmentos de refratários ou massa seca, incrustado na superfície. Provenientes de oscilações na atmosfera do forno, vazios ou ineficiência das chaminé.",
+            "27": "Pequenos orifícios similares a picadas de agulha; gases aprisionados ou viscosidade excessiva do esmalte na temperatura de queima. Reduzir camadas pode ajudar, mas verificar a formulação e curva de queima.",
+            "28": "Variação dimensional excessiva ou irregular das peças durante o ciclo de tratamento térmico. Incompatibilidade do acordo dilatométrico entre massa, engobe e esmalte durante o resfriamento.",
+            "29": "Trincas ou rachaduras no matéria devido a impactos na linha. Verificar toda a extensão da linha por pontos de impacto/batidas.",
+            "30": "Resíduos de rolos ou material refratário que caem sobre a peça durante o trajeto dentro do forno.",
+            "31": "Sobreposição acidental de peças na linha de transporte ou por trancamento, pode ser na linha nas cargas e descargas box ou na entrada/dentro do forno.",
+            "33": "Acúmulo de massa úmida no punção da prensa, marcando a superfície do biscoito, geralmente nas laterais ou cantos.",
+            "34": "Deformação nos vértices da peça onde os gradientes de umidade e temperatura são mais intensos e a transferência de massa é acelerada. Verificar secagem, extração da peça na PH.",
+            "36": "Defeito mecânico ou de aplicação no acabamento das bordas das peças. Pode ser causado por desgaste na matrizaria (caixa/punção) e pode ser ajustado paliativamente nos rebarbadores se forem de tamanho pequeno.",
+            "37": "Resíduos ou excesso de pó sobre o suporte cerâmico cru que prejudicam a aderência do engobe e do esmalte. Verificar limpeza na PH (caída, sopros, régua etc.), ajustar bem as escovas da linha.",
+            "38": "Falha na compactação de massa, geralmente relacionado a falhas na desaeração ou massa muito seca.",
+            "41": "Dano físico ocorrido durante a seleção, empilhamento ou paletização das peças acabadas.",
+            "42": "Marcas lineares superficiais causadas por contato abrasivo após a etapa de queima. Empilhados ou trancamentos.",
+            "45": "Tensão excessiva na camada vítrea que provoca o encolhimento ou abertura localizada da superfície. Geralmente proveniente de impactos no trajeto, pode ser reduzido ou eliminado aumentando a plasticidade do insumo com correção de ligantes como o CMC ou AMISOLO.",
+            "47": "Introdução de corpos estranhos como borracha (retorno de peneiras), óleo hidráulico (vazamentos na prensa) ou ferrugem (silos de estocagem). Fazer uma varredura no trajeto por pontos com contaminação, verificar peneiras da massa (retorno também), isolar silos com maior incidência do defeito.",
+            "48": "Material de boa qualidade desclassificado por engano ou falha.",
+            "49": "Variação dimensional além da tolerância permitida, originada por retração irregular de queima ou falha no ajuste das retíficas. Avaliar estafetas e dimensional na saída dos fornos, verificar se é possível corrigir na PH.",
+            "54": "Choque mecânico nas bordas durante o processo de seleção, armazenamento ou embalagem.",
+            "60": "Resíduos de pó ou de massa provenientes do sistema de limpeza das rebarbas das peças cruas. Podem estar muito apertados, úmidos ou com sopro/aspiração ineficientes.",
+            "64": "Marcas circulares causadas por gotejamento de condensação ou água sobre a peça antes da entrada no forno. Pode ser de chuva, vazamentos em linha, condensação em estruturas nos dias frios.",
+            "73": "Rompimento momentâneo da cortina de esmalte na campana devido a bolhas de ar ou flutuações reológicas. Interrupção no fluxo de aplicação dos insumos, causada por bolhas de ar ou entupimento parcial do sistema. Bolhas podem ser geradas por excesso de agitação, bombas com problema, reologia do insumo, tensão superficial ou viscosidade alta.",
+            "74": "Peças retiradas da linha para testes de laboratório ou liberações.",
+            "75": "Umidade residual excessiva (acima de 1,5%); a saída violenta da água no forno provoca a explosão da peça. Peças úmidas que pararam sob as aplicações ou que estão no estoque a muito tempo e podem ter recebido chuva.",
+            "77": "Falha física na transição das peças da zona de resfriamento final para a linha de transporte. Avisar o forneiro para ajustar o resfriamento.",
+            "78": "Variação na coloração final por instabilidade térmica ou falha no desenvolvimento de cor nas impressoras digitais. As vezes podem ser insumos trocados, camadas erradas ou tintas misturadas.",
+            "80": "Colisão mecânica causada por desalinhamento na linha ou acúmulo de peças (encavalamento). Verificar guias e correias.",
+            "85": "Instabilidade na cortina de aplicação que gera marcas onduladas; ligada à baixa viscosidade ou vibrações no equipamento.",
+            "88": "Presença de partículas não dissolvidas ou aglomeradas na suspensão do esmalte, pode ser excesso de CMC, correias ressecadas, peneiras transbordando, polias sujas.",
+            "93": "Respingos da camada protetora final (cobertura) aplicada sobre a decoração digital. Lavar a cabine com frequência, garantir o bom peneiramento do insumo. (caso for em disco, verificar se está na rotação ideal).",
+            "94": "Descarte de peças que apresentam dimensões significativamente maiores que o calibre padrão.",
+            "95": "Dano causado por falha mecânica ou erro de programação nos braços automatizados de manipulação das caixas/pilhas.",
+            "96": "Desvio geométrico de ortogonalidade onde a peça assume formato trapezoidal.",
+            "97": "Código específico para desvios dimensionais ou de retilinearidade detectados por sensores ópticos.",
+            "98": "Descarte total da peça devido a curvaturas severas que impedem o uso comercial.",
+            "99": "REGISTRAR UM NOVO DEFEITO.",
+            "106": "Deformação Piroplástica ; excesso de fase líquida ou baixa viscosidade durante a queima que faz a peça ceder sob o próprio peso entre os rolos.",
+            "109": "Riscos deixados por abrasivos durante o acabamento lateral ou limpeza superficial. Verificar a condição/regulagem das escovas e trocar preventivamente.",
+            "110": "Marcas de umidade externa incidentais sobre as peças durante estocagem ou transporte em dias de muita chuva.",
+            "111": "Resíduos de massa que permanecem no molde e são compactados na peça seguinte, gerando relevos irregulares. Ferificar sistema de limpeza da PH e regulagens.",
+            "113": "Entupimento parcial de nozzles (bicos) ou sujeira acumulada nos protetores das cabeças de impressão. Fazer purgas, avisar o técnico para progarmar a troca do módulo de impressão.",
+            "114": "Dano mecânico causado por falha no sistema de empilhamento ou paletização automatizada.",
+            "116": "Peças danificadas por empilhamento incorreto, excesso de peso ou curvatura, transporte por vias acidentadas, falta de borracha nos pancones e paletes.",
+            "117": "Material que fica fora do estoque coberto e retorna para retrabalho com embalagens danificadas ou marcas de ataque de muratura devido ao empilhamento prolongado sobre umidade.",
+            "118": "Diferença entre as medidas diagonais da peça, causada por prensagem isostática irregular ou retífica incorreta.",
+            "119": "Alguma falha na decoração ou imagem, ou ausência dela como peças brancas.",
+            "122": "Ajuste incorreto do ângulo de inclinação nas laterais da peça, pode ser do rebarbador ou raio do punção.",
+            "123": "Desgaste excessivo ou batimento lateral dos rebolos de diamante na retífica, deixando a borda irregular.",
+            "124": "Pressão excessiva dos cabeçotes ou vibração sobre peças com tensões residuais elevadas.",
+            "127": "Tensões desenvolvidas no resfriamento por falta de acordo dilatométrico ou má distribuição de temperatura no forno. Verificar as condições de curva de queima com o forneiro. Avisar departamento técnico.",
+            "129": "Riscos mecânicos originados na extração ou transporte das peças conformadas ainda cruas.",
+            "130": "Peças que não passaram pelo ciclo de queima ou foram retiradas prematuramente do forno."
+        };
 
         let ovenDefectMap = { ...seedOvenDefects };
         let grinderDefectMap = { ...seedGrinderDefects };
+        let defectResolutionsMap = { ...seedTroubleshooting };
+        
         let configDefectMode = 'ovens';
         let lookupOven = 'FORNO 2';
 
@@ -399,7 +417,6 @@
         let isDataLoaded = false; 
         
         let isAdminUnlocked = false;
-        let currentUserRole = null; // Guardará o perfil da simulação Microsoft
         let passwordContext = 'config'; 
         
         let unsubscribeRealtimeList = []; 
@@ -414,74 +431,6 @@
 
         let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION };
         const saveTimeouts = {}; const ovenDataStore = {};
-
-        // --- SIMULADOR MOCK SSO (MICROSOFT) ---
-        window.simulateSSOLogin = () => {
-            const emailInput = document.getElementById('mock-email').value.trim().toLowerCase();
-            const errorMsg = document.getElementById('mock-error');
-            const loginBtn = document.getElementById('mock-login-btn');
-
-            if (!emailInput) {
-                errorMsg.innerText = "Por favor, introduza um e-mail válido.";
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            if (!emailInput.endsWith('@mohawkbr.com')) {
-                errorMsg.innerText = "Acesso Negado: A organização bloqueou este dispositivo. Utilize o seu e-mail corporativo da Mohawk.";
-                errorMsg.classList.remove('hidden');
-                return;
-            }
-
-            errorMsg.classList.add('hidden');
-            loginBtn.innerText = "Aguarde...";
-            loginBtn.disabled = true;
-
-            // Simular atraso de rede do Azure AD
-            setTimeout(() => {
-                const adminEmails = ['adans.custodio@mohawkbr.com', 'gerente@mohawkbr.com', 'admin@mohawkbr.com', 'supervisor@mohawkbr.com'];
-                
-                // Define as iniciais do Perfil no Botão Redondo
-                const initials = emailInput.substring(0, 2).toUpperCase();
-                document.getElementById('btn-USER-PROFILE').innerText = initials;
-                document.getElementById('btn-USER-PROFILE').title = `Sessão: ${emailInput}`;
-
-                if (adminEmails.includes(emailInput)) {
-                    // LOGIN GESTOR
-                    currentUserRole = 'admin';
-                    isAdminUnlocked = true; // Gestor tem acesso histórico nativo
-                    
-                    // Exibe ferramentas de gestão
-                    document.getElementById('btn-CONFIG').style.display = 'flex';
-                    document.getElementById('btn-DASHBOARD').style.display = 'flex';
-                    document.querySelector('.btn-presentation').style.display = 'flex';
-                    
-                    // Oculta ecrã de login e exibe a App
-                    document.getElementById('mock-login-overlay').style.display = 'none';
-                    document.getElementById('app-wrapper').style.display = 'flex';
-                    
-                    window.setViewMode('dashboard'); 
-                } else {
-                    // LOGIN OPERAÇÃO
-                    currentUserRole = 'operator';
-                    isAdminUnlocked = false; 
-                    
-                    // Oculta ferramentas de gestão (Apenas ecrãs de Produção)
-                    document.getElementById('btn-CONFIG').style.display = 'none';
-                    document.getElementById('btn-DASHBOARD').style.display = 'none';
-                    document.querySelector('.btn-presentation').style.display = 'none';
-                    
-                    // Oculta ecrã de login e exibe a App
-                    document.getElementById('mock-login-overlay').style.display = 'none';
-                    document.getElementById('app-wrapper').style.display = 'flex';
-                    
-                    window.setViewMode('single', 'FORNO 2');
-                }
-                
-                updateDateUI();
-                document.getElementById('save-text').innerText = "Nuvem Sincronizada";
-            }, 1200);
-        };
 
         // --- LÓGICA DO MODO APRESENTAÇÃO ---
         window.openPresentationSetup = () => { document.getElementById('presentation-screens-list').innerHTML = ''; window.addPresentationScreenRow(); document.getElementById('presentation-setup-modal').style.display = 'flex'; };
@@ -603,7 +552,7 @@
             content.innerHTML = '';
         };
 
-        // --- NOVA FUNÇÃO: OFENSORES PARA A GESTÃO (DRILL-DOWN DETALHADO) ---
+        // --- OFENSORES PARA A GESTÃO (DRILL-DOWN DETALHADO) ---
         window.generateManagerOffendersHTML = (ovenName) => {
             const data = ovenDataStore[ovenName];
             if (!data) return '';
@@ -803,14 +752,15 @@
                             if (item && item.desc && item.desc.trim() !== '' && item.desc.toLowerCase() !== 'nenhum') {
                                 const v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(String(item.val).replace(',', '.'));
                                 if (!isNaN(v) && v > 0) {
-                                    map[item.desc] = (map[item.desc] || 0) + v;
+                                    if (!map[item.desc]) map[item.desc] = { val: 0, cod: item.cod };
+                                    map[item.desc].val += v;
                                 }
                             }
                         });
                     }
                 }
                 return Object.entries(map)
-                    .map(([desc, val]) => ({ desc, val }))
+                    .map(([desc, payload]) => ({ desc, val: payload.val, cod: payload.cod }))
                     .sort((a, b) => b.val - a.val)
                     .slice(0, 3);
             };
@@ -835,14 +785,27 @@
                 
                 let itemsHtml = offenders.map((off, index) => {
                     const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
+                    const resolution = defectResolutionsMap[off.cod] || '';
+
+                    let resolutionHtml = '';
+                    if (resolution && !isMin) { 
+                        resolutionHtml = `
+                            <div class="mt-2 pt-2 border-t border-gray-200/60 text-[0.7rem] sm:text-sm xl:text-base text-gray-700 w-full text-justify leading-snug">
+                                <span class="font-bold text-gray-900 uppercase text-[0.65rem] sm:text-xs xl:text-sm tracking-wider mr-1">O que fazer:</span>${resolution}
+                            </div>
+                        `;
+                    }
                     
                     return `
-                        <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
-                            <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">#${index + 1}</span>
-                                <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
+                        <div class="flex flex-col justify-start items-start ${bgColors[index]} ${theme.val} p-3 sm:p-4 rounded-xl w-full shadow-sm transition-all h-auto">
+                            <div class="flex justify-between items-center w-full gap-2">
+                                <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                                    <span class="text-2xl sm:text-3xl xl:text-4xl font-black ${rankColors[index]} drop-shadow-sm w-10 sm:w-12 text-center shrink-0">#${index + 1}</span>
+                                    <span class="${textSizes[index]} font-bold text-gray-800 break-words line-clamp-2 leading-tight">${off.desc}</span>
+                                </div>
+                                <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-1 shrink-0">${valStr}</span>
                             </div>
-                            <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
+                            ${resolutionHtml}
                         </div>
                     `;
                 }).join('');
@@ -850,7 +813,7 @@
                 return `
                     <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
                         <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-4 z-10 drop-shadow-sm text-center">${title}</span>
-                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-center">
+                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-start overflow-y-visible">
                             ${itemsHtml}
                         </div>
                     </div>
@@ -1120,18 +1083,7 @@
 
         const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
         const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
-        window.handleLockClick = () => { 
-            const diffDays = getDiffDays(); 
-            if (diffDays > 3) { 
-                if (currentUserRole === 'admin') {
-                    isAdminUnlocked = !isAdminUnlocked;
-                    updateDateUI();
-                    renderContent();
-                } else {
-                    alert("Acesso Negado: Apenas gestores podem desbloquear o histórico.");
-                }
-            } 
-        };
+        window.handleLockClick = () => { if (getDiffDays() > 3) { isAdminUnlocked = !isAdminUnlocked; updateDateUI(); renderContent(); } };
 
         window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todas as telas a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
 
@@ -1201,15 +1153,89 @@
             unsubscribeDefects = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; 
+                    grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    defectResolutionsMap = { ...seedTroubleshooting, ...(data.resolutions || {}) };
+                    
                     Object.keys(ovenDefectMap).forEach(k => { if (!ovenDefectMap[k] || ovenDefectMap[k] === "[REMOVIDO]") delete ovenDefectMap[k]; });
                     Object.keys(grinderDefectMap).forEach(k => { if (!grinderDefectMap[k] || grinderDefectMap[k] === "[REMOVIDO]") delete grinderDefectMap[k]; });
-                    if (viewMode === 'config') renderContent(); const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup();
-                } else setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects });
+                    
+                    if (viewMode === 'config') renderContent(); 
+                    const panel = document.getElementById('defect-lookup-panel'); 
+                    if (panel && panel.style.display === 'flex') window.renderDefectLookup();
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects, resolutions: seedTroubleshooting });
+                }
             });
         };
 
-        const saveDefectsToFirebase = async () => { if(!db) return; setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: ovenDefectMap, grinders: grinderDefectMap }); setSaveStatus('saved'); } catch(e) { setSaveStatus('error'); } };
+        window.addDefect = async () => { 
+            const code = document.getElementById('new-defect-code').value.trim();
+            const desc = document.getElementById('new-defect-desc').value.trim();
+            
+            if(code && desc) { 
+                const isOven = configDefectMode === 'ovens';
+                const mapName = isOven ? 'ovens' : 'grinders';
+                
+                (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+                window.renderContent();
+                const panel = document.getElementById('defect-lookup-panel'); 
+                if (panel && panel.style.display === 'flex') window.renderDefectLookup();
+                
+                setSaveStatus('saving'); 
+                try { 
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                        [mapName]: { [code]: desc }
+                    }, { merge: true }); 
+                    setSaveStatus('saved'); 
+                } catch(e) { setSaveStatus('error'); } 
+            } else {
+                alert("Preencha código e descrição."); 
+            }
+        };
+
+        window.deleteDefect = async (code) => { 
+            if(confirm(`Remover defeito ${code}?`)) { 
+                const isOven = configDefectMode === 'ovens'; 
+                const mapName = isOven ? 'ovens' : 'grinders';
+                
+                (isOven ? ovenDefectMap : grinderDefectMap)[code] = "[REMOVIDO]";
+                window.renderContent();
+
+                setSaveStatus('saving'); 
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                        [mapName]: { [code]: "[REMOVIDO]" }
+                    }, { merge: true });
+                    setSaveStatus('saved');
+                } catch(e) { setSaveStatus('error'); }
+            } 
+        };
+
+        window.updateDefectDesc = async (code, desc) => { 
+            const isOven = configDefectMode === 'ovens'; 
+            const mapName = isOven ? 'ovens' : 'grinders';
+            
+            (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+            setSaveStatus('saving');
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                    [mapName]: { [code]: desc }
+                }, { merge: true });
+                setSaveStatus('saved');
+            } catch(e) { setSaveStatus('error'); }
+        };
+
+        window.updateDefectResolution = async (code, resText) => { 
+            defectResolutionsMap[code] = resText;
+            setSaveStatus('saving');
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                    resolutions: { [code]: resText }
+                }, { merge: true });
+                setSaveStatus('saved');
+            } catch(e) { setSaveStatus('error'); }
+        };
 
         const createEmptySubRow = () => ({ cod: '', desc: '', val: '' });
         const createEmptyParadaRow = () => ({ desc: '', val: '' }); 
@@ -1405,10 +1431,44 @@
 
         window.runParadaRow = (oven, row) => {
             const data = ovenDataStore[oven].rows[row].paradas; let total = 0; if (data) { data.forEach(p => { const v = parseInt(p.val, 10); if (!isNaN(v) && v > 0) total += v; }); }
-            const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`); const utilDisplay = document.getElementById(`util-parada-${oven.replace(/\s+/g, '-')}-${row}`); let targetU = ovenDataStore[oven]?.targets?.utilization || window.getTargets(oven).utilization || 90.0;
+            const display = document.getElementById(`total-parada-${oven.replace(/\s+/g, '-')}-${row}`); 
+            const utilDisplay = document.getElementById(`util-parada-${oven.replace(/\s+/g, '-')}-${row}`); 
+            let targetU = ovenDataStore[oven]?.targets?.utilization || window.getTargets(oven).utilization || 90.0;
 
-            if (display) { if (total > 0) { const hrStr = window.getTempoVazioFormat(total).replace('min', 'm').replace(' ', ''); display.innerText = `${total}m (${hrStr})`; display.className = "text-[0.6rem] font-bold text-blue-800"; } else { display.innerText = '0m'; display.className = "text-[0.6rem] font-bold text-gray-500"; } }
-            if (utilDisplay) { let utilPercent = ((120 - total) / 120) * 100; let roundedUtil = parseFloat(utilPercent.toFixed(1)); utilDisplay.innerText = `${roundedUtil.toFixed(1).replace('.', ',')}%`; utilDisplay.className = `text-[0.6rem] font-black tracking-tighter leading-none ${roundedUtil >= targetU ? 'text-green-600' : 'text-red-600'}`; }
+            if (display) { 
+                if (total > 0) { 
+                    const hrStr = window.getTempoVazioFormat(total).replace('min', 'm').replace(' ', ''); 
+                    display.innerText = `${total}m (${hrStr})`; 
+                    display.className = "text-[0.6rem] font-bold text-blue-800"; 
+                } else { 
+                    display.innerText = '0m'; 
+                    display.className = "text-[0.6rem] font-bold text-gray-500"; 
+                } 
+            }
+            
+            if (utilDisplay) { 
+                let utilPercent = 0;
+                if (viewMode === 'presentation') {
+                    let totalDia = 0;
+                    for (let i = 0; i < 12; i++) {
+                        const rowParadas = ovenDataStore[oven].rows[i]?.paradas;
+                        if (rowParadas) {
+                            rowParadas.forEach(p => { 
+                                const v = parseInt(p.val, 10); 
+                                if (!isNaN(v) && v > 0) totalDia += v; 
+                            });
+                        }
+                    }
+                    utilPercent = ((1440 - totalDia) / 1440) * 100;
+                } 
+                else {
+                    utilPercent = ((120 - total) / 120) * 100; 
+                }
+
+                let roundedUtil = parseFloat(utilPercent.toFixed(1)); 
+                utilDisplay.innerText = `${roundedUtil.toFixed(1).replace('.', ',')}%`; 
+                utilDisplay.className = `text-[0.6rem] font-black tracking-tighter leading-none ${roundedUtil >= targetU ? 'text-green-600' : 'text-red-600'}`; 
+            }
             window.highlightMax(oven, row, 'paradas');
         };
 
@@ -1416,9 +1476,6 @@
         window.getTempoVazioFormat = (val) => { const num = parseInt(val, 10); if (isNaN(num) || num <= 0) return '-'; const hours = Math.floor(num / 60); const mins = num % 60; return hours > 0 ? `${hours}h${mins > 0 ? ' ' + mins + 'min' : ''}` : `${mins}min`; };
         window.setConfigDefectMode = (mode) => { configDefectMode = mode; renderContent(); };
         
-        window.addDefect = async () => { const code = document.getElementById('new-defect-code').value.trim(), desc = document.getElementById('new-defect-desc').value.trim(); if(code && desc) { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); document.getElementById('new-defect-code').value = ''; document.getElementById('new-defect-desc').value = ''; const panel = document.getElementById('defect-lookup-panel'); if (panel && panel.style.display === 'flex') window.renderDefectLookup(); } else alert("Preencha código e descrição."); };
-        window.deleteDefect = async (code) => { if(confirm(`Remover defeito ${code}?`)) { const isOven = configDefectMode === 'ovens'; const map = isOven ? ovenDefectMap : grinderDefectMap; const seedMap = isOven ? seedOvenDefects : seedGrinderDefects; if (seedMap[code]) map[code] = "[REMOVIDO]"; else delete map[code]; await saveDefectsToFirebase(); } };
-        window.updateDefectDesc = async (code, desc) => { (configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap)[code] = desc; await saveDefectsToFirebase(); };
         window.toggleDefectList = (ovenName) => { lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven; const panel = document.getElementById('defect-lookup-panel'); if (panel.style.display === 'flex') panel.style.display = 'none'; else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); } };
         window.renderDefectLookup = () => { const filter = document.getElementById('defect-search').value.toLowerCase(); const activeMap = getActiveDefectMap(lookupOven) || {}; document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter))).map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join(''); };
 
@@ -1439,7 +1496,25 @@
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
 
-        const generateDefectListHTML = () => Object.entries(configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => `<div class="defect-item"><div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div><div class="flex-grow px-2"><input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)"></div><button onclick="window.deleteDefect('${code}')" class="text-red-500 font-bold px-2">✕</button></div>`).join('');
+        const generateDefectListHTML = () => {
+            const activeMap = configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap;
+            return Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => {
+                const res = defectResolutionsMap[code] || '';
+                return `
+                <div class="flex flex-col border-b border-gray-200 py-3 bg-white hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center px-2 mb-1">
+                        <div class="w-12 font-black text-blue-800 text-center border-r border-gray-300 pr-2 text-sm">${code}</div>
+                        <div class="flex-grow px-2">
+                            <input type="text" class="w-full bg-transparent font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-sm" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                        </div>
+                        <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2 transition-colors">✕</button>
+                    </div>
+                    <div class="pl-14 pr-8">
+                        <textarea class="w-full text-xs p-1.5 border border-gray-200 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-200 outline-none resize-y text-gray-600" rows="2" placeholder="Descreva a Causa Raiz e a Ação sugerida (O que fazer...)" onchange="window.updateDefectResolution('${code}', this.value)">${res}</textarea>
+                    </div>
+                </div>`;
+            }).join('');
+        };
 
         const generateConfigHTML = () => `
             <div class="config-container">
@@ -1458,11 +1533,11 @@
                     
                     <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                <div class="flex flex-col">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Base de Conhecimento (Defeitos)</h3>
                     <div class="flex justify-center gap-4 mb-4"><label><input type="radio" name="defect-mode" ${configDefectMode === 'ovens' ? 'checked' : ''} onchange="window.setConfigDefectMode('ovens')"><span class="ml-1 font-bold text-sm">Fornos</span></label><label><input type="radio" name="defect-mode" ${configDefectMode === 'grinders' ? 'checked' : ''} onchange="window.setConfigDefectMode('grinders')"><span class="ml-1 font-bold text-sm">Retíficas</span></label></div>
-                    <div class="flex gap-2 mb-2"><input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center font-bold text-sm"><input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm"><button onclick="window.addDefect()" class="bg-green-600 text-white font-bold px-3 rounded">+</button></div>
-                    <div class="defect-list-container mt-4">${generateDefectListHTML()}</div>
+                    <div class="flex gap-2 mb-2"><input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center font-bold text-sm"><input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm"><button onclick="window.addDefect()" class="bg-green-600 text-white font-bold px-3 rounded shadow hover:bg-green-700">+</button></div>
+                    <div class="defect-list-container mt-2 flex-grow overflow-y-auto">${generateDefectListHTML()}</div>
                 </div>
             </div>`;
 
