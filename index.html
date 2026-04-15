@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* --- VERSÃO 6.0 - IMPLEMENTADA NOVA ABA DE GESTORES PARA OS OFENSORES E AJUSTE DE CÁLCULO DE UTILIZAÇÃO (TV CUMULATIVA) --- */
+        /* --- VERSÃO 6.2 - DASHBOARD COM QUEBRA ACUMULADA --- */
         
         /* --- ESTILOS GERAIS E TIPOGRAFIA --- */
         body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; }
@@ -82,9 +82,8 @@
         .config-header { grid-column: 1 / -1; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 10px; }
         
         .defect-list-container { height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; background: #f9fafb; }
-        .defect-item { display: flex; border-bottom: 1px solid #eee; padding: 4px; align-items: center; font-size: 0.8rem; }
-        .defect-item:nth-child(even) { background-color: white; }
-        .defect-item input { text-align: left; }
+        .defect-item { display: flex; flex-direction: column; border-bottom: 1px solid #eee; padding: 8px; font-size: 0.85rem; background-color: white; transition: background-color 0.2s; }
+        .defect-item:hover { background-color: #f0f9ff; }
         
         #password-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; }
         .pwd-content { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
@@ -311,7 +310,7 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 6.0; 
+        const APP_VERSION = 6.2; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -332,9 +331,78 @@
 
         const seedOvenDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "3": "Pingo de Tinta", "4": "Covinha", "7": "Pingo Preto", "9": "Ponta Vidrada", "10": "Risco de Veu", "11": "Pingo de Tinta", "12": "Ponta Quebrada Esmaltação", "13": "Lascado de esmaltação", "14": "Sujeira de Esmalte", "15": "Furo Esmalte", "18": "Pingo de Engobe", "25": "Martelado", "26": "Pedrinha", "27": "Pin Holles", "28": "Retração Formo", "29": "Ra Lateral", "30": "Sujeira de Forno", "31": "Encavalado", "33": "Pereba", "34": "Ra Canto", "35": "RA Centro", "36": "Aresta", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado de classificação", "42": "Riscado", "45": "Retração Esmalte", "47": "Massa contaminada", "48": "A no C", "54": "Ponta Quebrada Classificação", "60": "Sujeira de Rebarbador", "64": "Pingo d'agua", "73": "Falha de Veu", "74": "Peça de Prova", "75": "Peças estouradas", "77": "Quebra de saída", "78": "Fora de tom", "80": "Quebra p/Trancamento", "85": "Onda Veu", "88": "Grumo de esmalte", "93": "Pingo de Cobertura", "94": "Desc p/ Tam GG", "96": "Desti p/ Trapezio", "97": "Desi p/ Luneta", "98": "Desc/ Empeno", "99": "Outros", "95": "Quebra do Robo", "106": "Deformado", "109": "Marca de Lixa", "110": "Pingo de chuva", "111": "Reprensado", "113": "Risco de Decoradora Digital", "114": "Quebra de empilhador", "116": "Quebra de Estocagem", "119": "Falha de Digital", "127": "Empeno", "129": "Arranhado de prensa", "130": "Peças Cruas" };
         const seedGrinderDefects = { "1": "Arranhado", "2": "Empeno por Vazio", "4": "Covinha", "7": "Pingo Preto", "10": "Risco de Véu", "14": "Sujeira de Esmalte", "15": "Furo no Esmalte", "18": "Pingo de Engobe", "26": "Pedrinha", "29": "RA Lateral", "30": "Sujeira de Forno", "34": "RA Canto", "35": "RA Centro", "37": "Sujeira de Biscoito", "38": "Falhado", "41": "Lascado", "45": "Retração de Esmalte", "47": "Massa Contaminada", "54": "Ponta Quebrada", "60": "Sujeira Rebarbador", "64": "Pingo d'água", "73": "Falha de Véu", "78": "Fora de Ton", "80": "Quebra por Trancamento", "85": "Onda de Véu", "88": "Grumo no Esmalte", "93": "Pingo de Cobertura", "99": "Outros", "111": "Reprensado", "113": "Risco de Decoradora Digital", "106": "Deformado", "109": "Marca de Lixa", "114": "Quebra de Empilhador", "116": "Quebra de Estocagem", "117": "Material Molhado", "119": "Falha de Digital", "127": "Empeno", "49": "Fora de Calibre", "118": "Diagonal", "123": "Serrilhado", "122": "Chanfrado", "124": "Quebra de Retifica" };
+        
+        const seedTroubleshooting = {
+            "1": "Contato mecânico abrasivo; peças encavaladas, guias gastas ou trancamentos na linha de transporte, possível empilhado na classificação solto posteriormente.",
+            "2": "Desequilíbrio térmico no forno causado por falta de material, trancamentos na entrada ou falhas na alimentação devido a problemas na descarga box.",
+            "3": "Respingos das cabeças de impressão ou excesso de tinta acumulada na barra da máquina de decoração digital, reduzir temperatura/vapor das peças ou reduzir o tempo de purga.",
+            "4": "Secagem longa no esmalte, ou bolhas que não \"alisaram\" devido à alta viscosidade da camada. Bater sopros, retirar pó das estruturas, acelerar a secagem.",
+            "7": "Contaminação pontual por resíduos metálicos ou orgânicos que fundem e mancham a peça durante a queima. Fazer limpeza nas peneiras, colocar imãs nas massa e PHs.",
+            "9": "Batidas, lascamentos e pontas quebradas antes da aplicação de engobe/esmalte.",
+            "10": "Instabilidade reológica na campana; viscosidade ou densidade da suspensão inadequadas, ou presença de sujeira no bocal/disco da campana.",
+            "12": "Impacto mecânico durante o transporte ou manipulação na linha de aplicação de esmaltes. Fazer uma verificação reversa, da entrada do forno para trás. Carga e descarga BOX podem ser pontos sensíveis.",
+            "13": "Desprendimento de fragmentos do vidrado antes da queima, geralmente por baixa resistência mecânica da camada seca, mal rebarbado eu rebarbadores gastos ou desregulados.",
+            "14": "Falha na filtragem dos insumos ou presença de resíduos grosseiros provenientes de uma moagem ineficiente ou agentes externos. Verificar peneiras e filtros rasgados, lavar com frequência, correias com sujeira secas, raspadores ineficientes, atenção a sujeira de biscoito, o defeito pode estar vindo da PH e sendo confundido com grumo.",
+            "15": "Decomposição de partículas de carbonato de cálcio (calcário) na massa; o gás CO2 fica aprisionado se o esmalte selar a superfície antes da saída total dos gases. Verificar temperaturas das peças e camada de água, ver se biscoito não está chegando “molhado” na aplicação de engobe ou na aplicação de esmalte.",
+            "18": "Respingos acidentais durante a aplicação da camada de fundo (engobe) na linha de esmaltação. Verificar raspadores de correias, polias sujas ou muito rápidas.",
+            "25": "Irregularidade superficial assemelhando-se a batidas, vinculada a viscosidade dos insumos alta ou na superfície irregular do biscoito.",
+            "26": "Presença de material estranho grosseiro, como fragmentos de refratários ou massa seca, incrustado na superfície. Provenientes de oscilações na atmosfera do forno, vazios ou ineficiência das chaminé.",
+            "27": "Pequenos orifícios similares a picadas de agulha; gases aprisionados ou viscosidade excessiva do esmalte na temperatura de queima. Reduzir camadas pode ajudar, mas verificar a formulação e curva de queima.",
+            "28": "Variação dimensional excessiva ou irregular das peças durante o ciclo de tratamento térmico. Incompatibilidade do acordo dilatométrico entre massa, engobe e esmalte durante o resfriamento.",
+            "29": "Trincas ou rachaduras no matéria devido a impactos na linha. Verificar toda a extensão da linha por pontos de impacto/batidas.",
+            "30": "Resíduos de rolos ou material refratário que caem sobre a peça durante o trajeto dentro do forno.",
+            "31": "Sobreposição acidental de peças na linha de transporte ou por trancamento, pode ser na linha nas cargas e descargas box ou na entrada/dentro do forno.",
+            "33": "Acúmulo de massa úmida no punção da prensa, marcando a superfície do biscoito, geralmente nas laterais ou cantos.",
+            "34": "Deformação nos vértices da peça onde os gradientes de umidade e temperatura são mais intensos e a transferência de massa é acelerada. Verificar secagem, extração da peça na PH.",
+            "36": "Defeito mecânico ou de aplicação no acabamento das bordas das peças. Pode ser causado por desgaste na matrizaria (caixa/punção) e pode ser ajustado paliativamente nos rebarbadores se forem de tamanho pequeno.",
+            "37": "Resíduos ou excesso de pó sobre o suporte cerâmico cru que prejudicam a aderência do engobe e do esmalte. Verificar limpeza na PH (caída, sopros, régua etc.), ajustar bem as escovas da linha.",
+            "38": "Falha na compactação de massa, geralmente relacionado a falhas na desaeração ou massa muito seca.",
+            "41": "Dano físico ocorrido durante a seleção, empilhamento ou paletização das peças acabadas.",
+            "42": "Marcas lineares superficiais causadas por contato abrasivo após a etapa de queima. Empilhados ou trancamentos.",
+            "45": "Tensão excessiva na camada vítrea que provoca o encolhimento ou abertura localizada da superfície. Geralmente proveniente de impactos no trajeto, pode ser reduzido ou eliminado aumentando a plasticidade do insumo com correção de ligantes como o CMC ou AMISOLO.",
+            "47": "Introdução de corpos estranhos como borracha (retorno de peneiras), óleo hidráulico (vazamentos na prensa) ou ferrugem (silos de estocagem). Fazer uma varredura no trajeto por pontos com contaminação, verificar peneiras da massa (retorno também), isolar silos com maior incidência do defeito.",
+            "48": "Material de boa qualidade desclassificado por engano ou falha.",
+            "49": "Variação dimensional além da tolerância permitida, originada por retração irregular de queima ou falha no ajuste das retíficas. Avaliar estafetas e dimensional na saída dos fornos, verificar se é possível corrigir na PH.",
+            "54": "Choque mecânico nas bordas durante o processo de seleção, armazenamento ou embalagem.",
+            "60": "Resíduos de pó ou de massa provenientes do sistema de limpeza das rebarbas das peças cruas. Podem estar muito apertados, úmidos ou com sopro/aspiração ineficientes.",
+            "64": "Marcas circulares causadas por gotejamento de condensação ou água sobre a peça antes da entrada no forno. Pode ser de chuva, vazamentos em linha, condensação em estruturas nos dias frios.",
+            "73": "Rompimento momentâneo da cortina de esmalte na campana devido a bolhas de ar ou flutuações reológicas. Interrupção no fluxo de aplicação dos insumos, causada por bolhas de ar ou entupimento parcial do sistema. Bolhas podem ser geradas por excesso de agitação, bombas com problema, reologia do insumo, tensão superficial ou viscosidade alta.",
+            "74": "Peças retiradas da linha para testes de laboratório ou liberações.",
+            "75": "Umidade residual excessiva (acima de 1,5%); a saída violenta da água no forno provoca a explosão da peça. Peças úmidas que pararam sob as aplicações ou que estão no estoque a muito tempo e podem ter recebido chuva.",
+            "77": "Falha física na transição das peças da zona de resfriamento final para a linha de transporte. Avisar o forneiro para ajustar o resfriamento.",
+            "78": "Variação na coloração final por instabilidade térmica ou falha no desenvolvimento de cor nas impressoras digitais. As vezes podem ser insumos trocados, camadas erradas ou tintas misturadas.",
+            "80": "Colisão mecânica causada por desalinhamento na linha ou acúmulo de peças (encavalamento). Verificar guias e correias.",
+            "85": "Instabilidade na cortina de aplicação que gera marcas onduladas; ligada à baixa viscosidade ou vibrações no equipamento.",
+            "88": "Presença de partículas não dissolvidas ou aglomeradas na suspensão do esmalte, pode ser excesso de CMC, correias ressecadas, peneiras transbordando, polias sujas.",
+            "93": "Respingos da camada protetora final (cobertura) aplicada sobre a decoração digital. Lavar a cabine com frequência, garantir o bom peneiramento do insumo. (caso for em disco, verificar se está na rotação ideal).",
+            "94": "Descarte de peças que apresentam dimensões significativamente maiores que o calibre padrão.",
+            "95": "Dano causado por falha mecânica ou erro de programação nos braços automatizados de manipulação das caixas/pilhas.",
+            "96": "Desvio geométrico de ortogonalidade onde a peça assume formato trapezoidal.",
+            "97": "Código específico para desvios dimensionais ou de retilinearidade detectados por sensores ópticos.",
+            "98": "Descarte total da peça devido a curvaturas severas que impedem o uso comercial.",
+            "99": "REGISTRAR UM NOVO DEFEITO.",
+            "106": "Deformação Piroplástica ; excesso de fase líquida ou baixa viscosidade durante a queima que faz a peça ceder sob o próprio peso entre os rolos.",
+            "109": "Riscos deixados por abrasivos durante o acabamento lateral ou limpeza superficial. Verificar a condição/regulagem das escovas e trocar preventivamente.",
+            "110": "Marcas de umidade externa incidentais sobre as peças durante estocagem ou transporte em dias de muita chuva.",
+            "111": "Resíduos de massa que permanecem no molde e são compactados na peça seguinte, gerando relevos irregulares. Ferificar sistema de limpeza da PH e regulagens.",
+            "113": "Entupimento parcial de nozzles (bicos) ou sujeira acumulada nos protetores das cabeças de impressão. Fazer purgas, avisar o técnico para progarmar a troca do módulo de impressão.",
+            "114": "Dano mecânico causado por falha no sistema de empilhamento ou paletização automatizada.",
+            "116": "Peças danificadas por empilhamento incorreto, excesso de peso ou curvatura, transporte por vias acidentadas, falta de borracha nos pancones e paletes.",
+            "117": "Material Molhado: Material que fica fora do estoque coberto e retorna para retrabalho com embalagens danificadas ou marcas de ataque de muratura devido ao empilhamento prolongado sobre umidade.",
+            "118": "Diferença entre as medidas diagonais da peça, causada por prensagem isostática irregular ou retífica incorreta.",
+            "119": "Alguma falha na decoração ou imagem, ou ausência dela como peças brancas.",
+            "122": "Ajuste incorreto do ângulo de inclinação nas laterais da peça, pode ser do rebarbador ou raio do punção.",
+            "123": "Desgaste excessivo ou batimento lateral dos rebolos de diamante na retífica, deixando a borda irregular.",
+            "124": "Pressão excessiva dos cabeçotes ou vibração sobre peças com tensões residuais elevadas.",
+            "127": "Tensões desenvolvidas no resfriamento por falta de acordo dilatométrico ou má distribuição de temperatura no forno. Verificar as condições de curva de queima com o forneiro. Avisar departamento técnico.",
+            "129": "Riscos mecânicos originados na extração ou transporte das peças conformadas ainda cruas.",
+            "130": "Peças que não passaram pelo ciclo de queima ou foram retiradas prematuramente do forno."
+        };
 
         let ovenDefectMap = { ...seedOvenDefects };
         let grinderDefectMap = { ...seedGrinderDefects };
+        let defectResolutionsMap = { ...seedTroubleshooting };
+        
         let configDefectMode = 'ovens';
         let lookupOven = 'FORNO 2';
 
@@ -684,14 +752,15 @@
                             if (item && item.desc && item.desc.trim() !== '' && item.desc.toLowerCase() !== 'nenhum') {
                                 const v = type === 'paradas' ? parseInt(item.val, 10) : parseFloat(String(item.val).replace(',', '.'));
                                 if (!isNaN(v) && v > 0) {
-                                    map[item.desc] = (map[item.desc] || 0) + v;
+                                    if (!map[item.desc]) map[item.desc] = { val: 0, cod: item.cod };
+                                    map[item.desc].val += v;
                                 }
                             }
                         });
                     }
                 }
                 return Object.entries(map)
-                    .map(([desc, val]) => ({ desc, val }))
+                    .map(([desc, payload]) => ({ desc, val: payload.val, cod: payload.cod }))
                     .sort((a, b) => b.val - a.val)
                     .slice(0, 3);
             };
@@ -716,14 +785,27 @@
                 
                 let itemsHtml = offenders.map((off, index) => {
                     const valStr = isMin ? `${off.val}m` : `${off.val.toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:2})}%`;
+                    const resolution = defectResolutionsMap[off.cod] || '';
+
+                    let resolutionHtml = '';
+                    if (resolution && !isMin) { 
+                        resolutionHtml = `
+                            <div class="mt-2 pt-2 border-t border-gray-200/60 text-[0.7rem] sm:text-sm xl:text-base text-gray-700 w-full text-justify leading-snug">
+                                <span class="font-bold text-gray-900 uppercase text-[0.65rem] sm:text-xs xl:text-sm tracking-wider mr-1">O que fazer:</span>${resolution}
+                            </div>
+                        `;
+                    }
                     
                     return `
-                        <div class="flex justify-between items-center ${bgColors[index]} ${theme.val} p-3 rounded-xl w-full">
-                            <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                                <span class="text-2xl sm:text-3xl font-black ${rankColors[index]} drop-shadow-sm w-8 sm:w-10 text-center">#${index + 1}</span>
-                                <span class="${textSizes[index]} font-bold text-gray-800 truncate">${off.desc}</span>
+                        <div class="flex flex-col justify-start items-start ${bgColors[index]} ${theme.val} p-3 sm:p-4 rounded-xl w-full shadow-sm transition-all h-auto">
+                            <div class="flex justify-between items-center w-full gap-2">
+                                <div class="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                                    <span class="text-2xl sm:text-3xl xl:text-4xl font-black ${rankColors[index]} drop-shadow-sm w-10 sm:w-12 text-center shrink-0">#${index + 1}</span>
+                                    <span class="${textSizes[index]} font-bold text-gray-800 break-words line-clamp-2 leading-tight">${off.desc}</span>
+                                </div>
+                                <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-1 shrink-0">${valStr}</span>
                             </div>
-                            <span class="${valSizes[index]} font-black ${theme.val} whitespace-nowrap ml-2">${valStr}</span>
+                            ${resolutionHtml}
                         </div>
                     `;
                 }).join('');
@@ -731,7 +813,7 @@
                 return `
                     <div class="flex-1 ${theme.bg} rounded-3xl border-4 ${theme.border} p-4 sm:p-6 flex flex-col items-center justify-start shadow-inner relative overflow-hidden transition-all hover:scale-[1.02]">
                         <span class="text-xl sm:text-2xl font-black ${theme.title} uppercase tracking-widest mb-4 z-10 drop-shadow-sm text-center">${title}</span>
-                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-center">
+                        <div class="flex flex-col gap-4 w-full mt-2 z-10 h-full justify-start overflow-y-visible">
                             ${itemsHtml}
                         </div>
                     </div>
@@ -847,24 +929,44 @@
                         currentRef = r.ref || currentRef;
                         
                         let wSum = 0; let pVol = 0;
+                        let sumQuebraDia = 0;
+                        let countQuebraHours = 0;
+
                         for(let i = 0; i <= lastIdx; i++) {
                             const row = data.rows[i];
                             const v = parseFloat(String(row.vol).replace('.', '').replace(',', '.'));
                             const qH = parseFloat(String(row.qHora).replace(',', '.'));
+                            
+                            // 1. Calculando Qualidade (Ponderada pelo Volume)
                             if (!isNaN(v)) {
                                 let dVol = v - pVol;
                                 if (!isNaN(qH)) wSum += dVol * qH;
                                 if (v > 0) qualSnapshot = wSum / v;
                                 pVol = v;
                             }
+
+                            // 2. Calculando Quebra (Média Aritmética das Horas Apontadas)
+                            let hourQuebra = 0;
+                            let temQuebra = false;
+                            if (row.quebras) {
+                                row.quebras.forEach(q => {
+                                    const qv = parseFloat(String(q.val).replace(',', '.'));
+                                    if (!isNaN(qv)) {
+                                        hourQuebra += qv;
+                                        temQuebra = true;
+                                    }
+                                });
+                            }
+                            
+                            // Considera a hora como "trabalhada" se teve volume, ou se teve quebra apontada, ou qualidade apontada.
+                            const hasData = (!isNaN(v) && v > 0) || temQuebra || (row.qHora && row.qHora.trim() !== '');
+                            if (hasData) {
+                                sumQuebraDia += hourQuebra;
+                                countQuebraHours++;
+                            }
                         }
                         
-                        if (r.quebras) {
-                            r.quebras.forEach(q => {
-                                const v = parseFloat(String(q.val).replace(',', '.'));
-                                if (!isNaN(v)) quebraSnapshot += v;
-                            });
-                        }
+                        quebraSnapshot = countQuebraHours > 0 ? (sumQuebraDia / countQuebraHours) : 0;
                     }
                 }
                 
@@ -892,7 +994,7 @@
                         <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
                             <div class="flex-1 flex flex-row justify-around items-center">
                                 ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
-                                ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
+                                ${generateGauge('Quebra Acumulada', quebraSnapshot, targets.breakage, true)}
                                 ${generateGauge('Utilização (Total Dia)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
                             </div>
                             ${btnOfensoresHTML}
@@ -1071,7 +1173,9 @@
             unsubscribeDefects = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    ovenDefectMap = { ...seedOvenDefects, ...(data.ovens || {}) }; 
+                    grinderDefectMap = { ...seedGrinderDefects, ...(data.grinders || {}) };
+                    defectResolutionsMap = { ...seedTroubleshooting, ...(data.resolutions || {}) };
                     
                     Object.keys(ovenDefectMap).forEach(k => { if (!ovenDefectMap[k] || ovenDefectMap[k] === "[REMOVIDO]") delete ovenDefectMap[k]; });
                     Object.keys(grinderDefectMap).forEach(k => { if (!grinderDefectMap[k] || grinderDefectMap[k] === "[REMOVIDO]") delete grinderDefectMap[k]; });
@@ -1079,32 +1183,34 @@
                     if (viewMode === 'config') renderContent(); 
                     const panel = document.getElementById('defect-lookup-panel'); 
                     if (panel && panel.style.display === 'flex') window.renderDefectLookup();
-                } else setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects });
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), { ovens: seedOvenDefects, grinders: seedGrinderDefects, resolutions: seedTroubleshooting });
+                }
             });
         };
 
-        // As funções de Defeitos agora usam salvamento cirúrgico com { merge: true }
         window.addDefect = async () => { 
-            const code = document.getElementById('new-defect-code').value.trim();
-            const desc = document.getElementById('new-defect-desc').value.trim();
+            const codeInput = document.getElementById('new-defect-code');
+            const descInput = document.getElementById('new-defect-desc');
+            const code = codeInput.value.trim();
+            const desc = descInput.value.trim();
             
             if(code && desc) { 
                 const isOven = configDefectMode === 'ovens';
                 const mapName = isOven ? 'ovens' : 'grinders';
                 
-                // Atualiza tela imediatamente
                 (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+                codeInput.value = '';
+                descInput.value = '';
                 window.renderContent();
                 const panel = document.getElementById('defect-lookup-panel'); 
                 if (panel && panel.style.display === 'flex') window.renderDefectLookup();
                 
                 setSaveStatus('saving'); 
                 try { 
-                    // Salvamento Cirúrgico: Altera APENAS o código que foi digitado, sem tocar nos outros.
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
                         [mapName]: { [code]: desc }
                     }, { merge: true }); 
-                    
                     setSaveStatus('saved'); 
                 } catch(e) { setSaveStatus('error'); } 
             } else {
@@ -1117,13 +1223,11 @@
                 const isOven = configDefectMode === 'ovens'; 
                 const mapName = isOven ? 'ovens' : 'grinders';
                 
-                // Atualiza tela imediatamente
                 (isOven ? ovenDefectMap : grinderDefectMap)[code] = "[REMOVIDO]";
                 window.renderContent();
 
                 setSaveStatus('saving'); 
                 try {
-                    // Salvamento Cirúrgico
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
                         [mapName]: { [code]: "[REMOVIDO]" }
                     }, { merge: true });
@@ -1136,14 +1240,22 @@
             const isOven = configDefectMode === 'ovens'; 
             const mapName = isOven ? 'ovens' : 'grinders';
             
-            // Atualiza tela imediatamente
             (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
-
             setSaveStatus('saving');
             try {
-                // Salvamento Cirúrgico
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
                     [mapName]: { [code]: desc }
+                }, { merge: true });
+                setSaveStatus('saved');
+            } catch(e) { setSaveStatus('error'); }
+        };
+
+        window.updateDefectResolution = async (code, resText) => { 
+            defectResolutionsMap[code] = resText;
+            setSaveStatus('saving');
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'defects'), {
+                    resolutions: { [code]: resText }
                 }, { merge: true });
                 setSaveStatus('saved');
             } catch(e) { setSaveStatus('error'); }
@@ -1408,7 +1520,25 @@
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
 
-        const generateDefectListHTML = () => Object.entries(configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => `<div class="defect-item"><div class="w-16 font-bold text-center border-r border-gray-300 pr-2">${code}</div><div class="flex-grow px-2"><input type="text" id="config-defect-desc-${code}" class="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)"></div><button onclick="window.deleteDefect('${code}')" class="text-red-500 font-bold px-2">✕</button></div>`).join('');
+        const generateDefectListHTML = () => {
+            const activeMap = configDefectMode === 'ovens' ? ovenDefectMap : grinderDefectMap;
+            return Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).map(([code, desc]) => {
+                const res = defectResolutionsMap[code] || '';
+                return `
+                <div class="flex flex-col border-b border-gray-200 py-3 bg-white hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center px-2 mb-1">
+                        <div class="w-12 font-black text-blue-800 text-center border-r border-gray-300 pr-2 text-sm">${code}</div>
+                        <div class="flex-grow px-2">
+                            <input type="text" id="config-desc-${code}" class="w-full bg-transparent font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-sm" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                        </div>
+                        <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2 transition-colors">✕</button>
+                    </div>
+                    <div class="pl-14 pr-8">
+                        <textarea id="config-res-${code}" class="w-full text-xs p-1.5 border border-gray-200 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-200 outline-none resize-y text-gray-600" rows="2" placeholder="Descreva a Causa Raiz e a Ação sugerida (O que fazer...)" onchange="window.updateDefectResolution('${code}', this.value)">${res}</textarea>
+                    </div>
+                </div>`;
+            }).join('');
+        };
 
         const generateConfigHTML = () => `
             <div class="config-container">
@@ -1427,11 +1557,11 @@
                     
                     <div class="mt-8 p-3 bg-red-50 rounded border border-red-200"><h4 class="font-bold text-red-800 text-sm uppercase mb-2">Controle de Sistema</h4><p class="text-[0.65rem] text-red-700 mb-3 text-justify">Utilize este botão após aprovar uma nova versão ou alteração para forçar todos os navegadores e telas abertas na fábrica a recarregarem a página imediatamente.</p><button onclick="window.forceGlobalRefresh()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Atualização em Todas as Telas</button></div>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Cadastro de Defeitos</h3>
+                <div class="flex flex-col">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Base de Conhecimento (Defeitos)</h3>
                     <div class="flex justify-center gap-4 mb-4"><label><input type="radio" name="defect-mode" ${configDefectMode === 'ovens' ? 'checked' : ''} onchange="window.setConfigDefectMode('ovens')"><span class="ml-1 font-bold text-sm">Fornos</span></label><label><input type="radio" name="defect-mode" ${configDefectMode === 'grinders' ? 'checked' : ''} onchange="window.setConfigDefectMode('grinders')"><span class="ml-1 font-bold text-sm">Retíficas</span></label></div>
-                    <div class="flex gap-2 mb-2"><input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center font-bold text-sm"><input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm"><button onclick="window.addDefect()" class="bg-green-600 text-white font-bold px-3 rounded">+</button></div>
-                    <div class="defect-list-container mt-4">${generateDefectListHTML()}</div>
+                    <div class="flex gap-2 mb-2"><input type="text" id="new-defect-code" placeholder="Cód" class="w-16 border rounded p-1 text-center font-bold text-sm"><input type="text" id="new-defect-desc" placeholder="Nova Descrição" class="flex-grow border rounded p-1 text-sm"><button onclick="window.addDefect()" class="bg-green-600 text-white font-bold px-3 rounded shadow hover:bg-green-700">+</button></div>
+                    <div class="defect-list-container mt-2 flex-grow overflow-y-auto">${generateDefectListHTML()}</div>
                 </div>
             </div>`;
 
@@ -1539,7 +1669,11 @@
         
         const renderContent = () => {
             if (viewMode === 'presentation') { window.renderPresentationScreen(); return; }
-            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null; if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
+            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+                focusedId = activeElement.id;
+                try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){}
+            }
             const mainContent = document.getElementById('main-content');
             
             if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
