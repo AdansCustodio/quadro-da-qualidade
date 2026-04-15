@@ -388,7 +388,7 @@
             "113": "Entupimento parcial de nozzles (bicos) ou sujeira acumulada nos protetores das cabeças de impressão. Fazer purgas, avisar o técnico para progarmar a troca do módulo de impressão.",
             "114": "Dano mecânico causado por falha no sistema de empilhamento ou paletização automatizada.",
             "116": "Peças danificadas por empilhamento incorreto, excesso de peso ou curvatura, transporte por vias acidentadas, falta de borracha nos pancones e paletes.",
-            "117": "Material que fica fora do estoque coberto e retorna para retrabalho com embalagens danificadas ou marcas de ataque de muratura devido ao empilhamento prolongado sobre umidade.",
+            "117": "Material Molhado: Material que fica fora do estoque coberto e retorna para retrabalho com embalagens danificadas ou marcas de ataque de muratura devido ao empilhamento prolongado sobre umidade.",
             "118": "Diferença entre as medidas diagonais da peça, causada por prensagem isostática irregular ou retífica incorreta.",
             "119": "Alguma falha na decoração ou imagem, ou ausência dela como peças brancas.",
             "122": "Ajuste incorreto do ângulo de inclinação nas laterais da peça, pode ser do rebarbador ou raio do punção.",
@@ -1170,14 +1170,18 @@
         };
 
         window.addDefect = async () => { 
-            const code = document.getElementById('new-defect-code').value.trim();
-            const desc = document.getElementById('new-defect-desc').value.trim();
+            const codeInput = document.getElementById('new-defect-code');
+            const descInput = document.getElementById('new-defect-desc');
+            const code = codeInput.value.trim();
+            const desc = descInput.value.trim();
             
             if(code && desc) { 
                 const isOven = configDefectMode === 'ovens';
                 const mapName = isOven ? 'ovens' : 'grinders';
                 
                 (isOven ? ovenDefectMap : grinderDefectMap)[code] = desc;
+                codeInput.value = '';
+                descInput.value = '';
                 window.renderContent();
                 const panel = document.getElementById('defect-lookup-panel'); 
                 if (panel && panel.style.display === 'flex') window.renderDefectLookup();
@@ -1505,12 +1509,12 @@
                     <div class="flex items-center px-2 mb-1">
                         <div class="w-12 font-black text-blue-800 text-center border-r border-gray-300 pr-2 text-sm">${code}</div>
                         <div class="flex-grow px-2">
-                            <input type="text" class="w-full bg-transparent font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-sm" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
+                            <input type="text" id="config-desc-${code}" class="w-full bg-transparent font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none text-sm" value="${desc}" onchange="window.updateDefectDesc('${code}', this.value)">
                         </div>
                         <button onclick="window.deleteDefect('${code}')" class="text-red-500 hover:text-red-700 font-bold px-2 transition-colors">✕</button>
                     </div>
                     <div class="pl-14 pr-8">
-                        <textarea class="w-full text-xs p-1.5 border border-gray-200 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-200 outline-none resize-y text-gray-600" rows="2" placeholder="Descreva a Causa Raiz e a Ação sugerida (O que fazer...)" onchange="window.updateDefectResolution('${code}', this.value)">${res}</textarea>
+                        <textarea id="config-res-${code}" class="w-full text-xs p-1.5 border border-gray-200 rounded bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-200 outline-none resize-y text-gray-600" rows="2" placeholder="Descreva a Causa Raiz e a Ação sugerida (O que fazer...)" onchange="window.updateDefectResolution('${code}', this.value)">${res}</textarea>
                     </div>
                 </div>`;
             }).join('');
@@ -1645,7 +1649,11 @@
         
         const renderContent = () => {
             if (viewMode === 'presentation') { window.renderPresentationScreen(); return; }
-            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null; if (activeElement && activeElement.tagName === 'INPUT') { focusedId = activeElement.id; try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){} }
+            const activeElement = document.activeElement; let focusedId = null, cursorStart = null, cursorEnd = null;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+                focusedId = activeElement.id;
+                try { cursorStart = activeElement.selectionStart; cursorEnd = activeElement.selectionEnd; } catch(e){}
+            }
             const mainContent = document.getElementById('main-content');
             
             if (!isDataLoaded) { mainContent.style.opacity = '0.5'; mainContent.style.pointerEvents = 'none'; } else { mainContent.style.opacity = '1'; mainContent.style.pointerEvents = 'auto'; }
