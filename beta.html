@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* --- VERSÃO 6.1 - MODO TV INTELIGENTE COM CAUSAS E AÇÕES (BASE DE CONHECIMENTO) --- */
+        /* --- VERSÃO 6.3 - LOGIN MESTRE E TRANSAÇÕES FIREBASE --- */
         
         /* --- ESTILOS GERAIS E TIPOGRAFIA --- */
         body { font-size: 1.1rem; background-color: #e5e7eb; transition: background-color 0.3s ease; }
@@ -156,6 +156,25 @@
         </button>
     </div>
 
+    <!-- TELA DE LOGIN MESTRE (PORTA-FORTE) -->
+    <div id="app-login-screen" class="fixed inset-0 bg-gray-900/95 z-[999999] flex flex-col justify-center items-center backdrop-blur-sm" style="display: none;">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-[90%] max-w-md flex flex-col items-center border-t-8 border-red-600">
+            <div class="flex flex-col items-center justify-center select-none mb-6">
+                <span class="text-gray-800 font-black tracking-tighter" style="font-family: Georgia, 'Times New Roman', Times, serif; font-size: 2.2rem; line-height: 0.85;">MOHAWK</span>
+                <span class="text-red-700 font-bold tracking-[0.4em] ml-[0.4em]" style="font-family: Arial, Helvetica, sans-serif; font-size: 0.85rem; line-height: 1; margin-top: 4px;">BRASIL</span>
+            </div>
+            <h1 class="text-xl font-black text-gray-800 mb-2 uppercase tracking-wide">Acesso ao Sistema</h1>
+            <p class="text-sm text-gray-500 mb-6 text-center">Insira a senha da fábrica para aceder ao Quadro da Qualidade.</p>
+            
+            <input type="password" id="global-password-input" class="w-full border-2 border-gray-300 rounded-lg p-3 mb-4 text-center text-xl tracking-widest focus:border-red-500 focus:ring-4 focus:ring-red-100 outline-none transition-all" placeholder="••••••••" onkeypress="if(event.key === 'Enter') window.tryLogin()">
+            
+            <button onclick="window.tryLogin()" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-lg uppercase tracking-wider transition-transform hover:scale-[1.02] active:scale-95 shadow-md">
+                Entrar no Sistema
+            </button>
+            <p id="login-error-msg" class="text-red-600 text-sm mt-4 hidden font-bold bg-red-50 py-2 px-4 rounded w-full text-center border border-red-200">Senha incorreta!</p>
+        </div>
+    </div>
+
     <!-- MODO APRESENTAÇÃO - SETUP MODAL -->
     <div id="presentation-setup-modal" style="display:none;" class="fixed inset-0 bg-black/70 z-[4000] flex justify-center items-center">
         <div class="bg-white p-6 rounded-lg shadow-2xl w-[600px] max-w-[90vw] max-h-[90vh] flex flex-col">
@@ -249,7 +268,7 @@
             <div class="flex flex-col items-center min-w-[100px] relative">
                 <span class="text-[10px] uppercase font-bold text-gray-500">Data Registro</span>
                 <span id="display-date" class="text-xs font-black text-blue-700">--/--/----</span>
-                <div id="lock-container" onclick="window.handleLockClick()" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;"><span id="lock-icon" class="text-[10px]">🔒</span></div>
+                <div id="lock-container" onclick="window.openPasswordModal('unlock')" class="absolute -right-3 top-0 cursor-pointer bg-white rounded-full p-[2px] shadow flex items-center justify-center transition-transform hover:scale-110" style="display:none;"><span id="lock-icon" class="text-[10px]">🔒</span></div>
             </div>
             <button onclick="window.changeDate(1)" class="btn-nav-date p-1" aria-label="Próximo Dia"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
             <button onclick="window.setupRealtimeListener()" class="btn-force-reload" title="Forçar atualização">Carregar Dados</button>
@@ -271,20 +290,20 @@
             📊 Resultados Agora
         </button>
 
-        <button onclick="window.openPasswordModal('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
+        <button onclick="window.setViewMode('config')" class="btn-config px-3 py-2 shadow-sm flex items-center justify-center mr-2 shrink-0" id="btn-CONFIG"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
     </div>
 
-    <!-- MODAIS DE APOIO -->
+    <!-- MODAL DE CONFIRMAÇÃO DE SENHA (AÇÕES ADMIN) -->
     <div id="password-modal">
         <div class="pwd-content">
-            <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Acesso Restrito</h3>
-            <p id="pwd-desc" class="text-sm text-gray-600 mb-4">Digite a senha de administrador.</p>
-            <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center" placeholder="Senha">
+            <h3 id="pwd-title" class="text-lg font-bold mb-2 text-gray-800">Ação Protegida</h3>
+            <p id="pwd-desc" class="text-sm text-gray-600 mb-4">Confirme a senha mestre do sistema.</p>
+            <input type="password" id="admin-password" class="w-full border-2 border-gray-300 rounded p-2 mb-4 text-center text-lg tracking-widest outline-none focus:border-red-500" placeholder="Senha">
             <div class="flex justify-between gap-2">
-                <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm">Cancelar</button>
-                <button onclick="window.submitPassword()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">Confirmar</button>
+                <button onclick="window.closePasswordModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded font-bold text-sm transition-colors">Cancelar</button>
+                <button onclick="window.submitPassword()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold text-sm transition-colors">Confirmar</button>
             </div>
-            <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden">Senha incorreta!</p>
+            <p id="pwd-error" class="text-red-500 text-xs mt-2 hidden font-bold">Senha incorreta!</p>
         </div>
     </div>
 
@@ -308,9 +327,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const APP_VERSION = 6.1; 
+        const APP_VERSION = 6.3; 
         const appLoadTime = Date.now(); 
 
         const githubFirebaseConfig = {
@@ -418,6 +437,7 @@
         
         let isAdminUnlocked = false;
         let passwordContext = 'config'; 
+        let globalPassword = "admin321"; // Senha fallback inicial
         
         let unsubscribeRealtimeList = []; 
         let unsubscribeDefects = null;
@@ -431,6 +451,103 @@
 
         let globalConfig = { equipments: {}, ovens: { quality: 97.0, breakage: 1.2, utilization: 90.0 }, grinders: { quality: 97.0, breakage: 1.2, utilization: 89.0 }, minVersion: APP_VERSION };
         const saveTimeouts = {}; const ovenDataStore = {};
+        window.pendingUpdates = {};
+
+        // --- SISTEMA DE ACESSO (PORTA-FORTE) ---
+        const loadGlobalAuth = async () => {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'auth'));
+                if (docSnap.exists() && docSnap.data().password) {
+                    globalPassword = docSnap.data().password;
+                } else {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'auth'), { password: "admin321" });
+                }
+            } catch(e) { console.error("Erro auth:", e); }
+        };
+
+        window.tryLogin = () => {
+            const input = document.getElementById('global-password-input').value;
+            if (input === globalPassword) {
+                document.getElementById('app-login-screen').style.display = 'none';
+                sessionStorage.setItem('sc2_auth', 'true');
+                window.setupRealtimeListener(); // Carrega os dados só depois de destrancado
+            } else {
+                document.getElementById('login-error-msg').classList.remove('hidden');
+            }
+        };
+
+        window.changeGlobalPassword = async () => {
+            const curr = document.getElementById('config-pwd-current').value;
+            const nov = document.getElementById('config-pwd-new').value;
+            const conf = document.getElementById('config-pwd-confirm').value;
+
+            if (curr !== globalPassword) { alert("Senha atual incorreta!"); return; }
+            if (nov !== conf) { alert("A nova senha e a confirmação não coincidem!"); return; }
+            if (nov.length < 4) { alert("A nova senha deve ter pelo menos 4 caracteres."); return; }
+
+            setSaveStatus('saving');
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'auth'), { password: nov });
+                globalPassword = nov;
+                setSaveStatus('saved');
+                alert("Senha geral alterada com sucesso! Todos os próximos acessos exigirão a nova senha.");
+                document.getElementById('config-pwd-current').value = '';
+                document.getElementById('config-pwd-new').value = '';
+                document.getElementById('config-pwd-confirm').value = '';
+            } catch(e) {
+                setSaveStatus('error');
+                alert("Erro ao alterar senha.");
+            }
+        };
+
+        // --- SISTEMA DE FILA (EVITAR PERDA DE DADOS SIMULTÂNEA) ---
+        const queueUpdate = (ovenId, path, value) => {
+            if (!db || !isDataLoaded || isDateLocked()) return;
+            if (!window.pendingUpdates[ovenId]) window.pendingUpdates[ovenId] = {};
+            window.pendingUpdates[ovenId][path] = value;
+
+            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]);
+            setSaveStatus('saving');
+
+            saveTimeouts[ovenId] = setTimeout(async () => {
+                const updatesToApply = { ...window.pendingUpdates[ovenId] };
+                window.pendingUpdates[ovenId] = {}; 
+
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`);
+
+                    await runTransaction(db, async (transaction) => {
+                        const sfDoc = await transaction.get(docRef);
+                        let data = sfDoc.exists() ? sfDoc.data() : JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
+
+                        // Aplica as atualizações parciais diretamente no documento do servidor
+                        for (const [p, val] of Object.entries(updatesToApply)) {
+                            const keys = p.split('.');
+                            let current = data;
+                            for (let i = 0; i < keys.length - 1; i++) {
+                                if (current[keys[i]] === undefined || current[keys[i]] === null) {
+                                    current[keys[i]] = isNaN(keys[i+1]) ? {} : [];
+                                }
+                                current = current[keys[i]];
+                            }
+                            current[keys[keys.length - 1]] = val;
+                        }
+
+                        if (!data.targets) {
+                            data.targets = { ...window.getTargets(ovenId) };
+                        }
+
+                        transaction.set(docRef, data);
+                    });
+                    setSaveStatus('saved');
+                } catch (e) {
+                    console.error("Erro na transação de salvamento:", e);
+                    window.pendingUpdates[ovenId] = { ...updatesToApply, ...(window.pendingUpdates[ovenId] || {}) };
+                    setSaveStatus('error');
+                }
+            }, 1000);
+        };
 
         // --- LÓGICA DO MODO APRESENTAÇÃO ---
         window.openPresentationSetup = () => { document.getElementById('presentation-screens-list').innerHTML = ''; window.addPresentationScreenRow(); document.getElementById('presentation-setup-modal').style.display = 'flex'; };
@@ -929,24 +1046,41 @@
                         currentRef = r.ref || currentRef;
                         
                         let wSum = 0; let pVol = 0;
+                        let sumQuebraDia = 0;
+                        let countQuebraHours = 0;
+
                         for(let i = 0; i <= lastIdx; i++) {
                             const row = data.rows[i];
                             const v = parseFloat(String(row.vol).replace('.', '').replace(',', '.'));
                             const qH = parseFloat(String(row.qHora).replace(',', '.'));
+                            
                             if (!isNaN(v)) {
                                 let dVol = v - pVol;
                                 if (!isNaN(qH)) wSum += dVol * qH;
                                 if (v > 0) qualSnapshot = wSum / v;
                                 pVol = v;
                             }
+
+                            let hourQuebra = 0;
+                            let temQuebra = false;
+                            if (row.quebras) {
+                                row.quebras.forEach(q => {
+                                    const qv = parseFloat(String(q.val).replace(',', '.'));
+                                    if (!isNaN(qv)) {
+                                        hourQuebra += qv;
+                                        temQuebra = true;
+                                    }
+                                });
+                            }
+                            
+                            const hasData = (!isNaN(v) && v > 0) || temQuebra || (row.qHora && row.qHora.trim() !== '');
+                            if (hasData) {
+                                sumQuebraDia += hourQuebra;
+                                countQuebraHours++;
+                            }
                         }
                         
-                        if (r.quebras) {
-                            r.quebras.forEach(q => {
-                                const v = parseFloat(String(q.val).replace(',', '.'));
-                                if (!isNaN(v)) quebraSnapshot += v;
-                            });
-                        }
+                        quebraSnapshot = countQuebraHours > 0 ? (sumQuebraDia / countQuebraHours) : 0;
                     }
                 }
                 
@@ -974,7 +1108,7 @@
                         <div class="w-3/4 sm:w-4/5 flex flex-row justify-between items-center px-2 sm:px-4">
                             <div class="flex-1 flex flex-row justify-around items-center">
                                 ${generateGauge('Qualidade Acumulada', qualSnapshot, targets.quality, false)}
-                                ${generateGauge('Quebra (Últ. Reg.)', quebraSnapshot, targets.breakage, true)}
+                                ${generateGauge('Quebra Acumulada', quebraSnapshot, targets.breakage, true)}
                                 ${generateGauge('Utilização (Total Dia)', utilSnapshot, targets.utilization || (oven.includes('RET') ? 89.0 : 90.0), false)}
                             </div>
                             ${btnOfensoresHTML}
@@ -1083,7 +1217,30 @@
 
         const getDiffDays = () => { const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); const selected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()); return Math.floor((today - selected) / (1000 * 60 * 60 * 24)); };
         const isDateLocked = () => { if (isAdminUnlocked) return false; return getDiffDays() > 3; };
-        window.handleLockClick = () => { if (getDiffDays() > 3) { isAdminUnlocked = !isAdminUnlocked; updateDateUI(); renderContent(); } };
+        
+        window.openPasswordModal = (context = 'unlock') => { 
+            passwordContext = context; 
+            document.getElementById('pwd-error').classList.add('hidden'); 
+            document.getElementById('admin-password').value = ''; 
+            document.getElementById('pwd-title').innerText = 'Desbloqueio de Histórico'; 
+            document.getElementById('pwd-desc').innerText = 'Confirme a senha mestre do sistema para editar dados antigos.'; 
+            document.getElementById('password-modal').style.display = 'flex'; 
+            setTimeout(() => document.getElementById('admin-password').focus(), 100); 
+        };
+        
+        window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
+        
+        window.submitPassword = () => { 
+            const pwd = document.getElementById('admin-password').value;
+            if (pwd === globalPassword) { 
+                window.closePasswordModal(); 
+                isAdminUnlocked = true; 
+                updateDateUI(); 
+                renderContent(); 
+            } else {
+                document.getElementById('pwd-error').classList.remove('hidden'); 
+            }
+        };
 
         window.forceGlobalRefresh = async () => { if (!db) return; if (confirm("⚠️ ATENÇÃO: Forçar todas as telas a recarregarem imediatamente?")) { setSaveStatus('saving'); try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'refresh'), { timestamp: Date.now() }); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } } };
 
@@ -1262,16 +1419,6 @@
             else if(status === 'error') { dot.className = "w-2 h-2 rounded-full bg-red-600"; text.innerText = "Erro ao Salvar"; text.className = "text-red-600"; }
         };
 
-        const saveToFirebase = (ovenId) => {
-            if (!db || !ovenDataStore[ovenId] || !isDataLoaded || isDateLocked()) return;
-            if (saveTimeouts[ovenId]) clearTimeout(saveTimeouts[ovenId]); setSaveStatus('saving');
-            
-            if (!ovenDataStore[ovenId].targets) { ovenDataStore[ovenId].targets = { ...window.getTargets(ovenId) }; } else { const t = window.getTargets(ovenId); if (ovenDataStore[ovenId].targets.utilization === undefined) ovenDataStore[ovenId].targets.utilization = t.utilization; if (ovenDataStore[ovenId].targets.quality === undefined) ovenDataStore[ovenId].targets.quality = t.quality; if (ovenDataStore[ovenId].targets.breakage === undefined) ovenDataStore[ovenId].targets.breakage = t.breakage; }
-            
-            const dataToSave = JSON.parse(JSON.stringify(ovenDataStore[ovenId]));
-            saveTimeouts[ovenId] = setTimeout(async () => { try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'records', `${ovenId}_${getDateKey(selectedDate)}`), dataToSave); setSaveStatus('saved'); } catch (e) { setSaveStatus('error'); } }, 1000);
-        };
-
         const toggleLoading = (show) => { const el = document.getElementById('loading-indicator'); if(el) el.style.display = show ? 'flex' : 'none'; };
 
         const fetchPreviousDayData = async (ovenName, currentDate) => {
@@ -1329,12 +1476,28 @@
                 if (oven.includes('RETÍFICA')) { if (val.trim().toUpperCase() === 'X') { val = "EQUIPAMENTO PARADO"; if(el) { el.value = val; el.classList.add('text-stop-alert'); } } else if (val === "EQUIPAMENTO PARADO") { if(el) el.classList.add('text-stop-alert'); } else { if(el) el.classList.remove('text-stop-alert'); } } 
                 else { if (val.trim().toLowerCase() === 'x') { val = "❌FORNO PARADO⚠️"; if(el) el.value = val; } if (val === "❌FORNO PARADO⚠️") { if(el) el.classList.add('text-red-600', 'font-black'); } else { if(el) el.classList.remove('text-red-600', 'font-black'); } }
             }
-            ovenDataStore[oven].rows[row][field] = val; saveToFirebase(oven);
+            ovenDataStore[oven].rows[row][field] = val; 
+            queueUpdate(oven, `rows.${row}.${field}`, val);
         };
 
-        window.syncClosing = (oven, index, field, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].closing[index][field] = val; saveToFirebase(oven); } };
-        window.syncLinha = (oven, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].linha = val; saveToFirebase(oven); } };
-        window.syncNominal = (oven, val) => { if (isDataLoaded && !isDateLocked()) { ovenDataStore[oven].nominal = val; saveToFirebase(oven); } };
+        window.syncClosing = (oven, index, field, val) => { 
+            if (isDataLoaded && !isDateLocked()) { 
+                ovenDataStore[oven].closing[index][field] = val; 
+                queueUpdate(oven, `closing.${index}.${field}`, val);
+            } 
+        };
+        window.syncLinha = (oven, val) => { 
+            if (isDataLoaded && !isDateLocked()) { 
+                ovenDataStore[oven].linha = val; 
+                queueUpdate(oven, `linha`, val);
+            } 
+        };
+        window.syncNominal = (oven, val) => { 
+            if (isDataLoaded && !isDateLocked()) { 
+                ovenDataStore[oven].nominal = val; 
+                queueUpdate(oven, `nominal`, val);
+            } 
+        };
 
         const getActiveDefectMap = (oven) => oven && oven.includes('RETÍFICA') ? grinderDefectMap : ovenDefectMap;
 
@@ -1360,11 +1523,30 @@
             if (!isDataLoaded || isDateLocked()) return;
             if (!ovenDataStore[oven].rows[row][type][index]) ovenDataStore[oven].rows[row][type][index] = createEmptySubRow();
             ovenDataStore[oven].rows[row][type][index][field] = val;
-            if (field === 'cod') { const map = getActiveDefectMap(oven); const desc = map[val] || (val ? "Desconhecido" : ""); ovenDataStore[oven].rows[row][type][index]['desc'] = desc; const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`); if(descInput) { descInput.value = desc; if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); } else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); } } }
-            saveToFirebase(oven); if (type === 'quebras') window.runQuebra(oven, row); window.highlightMax(oven, row, type);
+            if (field === 'cod') { 
+                const map = getActiveDefectMap(oven); 
+                const desc = map[val] || (val ? "Desconhecido" : ""); 
+                ovenDataStore[oven].rows[row][type][index]['desc'] = desc; 
+                queueUpdate(oven, `rows.${row}.${type}.${index}.desc`, desc);
+                const descInput = document.getElementById(`input-${oven}-${row}-${type}-${index}-desc`); 
+                if(descInput) { 
+                    descInput.value = desc; 
+                    if (val === '99') { descInput.removeAttribute('readonly'); descInput.classList.remove('bg-gray-50', 'text-gray-500'); descInput.classList.add('input-desc-editable'); descInput.focus(); } else { descInput.setAttribute('readonly', true); descInput.classList.add('bg-gray-50', 'text-gray-500'); descInput.classList.remove('input-desc-editable'); } 
+                } 
+            }
+            queueUpdate(oven, `rows.${row}.${type}.${index}.${field}`, val);
+            if (type === 'quebras') window.runQuebra(oven, row); 
+            window.highlightMax(oven, row, type);
         };
 
-        window.updateParada = (oven, row, index, field, val) => { if (!isDataLoaded || isDateLocked()) return; if (!ovenDataStore[oven].rows[row].paradas) ovenDataStore[oven].rows[row].paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; ovenDataStore[oven].rows[row].paradas[index][field] = val; saveToFirebase(oven); window.runParadaRow(oven, row); window.updateTempoVazioSums(oven); };
+        window.updateParada = (oven, row, index, field, val) => { 
+            if (!isDataLoaded || isDateLocked()) return; 
+            if (!ovenDataStore[oven].rows[row].paradas) ovenDataStore[oven].rows[row].paradas = [createEmptyParadaRow(), createEmptyParadaRow(), createEmptyParadaRow()]; 
+            ovenDataStore[oven].rows[row].paradas[index][field] = val; 
+            queueUpdate(oven, `rows.${row}.paradas.${index}.${field}`, val);
+            window.runParadaRow(oven, row); 
+            window.updateTempoVazioSums(oven); 
+        };
 
         window.updateTempoVazioSums = (oven) => {
             const data = ovenDataStore[oven]; if (!data) return; const safeOven = oven.replace(/\s+/g, '-'); let targetU = data.targets?.utilization || window.getTargets(oven).utilization || 90.0;
@@ -1483,10 +1665,6 @@
         window.toggleDefectList = (ovenName) => { lookupOven = (typeof ovenName === 'string') ? ovenName : currentOven; const panel = document.getElementById('defect-lookup-panel'); if (panel.style.display === 'flex') panel.style.display = 'none'; else { panel.style.display = 'flex'; document.getElementById('defect-search').value = ''; document.getElementById('defect-search').focus(); document.getElementById('lookup-title').innerText = lookupOven.includes('RETÍFICA') ? "Lista de Defeitos (RETÍFICAS)" : "Lista de Defeitos (FORNOS)"; window.renderDefectLookup(); } };
         window.renderDefectLookup = () => { const filter = document.getElementById('defect-search').value.toLowerCase(); const activeMap = getActiveDefectMap(lookupOven) || {}; document.getElementById('defect-lookup-list').innerHTML = Object.entries(activeMap).sort((a,b) => parseInt(a[0]) - parseInt(b[0])).filter(([c, d]) => c.includes(filter) || (typeof d === 'string' && d.toLowerCase().includes(filter))).map(([c, d]) => `<div class="flex border-b border-gray-100 py-1 hover:bg-blue-50 px-2 cursor-default"><span class="w-12 font-bold text-center text-blue-800 border-r text-[10px]">${c}</span><span class="flex-grow pl-2 text-left text-gray-700 text-[10px] flex items-center">${d}</span></div>`).join(''); };
 
-        window.openPasswordModal = (context = 'config') => { passwordContext = context; document.getElementById('pwd-error').classList.add('hidden'); document.getElementById('admin-password').value = ''; if (context === 'unlock') { document.getElementById('pwd-title').innerText = 'Desbloqueio de Histórico'; document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para editar dados antigos.'; } else { document.getElementById('pwd-title').innerText = 'Acesso Restrito'; document.getElementById('pwd-desc').innerText = 'Digite a senha de administrador para acessar as configurações.'; } document.getElementById('password-modal').style.display = 'flex'; setTimeout(() => document.getElementById('admin-password').focus(), 100); };
-        window.closePasswordModal = () => document.getElementById('password-modal').style.display = 'none';
-        window.submitPassword = () => { if (document.getElementById('admin-password').value === "admin321") { window.closePasswordModal(); if (passwordContext === 'config') { window.setViewMode('config'); } else if (passwordContext === 'unlock') { isAdminUnlocked = true; updateDateUI(); renderContent(); } } else document.getElementById('pwd-error').classList.remove('hidden'); };
-
         window.saveConfig = () => {
             if (!globalConfig.equipments) globalConfig.equipments = {}; let hasError = false;
             ovenList.forEach(ov => {
@@ -1495,7 +1673,20 @@
                 if (isNaN(q) || isNaN(b) || isNaN(u)) { hasError = true; } else globalConfig.equipments[ov] = { quality: q, breakage: b, utilization: u };
             });
 
-            if (!hasError) { globalConfig.minVersion = APP_VERSION; saveGlobalConfigFirebase(); ovenList.forEach(ov => { if (ovenDataStore[ov]) ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; }); alert("Metas e Configurações atualizadas com sucesso!"); window.setViewMode('dashboard'); } else { alert("Existem valores inválidos. Verifique os campos."); }
+            if (!hasError) { 
+                globalConfig.minVersion = APP_VERSION; 
+                saveGlobalConfigFirebase(); 
+                ovenList.forEach(ov => { 
+                    if (ovenDataStore[ov]) {
+                        ovenDataStore[ov].targets = { ...globalConfig.equipments[ov] }; 
+                        queueUpdate(ov, 'targets', ovenDataStore[ov].targets);
+                    }
+                }); 
+                alert("Metas e Configurações atualizadas com sucesso!"); 
+                window.setViewMode('dashboard'); 
+            } else { 
+                alert("Existem valores inválidos. Verifique os campos."); 
+            }
         };
 
         window.cancelConfig = () => window.setViewMode('single', currentOven || 'FORNO 2');
@@ -1532,6 +1723,17 @@
                         </table>
                     </div>
                     <div class="flex flex-col gap-3 mt-4"><button onclick="window.saveConfig()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold py-3 rounded uppercase text-sm shadow">Salvar Metas e Voltar</button><button onclick="window.cancelConfig()" class="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-bold py-2 rounded uppercase text-sm">Cancelar</button></div>
+                    
+                    <div class="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-300 shadow-sm">
+                        <h4 class="font-bold text-gray-800 text-sm uppercase mb-3 border-b pb-2">Segurança (Trocar Senha Geral)</h4>
+                        <div class="flex flex-col gap-2">
+                            <input type="password" id="config-pwd-current" class="border p-2 rounded text-sm w-full outline-none focus:ring-2 focus:ring-blue-300" placeholder="Senha Atual">
+                            <input type="password" id="config-pwd-new" class="border p-2 rounded text-sm w-full outline-none focus:ring-2 focus:ring-blue-300" placeholder="Nova Senha">
+                            <input type="password" id="config-pwd-confirm" class="border p-2 rounded text-sm w-full outline-none focus:ring-2 focus:ring-blue-300" placeholder="Confirmar Nova Senha">
+                            <button onclick="window.changeGlobalPassword()" class="bg-gray-800 hover:bg-black text-white font-bold py-3 px-4 rounded text-xs w-full mt-2 uppercase transition-all shadow-md">Atualizar Senha do Sistema</button>
+                        </div>
+                    </div>
+
                     <div class="mt-8 p-3 bg-blue-50 rounded border border-blue-200"><h4 class="font-bold text-blue-800 text-sm uppercase mb-2">Gerar Backup Manual</h4><p class="text-[0.65rem] text-blue-700 mb-3 text-justify">O sistema faz um salvamento automático à meia-noite. Use este botão para gerar uma cópia de segurança extra na nuvem agora mesmo.</p><button onclick="window.runManualBackup(null, false)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow text-xs w-full uppercase transition-all shadow-md">Forçar Backup Agora</button></div>
                     <div class="mt-8 p-3 bg-yellow-50 rounded border"><h4 class="font-bold text-yellow-800 text-sm uppercase">Cofre de Segurança (Restaurar)</h4><div class="flex gap-2 mb-2"><select id="backup-oven-select" class="border p-1 text-xs rounded w-1/2">${ovenList.map(o => `<option value="${o}" ${o === currentOven ? 'selected' : ''}>${o}</option>`).join('')}</select><input type="date" id="backup-date-select" class="border p-1 text-xs rounded w-1/2" value="${getDateKey(selectedDate)}"></div><button onclick="window.searchBackups()" class="bg-gray-700 text-white font-bold py-2 px-4 rounded text-xs w-full mb-2">Localizar Cópias</button><div id="backup-results-container" style="display:none;" class="mt-4 border-t pt-3"><select id="backup-file-select" class="border p-2 text-xs rounded w-full mb-2"></select><button onclick="window.restoreBackup()" class="bg-red-600 text-white font-bold py-2 px-4 rounded text-xs w-full">Restaurar Dados</button></div></div>
                     
@@ -1674,6 +1876,9 @@
             if (window.location.protocol === 'file:') { document.getElementById('version-blocker').style.display = 'flex'; return; }
             resetStore(); updateDateUI(); 
 
+            // Exibir a tela de bloqueio por defeito
+            document.getElementById('app-login-screen').style.display = 'flex';
+
             const isPresActive = localStorage.getItem('isPresentationActive') === 'true';
             if (isPresActive) {
                 const savedConfig = localStorage.getItem('presentationConfig');
@@ -1694,11 +1899,32 @@
             renderContent();
             
             setInterval(() => { const now = new Date(); if (now.getDate() !== lastKnownDay) { const oldDate = new Date(selectedDate); lastKnownDay = now.getDate(); selectedDate = now; isAdminUnlocked = false; updateDateUI(); if (isDataLoaded && db) { window.runManualBackup(oldDate, true); } window.setupRealtimeListener(); return; } }, 60000);
-            if(auth) { try { if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); else await signInAnonymously(auth); } catch (e) {} onAuthStateChanged(auth, async user => { if(user) { await loadGlobalConfig(); setupDefectsListener(); setupRefreshListener(); window.setupRealtimeListener(); } }); }
+            
+            if(auth) { 
+                try { 
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token); 
+                    else await signInAnonymously(auth); 
+                } catch (e) {} 
+                
+                onAuthStateChanged(auth, async user => { 
+                    if(user) { 
+                        await loadGlobalAuth(); // Puxar senha da nuvem
+                        await loadGlobalConfig(); 
+                        setupDefectsListener(); 
+                        setupRefreshListener(); 
+
+                        // Se a sessão estiver ativa, liberta o login visual
+                        if (sessionStorage.getItem('sc2_auth') === 'true') {
+                            document.getElementById('app-login-screen').style.display = 'none';
+                            window.setupRealtimeListener(); 
+                        }
+                    } 
+                }); 
+            }
             
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search' || document.activeElement.id === 'mock-email') return; e.preventDefault();
+                    if (document.activeElement.id === 'admin-password' || document.activeElement.id === 'defect-search' || document.activeElement.id === 'global-password-input') return; e.preventDefault();
                     const el = document.activeElement; if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'SELECT')) return;
                     const subMatch = el.id.match(/input-(.+)-(\d+)-(defects|quebras|paradas)-(\d+)-(cod|val|desc)/);
                     if (subMatch) {
